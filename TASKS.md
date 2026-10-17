@@ -77,9 +77,9 @@
 
 | Task ID | Mô tả công việc | Assignee | Ước giờ | Status |
 | :--- | :--- | :---: | :---: | :---: |
-| QUICK-01 | `quickEntryParser.js` – tách số tiền (regex `35k`, `1tr2`, `200000`...) | Lead | 3h | ⬜ TODO |
-| QUICK-02 | Parser – tách ngày (`hôm nay`, `hôm qua`, `dd/mm`) | Lead | 2h | ⬜ TODO |
-| QUICK-03 | Parser – tách ví & danh mục qua từ khóa + `unaccent()` | Lead | 3h | ⬜ TODO |
+| QUICK-01 | `quickEntryParser.js` – tách số tiền (regex `35k`, `1tr2`, `200000`...) | Lead | 3h | ✅ DONE |
+| QUICK-02 | Parser – tách ngày (`hôm nay`, `hôm qua`, `dd/mm`) | Lead | 2h | ✅ DONE |
+| QUICK-03 | Parser – tách ví & danh mục qua từ khóa + `unaccent()` | Lead | 3h | ✅ DONE |
 | QUICK-04 | Giao diện ô nhập nhanh + khung Preview xem trước (trường không nhận diện = viền vàng) | FE | 3h | ⬜ TODO |
 
 ### STS – Safe-to-spend
