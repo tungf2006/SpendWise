@@ -28,3 +28,11 @@ Thumbs.db
 *.njsproj
 *.sln
 *.sw?
+
+# AI Agent & Scratch temp files
+.gemini/
+.antigravity/
+scratch/
+*.tmp
+*.temp
+

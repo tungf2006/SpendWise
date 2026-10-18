@@ -4,21 +4,63 @@
 
 ---
 
-## 1. THÔNG TIN DỰ ÁN & NHÂN SỰ
+## 1. THÔNG TIN DỰ ÁN & NHÂN SỰ CHÍNH THỨC
 - **Tên dự án:** SpendWise – Hệ thống quản lý chi tiêu cá nhân thông minh.
 - **Loại ứng dụng:** Web App Responsive (Mobile-First) + PWA cơ bản.
-- **Nhóm phát triển:** 5 thành viên (Trưởng nhóm / Leader: **Phan Thanh Tùng**).
-- **Ngôn ngữ 100%:** Tiếng Việt (UI, thông báo, tài liệu, comment code).
-- **Phân công vai trò:**
-  - `Lead` (Phan Thanh Tùng): Kiến trúc, Supabase DB, Parser, Gemini Client, PWA.
-  - `FS1` (Full-stack 1): Auth, Danh mục, Giao dịch, Báo cáo Chart.
-  - `FS2` (Full-stack 2): Ví tiền, Ngân sách, Công thức STS, Tiết kiệm & Định kỳ.
-  - `FE` (Frontend): UI/UX Mobile-First, Dashboard, Forms, Modals.
-  - `BA` (Business Analyst / QA): Use cases, Class diagram, Test RLS & Parser.
+- **Ngôn ngữ 100%:** Tiếng Việt (UI, thông báo, tài liệu thuyết minh, comment code).
+- **Phân công 5 thành viên chính thức (Theo Bảng phân công chuẩn):**
+  1. `Leader` – **Phan Thanh Tùng** (Project Manager & AI/DB Lead):
+     - *Nhiệm vụ Quản lý & Kiến trúc:* Khởi tạo repo Vite + React + Tailwind + dependencies; Khởi tạo Supabase DB 8 bảng + RLS; cấu hình `src/lib/supabaseClient.js`; Thuyết minh Chương 1 (Giới thiệu), Chương 4 (Kiến trúc) và mô hình ERD; Điều phối họp sprint & Review/Merge PR.
+     - *Nhiệm vụ Tính năng AI:* Viết `src/services/aiAssistantService.js` (tổng hợp context tài chính & gọi Gemini API); Code component `AiChatWidget.jsx` (khung chat & 4 quick reply chips); Đặc tả Use Case **UC21** (Chat trợ lý AI Gemini).
+  2. `TV1` – **Trương Bích Vân** (Full-stack Dev & BA/QA Lead):
+     - *Nhiệm vụ Tài liệu & QA:* Vẽ file draw.io (1 sơ đồ Use Case tổng quát + 4 sơ đồ phân rã chi tiết); Đặc tả 8 Use Case (**UC01–UC05, UC22, UC23, UC26**); Chủ biên ghép nối, chuẩn hóa thuyết minh; Lập Test Plan & 40–50 test cases.
+     - *Nhiệm vụ Lập trình:* Viết `src/services/authService.js`, `src/services/vietqrService.js`, `src/services/goalService.js`; Code các page: `LoginPage.jsx`, `RegisterPage.jsx`, `ProfilePage.jsx`, `BillSplitVietQR.jsx`, `GoalPage.jsx`.
+  3. `TV2` – **Hồ Nguyên Văn** (Frontend Lead & UI/PWA Dev):
+     - *Nhiệm vụ Thiết kế UI & Khung:* Vẽ Wireframe các trang chính (Figma/draw.io); Đặc tả 4 Use Case (**UC14–UC17**); Cấu hình Tailwind theme, `AppLayout.jsx` (Sidebar, Navbar, Theme Dark/Light), Router.
+     - *Nhiệm vụ Lập trình & Báo cáo:* Viết `src/services/budgetService.js`, `src/services/reportService.js`; Code `DashboardPage.jsx`, `BudgetPage.jsx`, `ReportPage.jsx` (tích hợp Chart.js); Cấu hình PWA (`manifest.json`, `sw.js`).
+  4. `TV3` – **Nguyễn Vũ Tấn Huy** (Full-stack Dev 1 - Core Data):
+     - *Nhiệm vụ Tài liệu Lõi:* Đặc tả 8 Use Case (**UC06–UC13** về Ví, Danh mục, Giao dịch); Đóng góp thuộc tính/phương thức cho Class Diagram; Mô tả chi tiết luồng nghiệp vụ dữ liệu lõi.
+     - *Nhiệm vụ Lập trình:* Viết `src/services/walletService.js`, `src/services/categoryService.js`, `src/services/transactionService.js` (chuyển ví nội bộ, tìm kiếm `note_unaccent`, phân trang, xuất CSV); Code `WalletPage.jsx`, `CategoryPage.jsx`, `TransactionPage.jsx` cùng các modal Thêm/Sửa/Xóa.
+  5. `TV4` – **Lê Hoài Quốc** (Full-stack Dev 2 - Smart & Auto):
+     - *Nhiệm vụ Sơ đồ lớp & Tài liệu Smart:* Vẽ Class Diagram tổng hợp bằng draw.io (8 Entity + các lớp Service); Đặc tả 5 Use Case (**UC18, UC19, UC20, UC24, UC25**).
+     - *Nhiệm vụ Lập trình:* Viết `src/services/quickEntryParser.js` (bóc tách câu tự nhiên); Viết `src/services/safeToSpendService.js` (công thức Safe-to-spend); Viết logic giao dịch định kỳ (`recurring_rules`) và thông báo hệ thống; Code ô nhập nhanh & modal Preview, component `<SafeToSpendCard/>`, trang Định kỳ và chuông thông báo.
 
 ---
 
-## 2. KIẾN TRÚC KỸ THUẬT & TECH STACK
+## 2. BẢNG CHỈ MỤC 26 USE CASES CHÍNH THỨC (USE CASE INDEX)
+
+| Mã UC | Tên Use Case | Nhóm chức năng (#) | Thành viên phụ trách |
+| :---: | :--- | :--- | :---: |
+| **UC01** | Đăng ký tài khoản | AUTH (1) | TV1 (Trương Bích Vân) |
+| **UC02** | Đăng nhập | AUTH (1) | TV1 (Trương Bích Vân) |
+| **UC03** | Đăng xuất | AUTH (1) | TV1 (Trương Bích Vân) |
+| **UC04** | Quên & đổi mật khẩu | AUTH (1) | TV1 (Trương Bích Vân) |
+| **UC05** | Cập nhật hồ sơ cá nhân | AUTH (1) | TV1 (Trương Bích Vân) |
+| **UC06** | Thêm ví | WALLET (2) | TV3 (Nguyễn Vũ Tấn Huy) |
+| **UC07** | Sửa ví | WALLET (2) | TV3 (Nguyễn Vũ Tấn Huy) |
+| **UC08** | Xóa / Ẩn ví | WALLET (2) | TV3 (Nguyễn Vũ Tấn Huy) |
+| **UC09** | Chuyển tiền nội bộ giữa các ví | WALLET (2) | TV3 (Nguyễn Vũ Tấn Huy) |
+| **UC10** | Thêm danh mục tùy chỉnh | CAT (3) | TV3 (Nguyễn Vũ Tấn Huy) |
+| **UC11** | Sửa / Xóa danh mục | CAT (3) | TV3 (Nguyễn Vũ Tấn Huy) |
+| **UC12** | Thêm giao dịch thu/chi | TXN (4) | TV3 (Nguyễn Vũ Tấn Huy) |
+| **UC13** | Sửa / Xóa giao dịch; Tìm kiếm; Xuất CSV | TXN (4) | TV3 (Nguyễn Vũ Tấn Huy) |
+| **UC14** | Đặt ngân sách tháng | BUDGET (5) | TV2 (Hồ Nguyên Văn) |
+| **UC15** | Xem tiến độ ngân sách | BUDGET (5) | TV2 (Hồ Nguyên Văn) |
+| **UC16** | Xem Dashboard tổng quan | DASH (6) | TV2 (Hồ Nguyên Văn) |
+| **UC17** | Xem báo cáo tài chính | REPORT (7) | TV2 (Hồ Nguyên Văn) |
+| **UC18** | Nhập nhanh bằng câu tự nhiên (Quick Entry) | QUICK (8) | TV4 (Lê Hoài Quốc) |
+| **UC19** | Xem Preview & xác nhận giao dịch | QUICK (8) | TV4 (Lê Hoài Quốc) |
+| **UC20** | Xem chỉ số Safe-to-spend hôm nay | STS (9) | TV4 (Lê Hoài Quốc) |
+| **UC21** | Chat với trợ lý AI Gemini | AIBOT (10) | Leader (Phan Thanh Tùng) |
+| **UC22** | Tạo mục tiêu tiết kiệm | GOAL_REC (11) | TV1 (Trương Bích Vân) |
+| **UC23** | Nạp tiền vào mục tiêu tiết kiệm | GOAL_REC (11) | TV1 (Trương Bích Vân) |
+| **UC24** | Tạo giao dịch định kỳ | GOAL_REC (11) | TV4 (Lê Hoài Quốc) |
+| **UC25** | Xem thông báo trong ứng dụng | NOTI_QR (12) | TV4 (Lê Hoài Quốc) |
+| **UC26** | Chia hóa đơn & tạo VietQR | NOTI_QR (12) | TV1 (Trương Bích Vân) |
+
+---
+
+## 3. KIẾN TRÚC KỸ THUẬT & TECH STACK
 - **Kiến trúc 3 tầng (Layered Architecture):**
   1. `Presentation Layer`: React 19 + Tailwind CSS + Lucide Icons + Chart.js.
   2. `Service Layer` (`src/services/`): Xử lý logic thuần túy độc lập với UI.
@@ -30,7 +72,7 @@
 
 ---
 
-## 3. CƠ SỞ DỮ LIỆU (8 BẢNG ĐÃ TRIỂN KHAI TRÊN SUPABASE)
+## 4. CƠ SỞ DỮ LIỆU (8 BẢNG ĐÃ TRIỂN KHAI TRÊN SUPABASE)
 1. `profiles`: Thông tin người dùng (`id` = `auth.users.id`, `default_bank_bin`, `default_bank_account`).
 2. `wallets`: Ví tiền (`cash`, `bank`, `ewallet`), quản lý `balance`.
 3. `categories`: Danh mục (`income`, `expense`), mảng từ khóa `keywords` cho Parser.
@@ -42,9 +84,9 @@
 
 ---
 
-## 4. BỘ 3 TÍNH NĂNG CỐT LÕI (CORE ALGORITHMS)
+## 5. BỘ 3 TÍNH NĂNG CỐT LÕI (CORE ALGORITHMS)
 
-### 4.1. Nhập nhanh câu tự nhiên (`src/services/quickEntryParser.js`)
+### 5.1. Nhập nhanh câu tự nhiên (`src/services/quickEntryParser.js`)
 - **Input:** Chuỗi tự nhiên (VD: `"cafe 35k hôm qua momo"`).
 - **Thuật toán Rule-based:**
   - `amount`: Regex `(\d+)k`, `(\d+)tr(\d+)`, `(\d+(?:\.\d+)?)tr`, số nguyên.
@@ -54,19 +96,19 @@
   - `category`: So khớp mảng `keywords` không dấu (`cafe` $\rightarrow$ Ăn uống).
 - **Nguyên tắc an toàn:** Luôn mở Preview xác nhận, trường chưa nhận diện được đánh dấu viền vàng, tuyệt đối không tự đoán.
 
-### 4.2. Công thức Safe-to-spend (`src/services/safeToSpendService.js`)
+### 5.2. Công thức Safe-to-spend (`src/services/safeToSpendService.js`)
 $$\text{SafeToSpend} = \max\left(0, \frac{\text{RemainingBudget} - \text{UpcomingRecurring}}{\text{DaysLeft}}\right)$$
 - `RemainingBudget`: Ngân sách tháng còn lại = Tổng hạn mức - Tổng đã chi.
 - `UpcomingRecurring`: Tổng chi phí định kỳ active có `next_due_date` từ hôm nay đến cuối tháng.
 - `DaysLeft`: Số ngày còn lại trong tháng (tính cả hôm nay, $\ge 1$).
 
-### 4.3. Trợ lý AI Gemini (`src/services/aiAssistantService.js`)
+### 5.3. Trợ lý AI Gemini (`src/services/aiAssistantService.js`)
 - Áp dụng kỹ thuật **Context-Stuffing**: Đóng gói JSON ngắn gọn (Dư ví, SafeToSpend hôm nay, Ngân sách tháng, Giao dịch trong tháng) đưa vào `systemInstruction`.
 - UI Chat luôn có sẵn **4 Quick Reply Chips** để demo mượt mà không lỗi gõ.
 
 ---
 
-## 5. BẢNG THUẬT NGỮ CHUẨN (GLOSSARY)
+## 6. BẢNG THUẬT NGỮ CHUẨN (GLOSSARY)
 BẮT BUỘC dùng thống nhất khi đặt tên code và hiển thị giao diện:
 - `User` / `Profile` (Người dùng)
 - `Wallet` (Ví) – *Không dùng: Thẻ, Nguồn tiền, Tài khoản*.
@@ -80,7 +122,7 @@ BẮT BUỘC dùng thống nhất khi đặt tên code và hiển thị giao di�
 
 ---
 
-## 6. PHẠM VI 12 CHỨC NĂNG (ĐÃ KHÓA – KHÔNG TỰ THÊM TÍNH NĂNG MỚI)
+## 7. PHẠM VI 12 CHỨC NĂNG (ĐÃ KHÓA – KHÔNG TỰ THÊM TÍNH NĂNG MỚI)
 1. `AUTH`: Xác thực Supabase Auth (Đăng ký, Đăng nhập, Quên mật khẩu, Profile).
 2. `WALLET`: Quản lý ví, số dư, chuyển tiền nội bộ.
 3. `CAT`: Danh mục hệ thống & tự tạo kèm từ khóa.
@@ -97,7 +139,7 @@ BẮT BUỘC dùng thống nhất khi đặt tên code và hiển thị giao di�
 
 ---
 
-## 7. QUY CHUẨN THIẾT KẾ UI/UX (Awwwards / Apple-tier)
+## 8. QUY CHUẨN THIẾT KẾ UI/UX (Awwwards / Apple-tier)
 - **Typography:** `Plus Jakarta Sans` (Nội dung) + `Outfit` (Số tiền & Tiêu đề).
 - **Cấu trúc thẻ Double-Bezel:** Vỏ ngoài bo tròn lớn `rounded-[2rem]` + Lõi trong bo đồng tâm `rounded-[calc(2rem-0.375rem)]`.
 - **Navigation:** Floating Island Navbar trên Desktop + Floating Dock ở đáy màn hình Mobile.

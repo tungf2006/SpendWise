@@ -177,3 +177,91 @@ INSERT INTO public.categories (user_id, name, type, keywords, icon, color) VALUE
 (NULL, 'Y tế & Sức khỏe', 'expense', ARRAY['thuoc', 'kham benh', 'benh vien', 'nha khoa', 'gym', 'the thao'], 'heartbeat', '#14B8A6'),
 (NULL, 'Lương', 'income', ARRAY['luong', 'ứng lương', 'salary'], 'money-bill-wave', '#10B981'),
 (NULL, 'Thưởng & Thu nhập phụ', 'income', ARRAY['thuong', 'freelance', 'ban do', 'lai tiet kiem', 'li xi', 'hoc bong'], 'gift', '#059669');
+
+-- ============================================================================
+-- 9. TRIGGER TỰ ĐỘNG KHỞI TẠO PROFILE VÀ VÍ TIỀN MẶT KHI USER ĐĂNG KÝ
+-- ============================================================================
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+    -- 1. Tự động tạo bản ghi Profile tương ứng với auth.users
+    INSERT INTO public.profiles (id, full_name, avatar_url)
+    VALUES (
+        NEW.id,
+        COALESCE(NEW.raw_user_meta_data->>'full_name', 'Người dùng mới'),
+        COALESCE(NEW.raw_user_meta_data->>'avatar_url', NULL)
+    );
+
+    -- 2. Tự động tạo Ví 'Tiền mặt' mặc định cho người dùng
+    INSERT INTO public.wallets (user_id, name, type, balance, icon, color)
+    VALUES (
+        NEW.id,
+        'Tiền mặt',
+        'cash',
+        0,
+        'wallet',
+        '#10B981'
+    );
+
+    -- 3. Tạo thông báo chào mừng ban đầu
+    INSERT INTO public.notifications (user_id, title, message, type)
+    VALUES (
+        NEW.id,
+        'Chào mừng đến với SpendWise!',
+        'Hãy bắt đầu ghi chép các khoản chi tiêu đầu tiên để kiểm soát tài chính thông minh.',
+        'system'
+    );
+
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Kích hoạt Trigger sau khi user đăng ký trong Supabase Auth
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+    AFTER INSERT ON auth.users
+    FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- ============================================================================
+-- 10. VIEWS THỐNG KÊ (HỖ TRỢ DASHBOARD VÀ BÁO CÁO)
+-- ============================================================================
+-- View tổng hợp thu chi theo tháng cho từng người dùng
+CREATE OR REPLACE VIEW public.v_monthly_summary WITH (security_invoker = true) AS
+SELECT 
+    user_id,
+    TO_CHAR(transaction_date, 'YYYY-MM') AS month_key,
+    COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) AS total_income,
+    COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) AS total_expense,
+    COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) - 
+    COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) AS net_savings
+FROM public.transactions
+WHERE type IN ('income', 'expense')
+GROUP BY user_id, TO_CHAR(transaction_date, 'YYYY-MM');
+
+-- View tiến độ ngân sách tháng theo danh mục
+CREATE OR REPLACE VIEW public.v_budget_progress WITH (security_invoker = true) AS
+SELECT 
+    b.id AS budget_id,
+    b.user_id,
+    b.month,
+    b.year,
+    b.category_id,
+    c.name AS category_name,
+    c.color AS category_color,
+    c.icon AS category_icon,
+    b.amount_limit AS budget_amount,
+    COALESCE(SUM(t.amount), 0) AS spent_amount,
+    b.amount_limit - COALESCE(SUM(t.amount), 0) AS remaining_amount,
+    CASE 
+        WHEN b.amount_limit > 0 THEN ROUND((COALESCE(SUM(t.amount), 0) / b.amount_limit) * 100, 1)
+        ELSE 0 
+    END AS spent_percentage
+FROM public.budgets b
+JOIN public.categories c ON b.category_id = c.id
+LEFT JOIN public.transactions t ON 
+    t.category_id = b.category_id 
+    AND t.user_id = b.user_id 
+    AND t.type = 'expense'
+    AND EXTRACT(MONTH FROM t.transaction_date) = b.month
+    AND EXTRACT(YEAR FROM t.transaction_date) = b.year
+GROUP BY b.id, b.user_id, b.month, b.year, b.category_id, c.name, c.color, c.icon, b.amount_limit;

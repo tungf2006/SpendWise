@@ -1,0 +1,17 @@
+{
+  "name": "SpendWise - Quản lý chi tiêu thông minh",
+  "short_name": "SpendWise",
+  "description": "Hệ thống quản lý chi tiêu cá nhân thông minh chuẩn Apple",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#090d16",
+  "theme_color": "#090d16",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "192x192 512x512"
+    }
+  ]
+}

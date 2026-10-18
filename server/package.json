@@ -1,0 +1,27 @@
+{
+  "name": "spendwise-backend",
+  "version": "1.0.0",
+  "description": "SpendWise Backend REST API Server (Node.js & Express)",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "keywords": [
+    "spendwise",
+    "express",
+    "backend",
+    "rest-api",
+    "gemini-ai"
+  ],
+  "author": "Phan Thanh Tùng (Leader)",
+  "license": "MIT",
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "@supabase/supabase-js": "^2.118.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2"
+  }
+}

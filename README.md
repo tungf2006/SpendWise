@@ -11,15 +11,17 @@
 
 ---
 
-## 👥 Thành Viên Nhóm & Phân Công Vai Trò
+## 👥 Thành Viên Nhóm & Phân Công Chính Thức
 
-| Vai trò | Phụ trách | Phạm vi công việc chính |
-| :--- | :--- | :--- |
-| **Leader / Tech Lead** | Phan Thanh Tùng | Kiến trúc hệ thống, Supabase DB, Thuật toán Parser, Gemini Client, PWA |
-| **FS1 (Full-stack 1)** | Thành viên 2 | Xác thực Auth, Quản lý Danh mục, Giao dịch, Báo cáo Chart |
-| **FS2 (Full-stack 2)** | Thành viên 3 | Quản lý Ví, Ngân sách, Công thức Safe-to-spend, Mục tiêu tiết kiệm |
-| **FE (Frontend UI)** | Thành viên 4 | UI/UX Mobile-first, Dashboard, Danh sách ví, Dialogs & Micro-interactions |
-| **BA / QA** | Thành viên 5 | Đặc tả Use cases, Sơ đồ lớp, Kiểm thử bảo mật RLS & Test cases thuật toán |
+> 📌 **DÀNH CHO THÀNH VIÊN NHẬN VIỆC:** Mọi thành viên bắt buộc đọc hướng dẫn chi tiết tại **[HUONG_DAN_LAM_VIEC.md](HUONG_DAN_LAM_VIEC.md)** để biết nhánh Git cần tạo, danh sách file code và mẫu viết Use Case.
+
+| Vai trò | Thành viên | Phụ trách chính | Nhánh Git |
+| :--- | :--- | :--- | :--- |
+| **Leader / Tech Lead** | **Phan Thanh Tùng** | Kiến trúc hệ thống, Supabase DB 8 bảng, Trợ lý AI Gemini (`UC21`), Điều phối PR | `master` / `feature/ai-lead` |
+| **TV1 (BA/QA Lead & Full-stack)** | **Trương Bích Vân** | Vẽ Use Case (1 tổng + 4 phân rã), Test Plan, Xác thực (`UC01-05`), Tiết kiệm (`UC22-23`), VietQR (`UC26`) | `feature/auth-goal-tv1` |
+| **TV2 (Frontend Lead & UI/PWA)** | **Hồ Nguyên Văn** | Wireframe UI, PWA, Ngân sách tháng (`UC14-15`), Dashboard (`UC16`), Báo cáo Chart.js (`UC17`) | `feature/dashboard-reports-tv2` |
+| **TV3 (Full-stack 1 - Core Data)** | **Nguyễn Vũ Tấn Huy** | Dữ liệu lõi, Quản lý Ví (`UC06-09`), Danh mục (`UC10-11`), Giao dịch & Xuất CSV (`UC12-13`) | `feature/wallets-txns-tv3` |
+| **TV4 (Full-stack 2 - Smart & Auto)** | **Lê Hoài Quốc** | Vẽ Class Diagram, Nhập nhanh câu tự nhiên (`UC18-19`), Safe-to-spend (`UC20`), Định kỳ & Chuông (`UC24-25`) | `feature/smart-features-tv4` |
 
 ---
 
@@ -67,24 +69,31 @@ Mở trình duyệt tại: `http://localhost:5173`
 
 ```text
 SpendWise/
-├── supabase/                # Script cơ sở dữ liệu (init_schema.sql)
+├── docs/                    # Tài liệu thuyết minh & báo cáo
+│   ├── use-cases/           # Mẫu đặc tả Use Case & bảng tra cứu 26 UC
+│   ├── git/                 # Quy trình nhánh Git & Review PR
+│   └── architecture/        # Sơ đồ kiến trúc 3 tầng & ERD 8 bảng
+├── supabase/                # Script khởi tạo DB (init_schema.sql) & Dữ liệu mẫu (seed_demo_data.sql)
 ├── src/
-│   ├── components/          # Giao diện dùng chung (common/, layout/)
+│   ├── components/          # Giao diện dùng chung (common/, layout/, ai/)
 │   ├── context/             # Quản lý phiên đăng nhập (AuthContext.jsx)
-│   ├── hooks/               # Custom hooks
 │   ├── lib/                 # Kết nối Supabase & Gemini API
-│   ├── pages/               # Màn hình chính (Auth, Dashboard, Wallets,...)
-│   ├── services/            # Tầng xử lý nghiệp vụ độc lập (Business logic)
+│   ├── pages/               # 13 màn hình giao diện chính
+│   ├── services/            # Tầng xử lý nghiệp vụ độc lập (12 services)
 │   └── utils/               # Tiện ích format tiền VNĐ, bỏ dấu tiếng Việt
-├── .env.example             # Mẫu biến môi trường
+├── HUONG_DAN_LAM_VIEC.md    # Hướng dẫn nhận việc & phối hợp nhóm (BẮT BUỘC ĐỌC)
 ├── AI_RULES.md              # Quy tắc viết code & glossary cho AI và nhóm
-├── PROJECT_SPEC.md          # Đặc tả kỹ thuật 12 chức năng
+├── PROJECT_SPEC.md          # Đặc tả kỹ thuật 12 nhóm chức năng
 └── TASKS.md                 # Bảng theo dõi tiến độ chi tiết (Backlog)
 ```
 
 ---
 
-## 📜 Tài Liệu Tham Khảo
-* [AI_RULES.md](AI_RULES.md) – Quy tắc viết code và bảng thuật ngữ chuẩn
-* [PROJECT_SPEC.md](PROJECT_SPEC.md) – Đặc tả 12 chức năng chi tiết
-* [TASKS.md](TASKS.md) – Backlog phân công công việc chi tiết
+## 📜 Tài Liệu Quan Trọng Cần Đọc
+* **[HUONG_DAN_LAM_VIEC.md](HUONG_DAN_LAM_VIEC.md)** – Cẩm nang bắt đầu và phối hợp làm việc nhóm
+* **[docs/use-cases/TEMPLATE_USE_CASE.md](docs/use-cases/TEMPLATE_USE_CASE.md)** – Mẫu viết đặc tả Use Case
+* **[docs/use-cases/UC_INDEX_AND_ASSIGNMENT.md](docs/use-cases/UC_INDEX_AND_ASSIGNMENT.md)** – Bảng tra cứu 26 Use Cases chi tiết
+* **[docs/git/WORKFLOW.md](docs/git/WORKFLOW.md)** – Quy định nhánh Git và review Pull Request
+* **[docs/architecture/ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md)** – Thuyết minh kiến trúc 3 tầng và mô hình ERD
+* **[TASKS.md](TASKS.md)** – Backlog phân công công việc chi tiết
+
