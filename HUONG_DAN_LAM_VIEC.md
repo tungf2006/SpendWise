@@ -145,6 +145,7 @@ Leader đã khởi tạo sẵn bộ khung 13 trang màn hình (`src/pages/`), c�
 | **Bảng tra cứu 26 Use Case** | `docs/use-cases/UC_INDEX_AND_ASSIGNMENT.md` | Tra cứu mã UC tương ứng với từng file Page/Service |
 | **Mẫu viết đặc tả Use Case** | `docs/use-cases/TEMPLATE_USE_CASE.md` | Mẫu chuẩn bắt buộc khi viết mô tả Use Case |
 | **Kiến trúc hệ thống & ERD** | `docs/architecture/ARCHITECTURE.md` | Xem sơ đồ 3 tầng và mô hình 8 bảng dữ liệu |
+| **Kế hoạch 2 Sprint (Excel)** | `docs/sprints/` | Chi tiết phân công công việc, thời gian và mốc bàn giao |
 | **Script Dữ liệu Mẫu (Seed)** | `supabase/seed_demo_data.sql` | Dữ liệu test có sẵn ví, giao dịch, ngân sách |
 
 ---

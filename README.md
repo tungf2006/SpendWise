@@ -59,9 +59,12 @@ VITE_GEMINI_API_KEY=your_gemini_api_key_here
 
 ### 3. Chạy ứng dụng ở môi trường phát triển
 ```bash
+# Khởi chạy giao diện Frontend (React 19) - http://localhost:5173
 npm run dev
+
+# Khởi chạy Backend REST API (Node.js/Express) - http://localhost:5000
+npm run server
 ```
-Mở trình duyệt tại: `http://localhost:5173`
 
 ---
 
@@ -71,15 +74,22 @@ Mở trình duyệt tại: `http://localhost:5173`
 SpendWise/
 ├── docs/                    # Tài liệu thuyết minh & báo cáo
 │   ├── use-cases/           # Mẫu đặc tả Use Case & bảng tra cứu 26 UC
+│   ├── diagrams/            # Nơi lưu trữ file vẽ sơ đồ draw.io & ảnh xuất
+│   ├── sprints/             # Kế hoạch chi tiết 2 Sprint & phân công (file Excel .xlsx)
 │   ├── git/                 # Quy trình nhánh Git & Review PR
 │   └── architecture/        # Sơ đồ kiến trúc 3 tầng & ERD 8 bảng
+├── server/                  # Phân hệ Backend REST API (Node.js/Express - port 5000)
+│   ├── routes/              # Các router API (Finance, AI Assistant)
+│   └── server.js            # Khởi chạy Express server bảo mật Gemini API
 ├── supabase/                # Script khởi tạo DB (init_schema.sql) & Dữ liệu mẫu (seed_demo_data.sql)
 ├── src/
+│   ├── assets/              # Hình ảnh minh họa & icon tĩnh
 │   ├── components/          # Giao diện dùng chung (common/, layout/, ai/)
 │   ├── context/             # Quản lý phiên đăng nhập (AuthContext.jsx)
+│   ├── hooks/               # Custom hooks mở rộng
 │   ├── lib/                 # Kết nối Supabase & Gemini API
 │   ├── pages/               # 13 màn hình giao diện chính
-│   ├── services/            # Tầng xử lý nghiệp vụ độc lập (12 services)
+│   ├── services/            # Tầng xử lý nghiệp vụ độc lập (13 services)
 │   └── utils/               # Tiện ích format tiền VNĐ, bỏ dấu tiếng Việt
 ├── HUONG_DAN_LAM_VIEC.md    # Hướng dẫn nhận việc & phối hợp nhóm (BẮT BUỘC ĐỌC)
 ├── AI_RULES.md              # Quy tắc viết code & glossary cho AI và nhóm
@@ -91,6 +101,8 @@ SpendWise/
 
 ## 📜 Tài Liệu Quan Trọng Cần Đọc
 * **[HUONG_DAN_LAM_VIEC.md](HUONG_DAN_LAM_VIEC.md)** – Cẩm nang bắt đầu và phối hợp làm việc nhóm
+* **[server/README.md](server/README.md)** – Hướng dẫn phân hệ Backend REST API & danh sách endpoint
+* **[docs/sprints/README.md](docs/sprints/README.md)** – Kế hoạch chi tiết 2 Sprint & bảng phân công công việc (file Excel)
 * **[docs/use-cases/TEMPLATE_USE_CASE.md](docs/use-cases/TEMPLATE_USE_CASE.md)** – Mẫu viết đặc tả Use Case
 * **[docs/use-cases/UC_INDEX_AND_ASSIGNMENT.md](docs/use-cases/UC_INDEX_AND_ASSIGNMENT.md)** – Bảng tra cứu 26 Use Cases chi tiết
 * **[docs/git/WORKFLOW.md](docs/git/WORKFLOW.md)** – Quy định nhánh Git và review Pull Request
