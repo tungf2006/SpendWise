@@ -37,10 +37,17 @@ export const RegisterPage = () => {
       const { data, error } = await signUp(email, password, fullName)
       if (error) throw error
 
-      setSuccessMsg('Đăng ký tài khoản thành công! Bạn có thể bắt đầu sử dụng SpendWise ngay bây giờ.')
-      setTimeout(() => {
-        navigate('/', { replace: true })
-      }, 1500)
+      if (data?.session) {
+        setSuccessMsg('Đăng ký tài khoản thành công! Đang chuyển hướng vào hệ thống...')
+        setTimeout(() => {
+          navigate('/', { replace: true })
+        }, 1200)
+      } else {
+        setSuccessMsg('Đăng ký tài khoản thành công! Supabase đã gửi email xác nhận. Vui lòng kiểm tra hộp thư kích hoạt (hoặc tắt "Confirm email" trong Supabase để đăng nhập ngay).')
+        setTimeout(() => {
+          navigate('/login', { replace: true })
+        }, 3000)
+      }
     } catch (err) {
       setErrorMsg(err.message || 'Đăng ký không thành công. Vui lòng thử lại.')
     } finally {

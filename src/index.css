@@ -10,7 +10,8 @@
   }
 
   h1, h2, h3, .font-heading {
-    @apply font-display tracking-tight;
+    font-family: 'Outfit', 'Plus Jakarta Sans', sans-serif;
+    @apply tracking-tight;
   }
 }
 

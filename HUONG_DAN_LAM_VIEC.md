@@ -49,6 +49,17 @@ VITE_GEMINI_API_KEY=AIzaSy...
   ```
   *(Đảm bảo terminal báo `✓ built in ...s` màu xanh không có bất kỳ lỗi nào)*
 
+### Bước 5: Đăng nhập vào hệ thống (Tiện ích 1-Click Demo Login)
+Mở trình duyệt tại `http://localhost:5173/login`:
+* **Cách 1 (Nhanh nhất):** Bấm nút **"⚡ Đăng nhập 1-Click tài khoản Demo"** để vào ngay với tài khoản mẫu `demo@spendwise.vn`.
+* **Cách 2:** Bấm chọn nhanh tài khoản tương ứng với vai trò của mình trong nhóm:
+  * 👑 **Leader (Tùng):** `tung123@gmail.com` (Pass: `123456`)
+  * 👩‍💻 **TV1 (Bích Vân):** `van@spendwise.vn` (Pass: `123456`)
+  * 👨‍💻 **TV2 (Nguyên Văn):** `nguyenvan@spendwise.vn` (Pass: `123456`)
+  * 👨‍💻 **TV3 (Tấn Huy):** `huy@spendwise.vn` (Pass: `123456`)
+  * 👨‍💻 **TV4 (Hoài Quốc):** `quoc@spendwise.vn` (Pass: `123456`)
+* *Lưu ý:* Nếu tài khoản chưa từng tạo trên Supabase, nút bấm sẽ tự động khởi tạo và đăng nhập tức thì.
+
 ---
 
 ## 2. QUY ƯỚC NHÁNH GIT (GIT BRANCHING & PULL REQUEST)
