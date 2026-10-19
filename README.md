@@ -77,7 +77,10 @@ SpendWise/
 │   ├── diagrams/            # Nơi lưu trữ file vẽ sơ đồ draw.io & ảnh xuất
 │   ├── sprints/             # Kế hoạch chi tiết 2 Sprint & phân công (file Excel .xlsx)
 │   ├── git/                 # Quy trình nhánh Git & Review PR
-│   └── architecture/        # Sơ đồ kiến trúc 3 tầng & ERD 8 bảng
+│   ├── architecture/        # Sơ đồ kiến trúc 3 tầng & ERD 8 bảng
+│   ├── AI_RULES.md          # Quy tắc viết code & glossary cho AI và nhóm
+│   ├── PROJECT_SPEC.md      # Đặc tả kỹ thuật 12 nhóm chức năng
+│   └── TASKS.md             # Bảng theo dõi tiến độ chi tiết (Backlog)
 ├── server/                  # Phân hệ Backend REST API (Node.js/Express - port 5000)
 │   ├── routes/              # Các router API (Finance, AI Assistant)
 │   └── server.js            # Khởi chạy Express server bảo mật Gemini API
@@ -91,10 +94,7 @@ SpendWise/
 │   ├── pages/               # 13 màn hình giao diện chính
 │   ├── services/            # Tầng xử lý nghiệp vụ độc lập (13 services)
 │   └── utils/               # Tiện ích format tiền VNĐ, bỏ dấu tiếng Việt
-├── HUONG_DAN_LAM_VIEC.md    # Hướng dẫn nhận việc & phối hợp nhóm (BẮT BUỘC ĐỌC)
-├── AI_RULES.md              # Quy tắc viết code & glossary cho AI và nhóm
-├── PROJECT_SPEC.md          # Đặc tả kỹ thuật 12 nhóm chức năng
-└── TASKS.md                 # Bảng theo dõi tiến độ chi tiết (Backlog)
+└── HUONG_DAN_LAM_VIEC.md    # Hướng dẫn nhận việc & phối hợp nhóm (BẮT BUỘC ĐỌC)
 ```
 
 ---
@@ -103,9 +103,11 @@ SpendWise/
 * **[HUONG_DAN_LAM_VIEC.md](HUONG_DAN_LAM_VIEC.md)** – Cẩm nang bắt đầu và phối hợp làm việc nhóm
 * **[server/README.md](server/README.md)** – Hướng dẫn phân hệ Backend REST API & danh sách endpoint
 * **[docs/sprints/README.md](docs/sprints/README.md)** – Kế hoạch chi tiết 2 Sprint & bảng phân công công việc (file Excel)
+* **[docs/TASKS.md](docs/TASKS.md)** – Backlog phân công công việc chi tiết
 * **[docs/use-cases/TEMPLATE_USE_CASE.md](docs/use-cases/TEMPLATE_USE_CASE.md)** – Mẫu viết đặc tả Use Case
 * **[docs/use-cases/UC_INDEX_AND_ASSIGNMENT.md](docs/use-cases/UC_INDEX_AND_ASSIGNMENT.md)** – Bảng tra cứu 26 Use Cases chi tiết
 * **[docs/git/WORKFLOW.md](docs/git/WORKFLOW.md)** – Quy định nhánh Git và review Pull Request
 * **[docs/architecture/ARCHITECTURE.md](docs/architecture/ARCHITECTURE.md)** – Thuyết minh kiến trúc 3 tầng và mô hình ERD
-* **[TASKS.md](TASKS.md)** – Backlog phân công công việc chi tiết
+* **[docs/AI_RULES.md](docs/AI_RULES.md)** – Quy tắc viết code & bảng thuật ngữ chuẩn
+* **[docs/PROJECT_SPEC.md](docs/PROJECT_SPEC.md)** – Đặc tả kỹ thuật 12 nhóm chức năng
 

@@ -19,4 +19,4 @@
 
 ## 📌 Hướng dẫn sử dụng
 * Các thành viên tải file về mở bằng Microsoft Excel hoặc Google Sheets để tra cứu chi tiết giờ ước tính và deadline của từng đầu việc.
-* Bảng tiến độ tóm tắt dạng Markdown được đồng bộ tại file: **`TASKS.md`** (ở thư mục gốc).
+* Bảng tiến độ tóm tắt dạng Markdown được đồng bộ tại file: **`docs/TASKS.md`**.
