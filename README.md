@@ -81,6 +81,7 @@ SpendWise/
 │   ├── AI_RULES.md          # Quy tắc viết code & glossary cho AI và nhóm
 │   ├── PROJECT_SPEC.md      # Đặc tả kỹ thuật 12 nhóm chức năng
 │   └── TASKS.md             # Bảng theo dõi tiến độ chi tiết (Backlog)
+├── public/                  # Tài nguyên tĩnh & cấu hình PWA (manifest.json, sw.js)
 ├── server/                  # Phân hệ Backend REST API (Node.js/Express - port 5000)
 │   ├── routes/              # Các router API (Finance, AI Assistant)
 │   └── server.js            # Khởi chạy Express server bảo mật Gemini API
@@ -94,6 +95,7 @@ SpendWise/
 │   ├── pages/               # 13 màn hình giao diện chính
 │   ├── services/            # Tầng xử lý nghiệp vụ độc lập (13 services)
 │   └── utils/               # Tiện ích format tiền VNĐ, bỏ dấu tiếng Việt
+├── .env.example             # Mẫu cấu hình biến môi trường
 └── HUONG_DAN_LAM_VIEC.md    # Hướng dẫn nhận việc & phối hợp nhóm (BẮT BUỘC ĐỌC)
 ```
 
