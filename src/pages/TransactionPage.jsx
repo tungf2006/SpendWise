@@ -1,12 +1,9 @@
+import { exportAllTransactionsCSV } from '@/services/transactionCsvExport'
+import { useState as useCsvExportState } from 'react'
 import React, { useState, useEffect } from 'react'
 import { PageHeader } from '@/components/common/PageHeader'
 import { formatCurrency } from '@/utils/formatCurrency'
-import { 
-  getTransactions, 
-  createTransaction, 
-  deleteTransaction, 
-  exportTransactionsCSV 
-} from '@/services/transactionService'
+import { getTransactions, createTransaction, deleteTransaction } from '@/services/transactionService'
 import { getWallets } from '@/services/walletService'
 import { getCategories } from '@/services/categoryService'
 import { 
@@ -29,6 +26,7 @@ import {
  * Phụ trách: TV3 (Nguyễn Vũ Tấn Huy) - Nhóm chức năng TXN (UC12 - UC13)
  */
 export const TransactionPage = () => {
+  const [isExporting, setIsExporting] = useCsvExportState(false)
   const [transactions, setTransactions] = useState([])
   const [wallets, setWallets] = useState([])
   const [categories, setCategories] = useState([])
@@ -134,8 +132,27 @@ export const TransactionPage = () => {
     }
   }
 
-  const handleExportCSV = () => {
-    exportTransactionsCSV(transactions, `SpendWise_GiaoDich_${new Date().toISOString().split('T')[0]}.csv`)
+  const handleExportCSV = async () => {
+    if (isExporting) return
+    setIsExporting(true)
+    try {
+      const exportedCount = await exportAllTransactionsCSV({
+        walletId: selectedWallet || null,
+        categoryId: selectedCategory || null,
+        type: selectedType || null,
+        startDate: startDate || null,
+        endDate: endDate || null,
+        searchKeyword: searchKeyword
+      })
+      if (exportedCount === 0) {
+        window.alert('Không có giao dịch phù hợp để xuất CSV.')
+      }
+    } catch (err) {
+      console.error('Lỗi xuất CSV:', err)
+      window.alert('Không thể xuất CSV: ' + (err?.message || 'Lỗi không xác định'))
+    } finally {
+      setIsExporting(false)
+    }
   }
 
   return (
@@ -149,11 +166,11 @@ export const TransactionPage = () => {
             <button
               type="button"
               onClick={handleExportCSV}
-              disabled={transactions.length === 0}
+              disabled={isExporting || (transactions.length === 0)}
               className="px-3.5 py-2 rounded-full bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold flex items-center gap-1.5 border border-slate-200/80 shadow-2xs transition-colors cursor-pointer disabled:opacity-50"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>Xuất CSV</span>
+              <span>{isExporting ? 'Đang xuất CSV...' : 'Export CSV'}</span>
             </button>
             <button
               type="button"
