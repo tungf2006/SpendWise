@@ -1,0 +1,121 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Xác thực - chi tiết" id="b6tfoYJ1tZlqQnR6IQOj">
+    <mxGraphModel dx="1373" dy="1202" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1700" pageHeight="1470" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=0;align=center;verticalAlign=middle;fontSize=24;fontStyle=1;fontColor=#10263c;" value="SƠ ĐỒ PHÂN RÃ: XÁC THỰC VÀ HỒ SƠ" vertex="1">
+          <mxGeometry height="50" width="1300" x="200" y="12" as="geometry" />
+        </mxCell>
+        <mxCell id="boundary" parent="1" style="rounded=0;whiteSpace=wrap;html=0;verticalAlign=top;spacingTop=18;fontSize=20;fontStyle=1;fillColor=#ffffff;strokeColor=#334155;strokeWidth=2;" value="Hệ thống SpendWise" vertex="1">
+          <mxGeometry height="1330" width="1405" x="245" y="90" as="geometry" />
+        </mxCell>
+        <mxCell id="user" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=0;fontSize=17;strokeColor=#334155;strokeWidth=2;fillColor=#ffffff;" value="Người dùng" vertex="1">
+          <mxGeometry height="90" width="50" x="75" y="660" as="geometry" />
+        </mxCell>
+        <mxCell id="reg" parent="1" style="ellipse;whiteSpace=wrap;html=0;fontSize=15;fontColor=#142a40;fillColor=#ffffff;strokeColor=#334155;strokeWidth=1.4;" value="UC01 · Đăng ký tài khoản" vertex="1">
+          <mxGeometry height="62" width="330" x="400" y="250" as="geometry" />
+        </mxCell>
+        <mxCell id="user_reg" edge="1" parent="1" source="user" style="endArrow=none;endFill=0;startArrow=none;strokeColor=#334155;strokeWidth=1.3;html=0;" target="reg" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="login" parent="1" style="ellipse;whiteSpace=wrap;html=0;fontSize=15;fontColor=#142a40;fillColor=#ffffff;strokeColor=#334155;strokeWidth=1.4;" value="UC02 · Đăng nhập" vertex="1">
+          <mxGeometry height="62" width="330" x="400" y="460" as="geometry" />
+        </mxCell>
+        <mxCell id="user_login" edge="1" parent="1" source="user" style="endArrow=none;endFill=0;startArrow=none;strokeColor=#334155;strokeWidth=1.3;html=0;" target="login" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="forgot" parent="1" style="ellipse;whiteSpace=wrap;html=0;fontSize=15;fontColor=#142a40;fillColor=#ffffff;strokeColor=#334155;strokeWidth=1.4;" value="UC04 · Quên mật khẩu" vertex="1">
+          <mxGeometry height="62" width="330" x="400" y="630" as="geometry" />
+        </mxCell>
+        <mxCell id="user_forgot" edge="1" parent="1" source="user" style="endArrow=none;endFill=0;startArrow=none;strokeColor=#334155;strokeWidth=1.3;html=0;" target="forgot" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="logout" parent="1" style="ellipse;whiteSpace=wrap;html=0;fontSize=15;fontColor=#142a40;fillColor=#ffffff;strokeColor=#334155;strokeWidth=1.4;" value="UC03 · Đăng xuất" vertex="1">
+          <mxGeometry height="62" width="330" x="400" y="900" as="geometry" />
+        </mxCell>
+        <mxCell id="user_logout" edge="1" parent="1" source="user" style="endArrow=none;endFill=0;startArrow=none;strokeColor=#334155;strokeWidth=1.3;html=0;" target="logout" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="change" parent="1" style="ellipse;whiteSpace=wrap;html=0;fontSize=15;fontColor=#142a40;fillColor=#ffffff;strokeColor=#334155;strokeWidth=1.4;" value="UC04 · Đổi mật khẩu" vertex="1">
+          <mxGeometry height="62" width="330" x="400" y="1065" as="geometry" />
+        </mxCell>
+        <mxCell id="user_change" edge="1" parent="1" source="user" style="endArrow=none;endFill=0;startArrow=none;strokeColor=#334155;strokeWidth=1.3;html=0;" target="change" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="profile" parent="1" style="ellipse;whiteSpace=wrap;html=0;fontSize=15;fontColor=#142a40;fillColor=#ffffff;strokeColor=#334155;strokeWidth=1.4;" value="UC05 · Cập nhật hồ sơ" vertex="1">
+          <mxGeometry height="62" width="330" x="400" y="1255" as="geometry" />
+        </mxCell>
+        <mxCell id="user_profile" edge="1" parent="1" source="user" style="endArrow=none;endFill=0;startArrow=none;strokeColor=#334155;strokeWidth=1.3;html=0;" target="profile" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="reg_check" parent="1" style="ellipse;whiteSpace=wrap;html=0;fontSize=15;fontColor=#142a40;fillColor=#ffffff;strokeColor=#334155;strokeWidth=1.4;" value="Kiểm tra thông tin đăng ký" vertex="1">
+          <mxGeometry height="62" width="385" x="1010" y="180" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_reg_check" edge="1" parent="1" source="reg" style="endArrow=open;endFill=0;startArrow=none;strokeColor=#334155;strokeWidth=1.3;html=0;dashed=1;dashPattern=7 5;fontSize=13;labelBackgroundColor=#ffffff;" target="reg_check" value="&lt;&lt;include&gt;&gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="reg_profile" parent="1" style="ellipse;whiteSpace=wrap;html=0;fontSize=15;fontColor=#142a40;fillColor=#ffffff;strokeColor=#334155;strokeWidth=1.4;" value="Tạo hồ sơ người dùng" vertex="1">
+          <mxGeometry height="62" width="385" x="1010" y="250" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_reg_profile" edge="1" parent="1" source="reg" style="endArrow=open;endFill=0;startArrow=none;strokeColor=#334155;strokeWidth=1.3;html=0;dashed=1;dashPattern=7 5;fontSize=13;labelBackgroundColor=#ffffff;" target="reg_profile" value="&lt;&lt;include&gt;&gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="reg_wallet" parent="1" style="ellipse;whiteSpace=wrap;html=0;fontSize=15;fontColor=#142a40;fillColor=#ffffff;strokeColor=#334155;strokeWidth=1.4;" value="Tạo ví tiền mặt mặc định" vertex="1">
+          <mxGeometry height="62" width="385" x="1010" y="320" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_reg_wallet" edge="1" parent="1" source="reg" style="endArrow=open;endFill=0;startArrow=none;strokeColor=#334155;strokeWidth=1.3;html=0;dashed=1;dashPattern=7 5;fontSize=13;labelBackgroundColor=#ffffff;" target="reg_wallet" value="&lt;&lt;include&gt;&gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="login_check" parent="1" style="ellipse;whiteSpace=wrap;html=0;fontSize=15;fontColor=#142a40;fillColor=#ffffff;strokeColor=#334155;strokeWidth=1.4;" value="Kiểm tra thông tin đăng nhập" vertex="1">
+          <mxGeometry height="62" width="385" x="1010" y="460" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_login_check" edge="1" parent="1" source="login" style="endArrow=open;endFill=0;startArrow=none;strokeColor=#334155;strokeWidth=1.3;html=0;dashed=1;dashPattern=7 5;fontSize=13;labelBackgroundColor=#ffffff;" target="login_check" value="&lt;&lt;include&gt;&gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="forgot_email" parent="1" style="ellipse;whiteSpace=wrap;html=0;fontSize=15;fontColor=#142a40;fillColor=#ffffff;strokeColor=#334155;strokeWidth=1.4;" value="Gửi email chứa liên kết đặt lại" vertex="1">
+          <mxGeometry height="62" width="385" x="1010" y="630" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_forgot_email" edge="1" parent="1" source="forgot" style="endArrow=open;endFill=0;startArrow=none;strokeColor=#334155;strokeWidth=1.3;html=0;dashed=1;dashPattern=7 5;fontSize=13;labelBackgroundColor=#ffffff;" target="forgot_email" value="&lt;&lt;include&gt;&gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="logout_end" parent="1" style="ellipse;whiteSpace=wrap;html=0;fontSize=15;fontColor=#142a40;fillColor=#ffffff;strokeColor=#334155;strokeWidth=1.4;" value="Kết thúc phiên đăng nhập" vertex="1">
+          <mxGeometry height="62" width="385" x="1010" y="900" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_logout_end" edge="1" parent="1" source="logout" style="endArrow=open;endFill=0;startArrow=none;strokeColor=#334155;strokeWidth=1.3;html=0;dashed=1;dashPattern=7 5;fontSize=13;labelBackgroundColor=#ffffff;" target="logout_end" value="&lt;&lt;include&gt;&gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="change_check" parent="1" style="ellipse;whiteSpace=wrap;html=0;fontSize=15;fontColor=#142a40;fillColor=#ffffff;strokeColor=#334155;strokeWidth=1.4;" value="Kiểm tra mật khẩu mới" vertex="1">
+          <mxGeometry height="62" width="385" x="1010" y="1030" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_change_check" edge="1" parent="1" source="change" style="endArrow=open;endFill=0;startArrow=none;strokeColor=#334155;strokeWidth=1.3;html=0;dashed=1;dashPattern=7 5;fontSize=13;labelBackgroundColor=#ffffff;" target="change_check" value="&lt;&lt;include&gt;&gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="change_save" parent="1" style="ellipse;whiteSpace=wrap;html=0;fontSize=15;fontColor=#142a40;fillColor=#ffffff;strokeColor=#334155;strokeWidth=1.4;" value="Cập nhật mật khẩu" vertex="1">
+          <mxGeometry height="62" width="385" x="1010" y="1100" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_change_save" edge="1" parent="1" source="change" style="endArrow=open;endFill=0;startArrow=none;strokeColor=#334155;strokeWidth=1.3;html=0;dashed=1;dashPattern=7 5;fontSize=13;labelBackgroundColor=#ffffff;" target="change_save" value="&lt;&lt;include&gt;&gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="profile_check" parent="1" style="ellipse;whiteSpace=wrap;html=0;fontSize=15;fontColor=#142a40;fillColor=#ffffff;strokeColor=#334155;strokeWidth=1.4;" value="Kiểm tra thông tin hồ sơ" vertex="1">
+          <mxGeometry height="62" width="385" x="1010" y="1220" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_profile_check" edge="1" parent="1" source="profile" style="endArrow=open;endFill=0;startArrow=none;strokeColor=#334155;strokeWidth=1.3;html=0;dashed=1;dashPattern=7 5;fontSize=13;labelBackgroundColor=#ffffff;" target="profile_check" value="&lt;&lt;include&gt;&gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="profile_save" parent="1" style="ellipse;whiteSpace=wrap;html=0;fontSize=15;fontColor=#142a40;fillColor=#ffffff;strokeColor=#334155;strokeWidth=1.4;" value="Lưu thay đổi hồ sơ" vertex="1">
+          <mxGeometry height="62" width="385" x="1010" y="1290" as="geometry" />
+        </mxCell>
+        <mxCell id="rel_profile_save" edge="1" parent="1" source="profile" style="endArrow=open;endFill=0;startArrow=none;strokeColor=#334155;strokeWidth=1.3;html=0;dashed=1;dashPattern=7 5;fontSize=13;labelBackgroundColor=#ffffff;" target="profile_save" value="&lt;&lt;include&gt;&gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="note" parent="1" style="shape=note;whiteSpace=wrap;html=0;align=left;verticalAlign=middle;spacing=12;fontSize=14;fillColor=#f3f7fc;strokeColor=#839bb4;fontColor=#203a55;" value="Luồng quên mật khẩu:&#xa;1. Người dùng nhập email tài khoản.&#xa;2. Hệ thống gửi email có liên kết đặt lại.&#xa;3. Người dùng mở liên kết, nhập mật khẩu mới.&#xa;4. Hệ thống kiểm tra và cập nhật mật khẩu." vertex="1">
+          <mxGeometry height="128" width="535" x="1000" y="710" as="geometry" />
+        </mxCell>
+        <mxCell id="forgot_ext_login" edge="1" parent="1" source="forgot" style="endArrow=open;endFill=0;startArrow=none;strokeColor=#334155;strokeWidth=1.3;html=0;dashed=1;dashPattern=7 5;fontSize=13;labelBackgroundColor=#ffffff;exitX=0.92;exitY=0;entryX=0.92;entryY=1;" target="login" value="&lt;&lt;extend&gt;&gt;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
