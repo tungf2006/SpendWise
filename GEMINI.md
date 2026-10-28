@@ -144,3 +144,20 @@ BẮT BUỘC dùng thống nhất khi đặt tên code và hiển thị giao di�
 - **Cấu trúc thẻ Double-Bezel:** Vỏ ngoài bo tròn lớn `rounded-[2rem]` + Lõi trong bo đồng tâm `rounded-[calc(2rem-0.375rem)]`.
 - **Navigation:** Floating Island Navbar trên Desktop + Floating Dock ở đáy màn hình Mobile.
 - **Nút bấm:** Pill-shaped `rounded-full` với Button-in-Button trailing icon.
+
+---
+
+## 9. QUY CHUẨN VẬN HÀNH BẮT BUỘC CHO AI AGENT (MANDATORY OPERATIONAL PROTOCOL)
+Mỗi phiên làm việc, Agent PHẢI tuân thủ 5 nguyên tắc hành động sau như một phản xạ mặc định:
+
+1. **🤖 Tự động kiểm thử & Quay video nghiệm thu (Browser Subagent):**
+   - Bất cứ khi nào hoàn thiện hoặc sửa đổi một tính năng/màn hình UI, Agent PHẢI tự động khởi chạy `browser_subagent` để truy cập ứng dụng (`localhost`), thao tác click/nhập thử, kiểm tra responsive mobile/desktop và ghi lại video clip nghiệm thu (`.webp`) minh chứng tính năng hoạt động hoàn hảo trước khi bàn giao.
+2. **📐 Lập kế hoạch chi tiết trước khi code (`/plan`):**
+   - Với mọi tác vụ có độ phức tạp từ trung bình trở lên (sửa đổi kiến trúc, thêm luồng nghiệp vụ, thay đổi DB/Service), Agent BẮT BUỘC phải lập kế hoạch step-by-step rõ ràng (Checklist/Artifact) để hình dung toàn bộ quy trình trước khi can thiệp vào mã nguồn. Tuyệt đối không code hấp tấp.
+3. **🔥 Chủ động phản biện & rà soát trường hợp biên (`/grill-me`):**
+   - Đóng vai trò Senior Architect/Tech Lead: Trước khi thực thi một yêu cầu mới, chủ động rà soát, phản biện và chất vấn các lỗ hổng logic, xung đột dữ liệu, trường hợp biên (edge cases) hoặc trải nghiệm người dùng chưa hợp lý thay vì thụ động làm theo ngay.
+4. **🎛️ Thu thập ý kiến qua Hộp thoại Trắc nghiệm tương tác (`ask_question`):**
+   - Khi đứng trước các ngã rẽ có từ 2 phương án trở lên (chọn thư viện, lựa chọn layout, bảng màu, hướng xử lý logic), BẮT BUỘC gọi công cụ `ask_question` để mở Modal tương tác trực tiếp (Radio/Checkbox) cho User bấm chọn nhanh, không hỏi văn bản dài dòng trôi nổi trong hội thoại.
+5. **💎 Triệt tiêu AI-Slop, tuân thủ thẩm mỹ cao cấp (Anti-AI Slop Design):**
+   - Áp dụng nghiêm ngặt các tiêu chuẩn từ `taste-skill` và `high-end-visual-design`: Tuyệt đối không dùng màu sắc mặc định thô thiển; chuẩn hóa Typography (`Plus Jakarta Sans` + `Outfit`); áp dụng cấu trúc thẻ Double-Bezel (`rounded-[2rem]` bọc `rounded-[calc(2rem-0.375rem)]`); trau chuốt micro-animations, hiệu ứng hover/focus có chiều sâu; đảm bảo giao diện luôn đạt chuẩn Awwwards/Apple-tier.
+
