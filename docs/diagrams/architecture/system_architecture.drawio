@@ -1,0 +1,147 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Kien Truc He Thong SpendWise" id="spendwise-system-arch">
+    <mxGraphModel dx="1600" dy="1200" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1654" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- Tiêu đề sơ đồ -->
+        <mxCell id="title" parent="1" style="text;html=0;align=center;verticalAlign=middle;fontSize=26;fontStyle=1;fontColor=#0f172a;fontFamily=Helvetica;" value="SƠ ĐỒ KIẾN TRÚC HỆ THỐNG SPENDWISE (3-TIER HYBRID ARCHITECTURE)" vertex="1">
+          <mxGeometry x="100" y="20" width="1450" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" parent="1" style="text;html=0;align=center;verticalAlign=middle;fontSize=14;fontColor=#64748b;fontFamily=Helvetica;" value="Mô hình kết hợp giữa Client-side BaaS (Supabase PostgREST) và Máy chủ Bảo mật API Gateway (Node.js Express)" vertex="1">
+          <mxGeometry x="100" y="70" width="1450" height="30" as="geometry" />
+        </mxCell>
+
+        <!-- CONTAINER TẦNG 1: FRONTEND -->
+        <mxCell id="box_frontend" parent="1" style="rounded=1;arcSize=4;html=0;verticalAlign=top;spacingTop=15;fontSize=18;fontStyle=1;fillColor=#f8fafc;strokeColor=#3b82f6;strokeWidth=2.5;fontColor=#1e3a8a;" value="TẦNG 1: FRONTEND &amp; PWA CLIENT (React 19 - Port 5173)" vertex="1">
+          <mxGeometry x="80" y="130" width="460" height="760" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="fe_pages" parent="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#dbeafe;strokeColor=#2563eb;strokeWidth=1.5;fontColor=#1e40af;fontSize=14;fontStyle=1;" value="React 19 AppRouter &amp; 13 Màn hình UI&#xa;(Dashboard, Wallet, Txn, Budget, Report...)" vertex="1">
+          <mxGeometry x="110" y="190" width="400" height="60" as="geometry" />
+        </mxCell>
+        
+        <mxCell id="fe_style" parent="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#ffffff;strokeColor=#93c5fd;strokeWidth=1.5;fontColor=#1e293b;fontSize=13;" value="Giao diện Double-Bezel &amp; Chart.js&#xa;(Tailwind CSS, Lucide Icons, Dark/Light Mode)" vertex="1">
+          <mxGeometry x="110" y="280" width="400" height="55" as="geometry" />
+        </mxCell>
+
+        <mxCell id="fe_pwa" parent="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#ffffff;strokeColor=#93c5fd;strokeWidth=1.5;fontColor=#1e293b;fontSize=13;" value="PWA Service Worker &amp; Offline Cache&#xa;(manifest.json, sw.js, App Shell)" vertex="1">
+          <mxGeometry x="110" y="365" width="400" height="55" as="geometry" />
+        </mxCell>
+
+        <mxCell id="fe_services" parent="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#eff6ff;strokeColor=#3b82f6;strokeWidth=2;fontColor=#1e3a8a;fontSize=14;fontStyle=1;" value="Client Service Layer (src/services/)&#xa;• walletService &amp; transactionService&#xa;• budgetService &amp; reportService&#xa;• safeToSpendService &amp; quickEntryParser&#xa;• vietqrService &amp; goalService" vertex="1">
+          <mxGeometry x="110" y="455" width="400" height="120" as="geometry" />
+        </mxCell>
+
+        <mxCell id="fe_ai_widget" parent="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#fef3c7;strokeColor=#d97706;strokeWidth=2;fontColor=#92400e;fontSize=13;fontStyle=1;" value="AiChatWidget &amp; aiAssistantService.js&#xa;(Gom Context tài chính &amp; Quản lý 4 Quick Reply Chips)" vertex="1">
+          <mxGeometry x="110" y="610" width="400" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="fe_clients" parent="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#ffffff;strokeColor=#64748b;strokeWidth=1.5;fontColor=#0f172a;fontSize=13;" value="API Gateway Client &amp; Supabase JS Client&#xa;(supabaseClient.js &amp; Fetch REST API)" vertex="1">
+          <mxGeometry x="110" y="700" width="400" height="55" as="geometry" />
+        </mxCell>
+
+        <!-- CONTAINER TẦNG 2: BACKEND GATEWAY -->
+        <mxCell id="box_backend" parent="1" style="rounded=1;arcSize=4;html=0;verticalAlign=top;spacingTop=15;fontSize=18;fontStyle=1;fillColor=#f8fafc;strokeColor=#10b981;strokeWidth=2.5;fontColor=#065f46;" value="TẦNG 2: MÁY CHỦ BẢO MẬT &amp; API GATEWAY (Node.js Express - Port 5000)" vertex="1">
+          <mxGeometry x="590" y="130" width="460" height="760" as="geometry" />
+        </mxCell>
+
+        <mxCell id="be_server" parent="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#d1fae5;strokeColor=#059669;strokeWidth=1.5;fontColor=#064e3b;fontSize=14;fontStyle=1;" value="Express HTTP Server (server/server.js)&#xa;(CORS Middleware, Body-Parser, Dotenv Protection)" vertex="1">
+          <mxGeometry x="620" y="190" width="400" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="be_ai_route" parent="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#fef3c7;strokeColor=#d97706;strokeWidth=2;fontColor=#92400e;fontSize=13;fontStyle=1;" value="POST /api/ai/chat (routes/aiRoutes.js)&#xa;Bảo mật GEMINI_API_KEY, truyền System Instruction&#xa;&amp; Context-Stuffing tài chính người dùng" vertex="1">
+          <mxGeometry x="620" y="280" width="400" height="85" as="geometry" />
+        </mxCell>
+
+        <mxCell id="be_quick_route" parent="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#ffffff;strokeColor=#6ee7b7;strokeWidth=1.5;fontColor=#0f172a;fontSize=13;" value="POST /api/quick-entry/parse (quickEntryRoutes.js)&#xa;Bóc tách câu tự nhiên phía Server (Fallback)" vertex="1">
+          <mxGeometry x="620" y="395" width="400" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="be_finance_route" parent="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#ffffff;strokeColor=#6ee7b7;strokeWidth=1.5;fontColor=#0f172a;fontSize=13;" value="POST /api/finance/safe-to-spend (financeRoutes.js)&#xa;Tính toán chỉ số Safe-to-spend an toàn" vertex="1">
+          <mxGeometry x="620" y="485" width="400" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="be_health" parent="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#ffffff;strokeColor=#6ee7b7;strokeWidth=1.5;fontColor=#0f172a;fontSize=13;" value="GET /health - Giám sát sức khỏe &amp; Uptime" vertex="1">
+          <mxGeometry x="620" y="575" width="400" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="be_sec_note" parent="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#fee2e2;strokeColor=#ef4444;strokeWidth=1.5;fontColor=#991b1b;fontSize=12;" value="VAI TRÒ BẢO MẬT:&#xa;Triệt tiêu rủi ro lộ API Key của Gemini trên trình duyệt" vertex="1">
+          <mxGeometry x="620" y="655" width="400" height="60" as="geometry" />
+        </mxCell>
+
+        <!-- CONTAINER TẦNG 3: SUPABASE BAAS -->
+        <mxCell id="box_supabase" parent="1" style="rounded=1;arcSize=4;html=0;verticalAlign=top;spacingTop=15;fontSize=18;fontStyle=1;fillColor=#f8fafc;strokeColor=#059669;strokeWidth=2.5;fontColor=#065f46;" value="TẦNG 3: CƠ SỞ DỮ LIỆU &amp; BẢO MẬT (Supabase PostgreSQL 15)" vertex="1">
+          <mxGeometry x="1100" y="130" width="470" height="760" as="geometry" />
+        </mxCell>
+
+        <mxCell id="sb_gateway" parent="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#a7f3d0;strokeColor=#059669;strokeWidth=1.5;fontColor=#064e3b;fontSize=14;fontStyle=1;" value="Supabase API Gateway (Kong &amp; PostgREST)&#xa;Tiếp nhận truy vấn Client trực tiếp qua HTTPS" vertex="1">
+          <mxGeometry x="1135" y="190" width="400" height="60" as="geometry" />
+        </mxCell>
+
+        <mxCell id="sb_auth" parent="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#ffffff;strokeColor=#34d399;strokeWidth=1.5;fontColor=#0f172a;fontSize=13;" value="GoTrue Auth Engine (auth.users)&#xa;Xác thực người dùng, JWT Session Token" vertex="1">
+          <mxGeometry x="1135" y="280" width="400" height="55" as="geometry" />
+        </mxCell>
+
+        <mxCell id="sb_rls" parent="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#fef2f2;strokeColor=#dc2626;strokeWidth=2;fontColor=#991b1b;fontSize=13;fontStyle=1;" value="ROW LEVEL SECURITY (RLS 100%)&#xa;Cô lập dữ liệu tuyệt đối: auth.uid() = user_id&#xa;Chống triệt để tấn công IDOR &amp; Truy cập trái phép" vertex="1">
+          <mxGeometry x="1135" y="365" width="400" height="75" as="geometry" />
+        </mxCell>
+
+        <mxCell id="sb_tables" parent="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#ffffff;strokeColor=#059669;strokeWidth=1.5;fontColor=#0f172a;fontSize=12;" value="8 BẢNG QUAN HỆ (PostgreSQL 15):&#xa;1. profiles           5. budgets&#xa;2. wallets            6. saving_goals&#xa;3. categories         7. recurring_rules&#xa;4. transactions       8. notifications" vertex="1">
+          <mxGeometry x="1135" y="465" width="400" height="100" as="geometry" />
+        </mxCell>
+
+        <mxCell id="sb_triggers" parent="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#f0fdf4;strokeColor=#10b981;strokeWidth=1.5;fontColor=#065f46;fontSize=12;" value="TRIGGERS &amp; ANALYTICAL VIEWS:&#xa;• on_auth_user_created (Tạo hồ sơ + ví mặc định)&#xa;• trg_transactions_unaccent (Chuẩn hóa không dấu)&#xa;• v_monthly_summary &amp; v_budget_progress" vertex="1">
+          <mxGeometry x="1135" y="590" width="400" height="80" as="geometry" />
+        </mxCell>
+
+        <!-- DỊCH VỤ NGOÀI -->
+        <mxCell id="ext_gemini" parent="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#fef08a;strokeColor=#ca8a04;strokeWidth=2;fontColor=#713f12;fontSize=14;fontStyle=1;" value="Google Cloud Platform&#xa;Google Gemini 1.5 Flash API" vertex="1">
+          <mxGeometry x="670" y="940" width="300" height="70" as="geometry" />
+        </mxCell>
+
+        <mxCell id="ext_vietqr" parent="1" style="rounded=1;whiteSpace=wrap;html=0;fillColor=#e0e7ff;strokeColor=#6366f1;strokeWidth=2;fontColor=#3730a3;fontSize=14;fontStyle=1;" value="VietQR Banking Service&#xa;img.vietqr.io (Render mã QR)" vertex="1">
+          <mxGeometry x="160" y="940" width="300" height="70" as="geometry" />
+        </mxCell>
+
+        <!-- ĐƯỜNG KẾT NỐI (CONNECTORS) -->
+        <!-- Frontend -> Backend -->
+        <mxCell id="edge_fe_be" edge="1" parent="1" source="fe_clients" target="be_server" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=0;strokeWidth=2.5;strokeColor=#2563eb;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lbl_fe_be" parent="1" style="text;html=0;align=center;verticalAlign=middle;fontSize=12;fontStyle=1;fontColor=#1d4ed8;backgroundColor=#ffffff;" value="REST API (AI &amp; Smart)" vertex="1">
+          <mxGeometry x="525" y="225" width="80" height="25" as="geometry" />
+        </mxCell>
+
+        <!-- Frontend -> Supabase -->
+        <mxCell id="edge_fe_sb" edge="1" parent="1" source="fe_clients" target="sb_gateway" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=0;strokeWidth=2.5;strokeColor=#059669;exitX=0.5;exitY=1;entryX=0.5;entryY=1;">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="310" y="860" />
+              <mxPoint x="1335" y="860" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="lbl_fe_sb" parent="1" style="text;html=0;align=center;verticalAlign=middle;fontSize=12;fontStyle=1;fontColor=#047857;backgroundColor=#ffffff;" value="PostgREST CRUD + Auth (RLS Phân quyền)" vertex="1">
+          <mxGeometry x="720" y="845" width="260" height="25" as="geometry" />
+        </mxCell>
+
+        <!-- Backend -> Gemini -->
+        <mxCell id="edge_be_gemini" edge="1" parent="1" source="be_ai_route" target="ext_gemini" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=0;strokeWidth=2.5;strokeColor=#d97706;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="lbl_be_gemini" parent="1" style="text;html=0;align=center;verticalAlign=middle;fontSize=12;fontStyle=1;fontColor=#b45309;backgroundColor=#ffffff;" value="Secure API Call (Key ẩn)" vertex="1">
+          <mxGeometry x="830" y="900" width="140" height="25" as="geometry" />
+        </mxCell>
+
+        <!-- Frontend -> VietQR -->
+        <mxCell id="edge_fe_vietqr" edge="1" parent="1" source="fe_services" target="ext_vietqr" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;jettySize=auto;html=0;strokeWidth=2;strokeColor=#6366f1;">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
+
