@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { PageHeader } from '@/components/common/PageHeader'
 import { formatCurrency } from '@/utils/formatCurrency'
-import { getFinancialSummary, getCategoryExpenseBreakdown, getPeriodComparison } from '@/services/reportService'
+import { getFinancialSummary, getCategoryExpenseBreakdown, getPeriodComparison, getIncomeExpenseTrend } from '@/services/reportService'
 import { 
   Chart as ChartJS, 
   ArcElement, 
@@ -24,6 +24,8 @@ ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarEle
 export const ReportPage = () => {
   const [currentMonth, setCurrentMonth] = useState(() => new Date().getMonth() + 1)
   const [currentYear, setCurrentYear] = useState(() => new Date().getFullYear())
+  const [period, setPeriod] = useState('month')
+  const [trend, setTrend] = useState({ labels: [], income: [], expense: [] })
   const [loading, setLoading] = useState(true)
 
   const [donutData, setDonutData] = useState({ labels: [], datasets: [], rawData: [] })
@@ -38,13 +40,19 @@ export const ReportPage = () => {
     async function loadReports() {
       try {
         setLoading(true)
-        const [donutRes, compRes] = await Promise.all([
+        const referenceDate = new Date(currentYear, currentMonth - 1, Math.min(new Date().getDate(), new Date(currentYear, currentMonth, 0).getDate()))
+        const [donutRes, compRes, trendRes] = await Promise.all([
           getCategoryExpenseBreakdown(currentMonth, currentYear),
-          getPeriodComparison(currentMonth, currentYear)
+          getPeriodComparison(currentMonth, currentYear),
+          getIncomeExpenseTrend(period, referenceDate)
         ])
 
+        if (donutRes.error) throw donutRes.error
+        if (compRes.error) throw compRes.error
+        if (trendRes.error) throw trendRes.error
         setDonutData(donutRes)
         setComparison(compRes)
+        setTrend(trendRes)
       } catch (err) {
         console.error('Lỗi khi tải báo cáo:', err)
       } finally {
@@ -53,21 +61,21 @@ export const ReportPage = () => {
     }
 
     loadReports()
-  }, [currentMonth, currentYear])
+  }, [currentMonth, currentYear, period])
 
   // Dữ liệu cho Bar Chart so sánh kỳ
   const barChartData = {
-    labels: [`Tháng ${currentMonth - 1 || 12}`, `Tháng ${currentMonth}`],
+    labels: trend.labels,
     datasets: [
       {
         label: 'Thu nhập',
-        data: [comparison.previous.income, comparison.current.income],
+        data: trend.income,
         backgroundColor: '#10B981',
         borderRadius: 8
       },
       {
         label: 'Chi tiêu',
-        data: [comparison.previous.expense, comparison.current.expense],
+        data: trend.expense,
         backgroundColor: '#EF4444',
         borderRadius: 8
       }
@@ -81,17 +89,46 @@ export const ReportPage = () => {
         title="Báo cáo Tài chính"
         description="Biểu đồ phân bổ chi tiêu theo danh mục, so sánh biến động dòng tiền giữa 2 kỳ liền kề."
         actions={
-          <div className="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-full border border-slate-200/80 shadow-2xs text-xs">
-            <Calendar className="w-3.5 h-3.5 text-slate-400" />
-            <select
-              value={currentMonth}
-              onChange={(e) => setCurrentMonth(Number(e.target.value))}
-              className="bg-transparent font-semibold text-slate-700 outline-none"
-            >
-              {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-                <option key={m} value={m}>Tháng {m}</option>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1 p-1 rounded-full bg-slate-100">
+              {[
+                { value: 'week', label: 'Tuần' },
+                { value: 'month', label: 'Tháng' },
+                { value: 'year', label: 'Năm' }
+              ].map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setPeriod(option.value)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${period === option.value ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-white'}`}
+                >
+                  {option.label}
+                </button>
               ))}
-            </select>
+            </div>
+            <div className="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-full border border-slate-200/80 shadow-2xs text-xs">
+              <Calendar className="w-3.5 h-3.5 text-slate-400" />
+              <select
+                aria-label="Chọn tháng báo cáo"
+                value={currentMonth}
+                onChange={(e) => setCurrentMonth(Number(e.target.value))}
+                className="bg-transparent font-semibold text-slate-700 outline-none"
+              >
+                {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                  <option key={m} value={m}>Tháng {m}</option>
+                ))}
+              </select>
+              <select
+                aria-label="Chọn năm báo cáo"
+                value={currentYear}
+                onChange={(e) => setCurrentYear(Number(e.target.value))}
+                className="bg-transparent font-semibold text-slate-700 outline-none"
+              >
+                {Array.from({ length: 7 }, (_, i) => new Date().getFullYear() - 3 + i).map((year) => (
+                  <option key={year} value={year}>{year}</option>
+                ))}
+              </select>
+            </div>
           </div>
         }
       />
@@ -204,7 +241,7 @@ export const ReportPage = () => {
         <div className="rounded-[2rem] bg-white/70 p-2 shadow-soft-md ring-1 ring-slate-900/5">
           <div className="rounded-[calc(2rem-0.5rem)] bg-white p-6 border border-slate-100 flex flex-col justify-between h-full">
             <h3 className="font-display font-bold text-slate-900 text-sm mb-4">
-              So sánh Thu/Chi 2 kỳ Liền kề
+              Biến động Thu/Chi theo {period === 'week' ? 'Tuần' : period === 'year' ? 'Năm' : 'Tháng'}
             </h3>
 
             {loading ? (
