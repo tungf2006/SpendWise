@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { PageHeader } from '@/components/common/PageHeader'
 import { formatCurrency } from '@/utils/formatCurrency'
-import { getBudgetProgress, setBudget, deleteBudget } from '@/services/budgetService'
+import { getBudgetProgress, setBudget, updateBudget, deleteBudget } from '@/services/budgetService'
 import { getCategories } from '@/services/categoryService'
 import { 
   PieChart, 
@@ -78,12 +78,15 @@ export const BudgetPage = () => {
 
     setIsSubmitting(true)
     try {
-      const { error } = await setBudget({
+      const budgetPayload = {
         category_id: selectedCategoryId,
         month: Number(currentMonth),
         year: Number(currentYear),
         amount_limit: Number(amountLimit)
-      })
+      }
+      const { error } = editingBudgetId
+        ? await updateBudget(editingBudgetId, budgetPayload)
+        : await setBudget(budgetPayload)
 
       if (error) throw error
 
@@ -348,6 +351,7 @@ export const BudgetPage = () => {
                 </label>
                 <select
                   required
+                  disabled={Boolean(editingBudgetId)}
                   value={selectedCategoryId}
                   onChange={(e) => setSelectedCategoryId(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-full text-xs text-slate-900 focus:outline-none"
