@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react'
+import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js'
+import { Doughnut } from 'react-chartjs-2'
 import { Link } from 'react-router-dom'
 import { formatCurrency } from '@/utils/formatCurrency'
 import { parseQuickEntry } from '@/services/quickEntryParser'
@@ -6,6 +8,9 @@ import { calculateSafeToSpend } from '@/services/safeToSpendService'
 import { getWallets } from '@/services/walletService'
 import { getTransactions, createTransaction } from '@/services/transactionService'
 import { getCategories } from '@/services/categoryService'
+import { getFinancialSummary, getCategoryExpenseBreakdown } from '@/services/reportService'
+
+ChartJS.register(ArcElement, Tooltip, Legend)
 import { 
   Sparkles, 
   TrendingUp, 
@@ -45,6 +50,8 @@ export const DashboardPage = () => {
     totalSpent: 0
   })
   const [loading, setLoading] = useState(true)
+  const [monthlySummary, setMonthlySummary] = useState({ totalIncome: 0, totalExpense: 0, netSavings: 0 })
+  const [categoryExpense, setCategoryExpense] = useState({ labels: [], datasets: [], rawData: [] })
 
   // Quick Entry state
   const [quickInput, setQuickInput] = useState('cafe 35k hôm qua momo')
@@ -56,17 +63,28 @@ export const DashboardPage = () => {
   const loadDashboardData = async () => {
     try {
       setLoading(true)
-      const [walletsRes, txnsRes, catsRes, stsRes] = await Promise.all([
+      const now = new Date()
+      const month = now.getMonth() + 1
+      const year = now.getFullYear()
+      const startDate = `${year}-${String(month).padStart(2, '0')}-01`
+      const endDate = `${year}-${String(month).padStart(2, '0')}-${String(new Date(year, month, 0).getDate()).padStart(2, '0')}`
+      const [walletsRes, txnsRes, catsRes, stsRes, summaryRes, categoryRes] = await Promise.all([
         getWallets(),
         getTransactions({ limit: 5 }),
         getCategories(),
-        calculateSafeToSpend()
+        calculateSafeToSpend(),
+        getFinancialSummary(startDate, endDate),
+        getCategoryExpenseBreakdown(month, year)
       ])
 
       setWallets(walletsRes.data || [])
       setRecentTransactions(txnsRes.data || [])
       setCategories(catsRes.data || [])
       setStsData(stsRes)
+      if (summaryRes.error) throw summaryRes.error
+      if (categoryRes.error) throw categoryRes.error
+      setMonthlySummary(summaryRes)
+      setCategoryExpense(categoryRes)
     } catch (err) {
       console.error('Lỗi khi tải dữ liệu Dashboard:', err)
     } finally {
@@ -199,7 +217,49 @@ export const DashboardPage = () => {
         </div>
       </section>
 
-      {/* 2. Quick Entry Bar (Chức năng 8 & 9) */}
+      {/* 2. Monthly financial overview (UC16) */}
+      <section className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div className="rounded-3xl bg-white p-5 border border-slate-100 shadow-soft-sm">
+          <span className="text-xs text-slate-500 font-medium">Tổng thu tháng này</span>
+          <div className="mt-2 font-display font-extrabold text-xl text-emerald-600">
+            {formatCurrency(monthlySummary.totalIncome)}
+          </div>
+        </div>
+        <div className="rounded-3xl bg-white p-5 border border-slate-100 shadow-soft-sm">
+          <span className="text-xs text-slate-500 font-medium">Tổng chi tháng này</span>
+          <div className="mt-2 font-display font-extrabold text-xl text-rose-600">
+            {formatCurrency(monthlySummary.totalExpense)}
+          </div>
+        </div>
+        <div className="rounded-3xl bg-white p-5 border border-slate-100 shadow-soft-sm">
+          <span className="text-xs text-slate-500 font-medium">Chênh lệch thu - chi</span>
+          <div className={`mt-2 font-display font-extrabold text-xl ${monthlySummary.netSavings >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+            {formatCurrency(monthlySummary.netSavings)}
+          </div>
+        </div>
+        <div className="rounded-3xl bg-white p-5 border border-slate-100 shadow-soft-sm">
+          <h3 className="text-xs font-bold text-slate-800 mb-3">Chi tiêu theo danh mục</h3>
+          {loading ? (
+            <div className="h-28 flex items-center justify-center text-xs text-slate-400">Đang tải biểu đồ...</div>
+          ) : categoryExpense.labels.length === 0 ? (
+            <div className="h-28 flex items-center justify-center text-xs text-slate-400 text-center">Chưa có dữ liệu chi tiêu tháng này</div>
+          ) : (
+            <div className="h-32">
+              <Doughnut
+                data={categoryExpense}
+                options={{
+                  responsive: true,
+                  maintainAspectRatio: false,
+                  plugins: { legend: { position: 'bottom', labels: { boxWidth: 9, boxHeight: 9, font: { size: 9 } } } },
+                  cutout: '65%'
+                }}
+              />
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* 3. Quick Entry Bar (Chức năng 8 & 9) */}
       <section id="quick-entry" className="rounded-[2rem] bg-white/70 p-2 shadow-soft-md ring-1 ring-slate-900/5 backdrop-blur-xl">
         <div className="rounded-[calc(2rem-0.5rem)] bg-white p-5 sm:p-6 border border-slate-100">
           <div className="flex items-center justify-between mb-3">
