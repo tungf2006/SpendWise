@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+﻿import React, { useState, useEffect } from 'react'
 import { PageHeader } from '@/components/common/PageHeader'
 import { formatCurrency } from '@/utils/formatCurrency'
 import { getWallets, createWallet, transferFunds, archiveWallet } from '@/services/walletService'
@@ -16,8 +16,8 @@ import {
 } from 'lucide-react'
 
 /**
- * Trang Quản lý Ví & Chuyển tiền nội bộ (WalletPage)
- * Phụ trách: TV3 (Nguyễn Vũ Tấn Huy) - Nhóm chức năng WALLET (UC06 - UC09)
+ * Trang Quáº£n lĂ½ VĂ­ & Chuyá»ƒn tiá»n ná»™i bá»™ (WalletPage)
+ * Phá»¥ trĂ¡ch: TV3 (Nguyá»…n VÅ© Táº¥n Huy) - NhĂ³m chá»©c nÄƒng WALLET (UC06 - UC09)
  */
 export const WalletPage = () => {
   const [wallets, setWallets] = useState([])
@@ -50,7 +50,7 @@ export const WalletPage = () => {
         setToWalletId(data[1].id)
       }
     } catch (err) {
-      console.error('Lỗi khi tải danh sách ví:', err)
+      console.error('Lá»—i khi táº£i danh sĂ¡ch vĂ­:', err)
     } finally {
       setLoading(false)
     }
@@ -80,7 +80,7 @@ export const WalletPage = () => {
       setBalance('')
       await fetchWalletsList()
     } catch (err) {
-      alert('Lỗi tạo ví: ' + err.message)
+      alert('Lá»—i táº¡o vĂ­: ' + err.message)
     } finally {
       setIsSubmitting(false)
     }
@@ -89,12 +89,12 @@ export const WalletPage = () => {
   const handleTransfer = async (e) => {
     e.preventDefault()
     if (!fromWalletId || !toWalletId || !transferAmount || Number(transferAmount) <= 0) {
-      alert('Vui lòng chọn ví và nhập số tiền hợp lệ')
+      alert('Vui lĂ²ng chá»n vĂ­ vĂ  nháº­p sá»‘ tiá»n há»£p lá»‡')
       return
     }
 
     if (fromWalletId === toWalletId) {
-      alert('Ví nguồn và ví đích không được trùng nhau')
+      alert('VĂ­ nguá»“n vĂ  vĂ­ Ä‘Ă­ch khĂ´ng Ä‘Æ°á»£c trĂ¹ng nhau')
       return
     }
 
@@ -113,23 +113,23 @@ export const WalletPage = () => {
       setTransferAmount('')
       setTransferNote('')
       await fetchWalletsList()
-      alert('Chuyển tiền nội bộ thành công!')
+      alert('Chuyá»ƒn tiá»n ná»™i bá»™ thĂ nh cĂ´ng!')
     } catch (err) {
-      alert('Lỗi chuyển tiền: ' + err.message)
+      alert('Lá»—i chuyá»ƒn tiá»n: ' + err.message)
     } finally {
       setIsSubmitting(false)
     }
   }
 
   const handleArchive = async (walletId) => {
-    if (!window.confirm('Bạn có muốn ẩn ví này khỏi danh sách sử dụng?')) return
+    if (!window.confirm('Báº¡n cĂ³ muá»‘n áº©n vĂ­ nĂ y khá»i danh sĂ¡ch sá»­ dá»¥ng?')) return
 
     try {
       const { error } = await archiveWallet(walletId)
       if (error) throw error
       await fetchWalletsList()
     } catch (err) {
-      alert('Lỗi khi ẩn ví: ' + err.message)
+      alert('Lá»—i khi áº©n vĂ­: ' + err.message)
     }
   }
 
@@ -138,9 +138,9 @@ export const WalletPage = () => {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Tài sản & Nguồn tiền"
-        title="Quản lý Ví tiền"
-        description="Quản lý các nguồn tiền mặt, tài khoản ngân hàng và ví điện tử; thực hiện chuyển tiền nội bộ giữa các ví."
+        eyebrow="TĂ i sáº£n & Nguá»“n tiá»n"
+        title="Quáº£n lĂ½ VĂ­ tiá»n"
+        description="Quáº£n lĂ½ cĂ¡c nguá»“n tiá»n máº·t, tĂ i khoáº£n ngĂ¢n hĂ ng vĂ  vĂ­ Ä‘iá»‡n tá»­; thá»±c hiá»‡n chuyá»ƒn tiá»n ná»™i bá»™ giá»¯a cĂ¡c vĂ­."
         actions={
           <div className="flex items-center gap-2">
             <button
@@ -150,7 +150,7 @@ export const WalletPage = () => {
               className="px-3.5 py-2 rounded-full bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold flex items-center gap-1.5 border border-slate-200/80 shadow-2xs transition-colors cursor-pointer disabled:opacity-50"
             >
               <ArrowRightLeft className="w-3.5 h-3.5" />
-              <span>Chuyển tiền nội bộ</span>
+              <span>Chuyá»ƒn tiá»n ná»™i bá»™</span>
             </button>
             <button
               type="button"
@@ -158,7 +158,7 @@ export const WalletPage = () => {
               className="px-4 py-2 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold flex items-center gap-1.5 shadow-soft-sm transition-transform active:scale-95 cursor-pointer"
             >
               <Plus className="w-4 h-4" />
-              <span>Thêm ví mới</span>
+              <span>ThĂªm vĂ­ má»›i</span>
             </button>
           </div>
         }
@@ -169,7 +169,7 @@ export const WalletPage = () => {
         <div className="rounded-[calc(2rem-0.5rem)] bg-gradient-to-r from-slate-900 to-slate-800 p-6 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <span className="text-xs text-slate-400 uppercase tracking-widest font-semibold block mb-1">
-              Tổng số dư tất cả các ví
+              Tá»•ng sá»‘ dÆ° táº¥t cáº£ cĂ¡c vĂ­
             </span>
             <span className="font-display font-extrabold text-3xl sm:text-4xl text-white tracking-tight">
               {formatCurrency(totalBalance)}
@@ -178,7 +178,7 @@ export const WalletPage = () => {
 
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/10 backdrop-blur-md text-emerald-300 text-xs font-semibold border border-white/10 self-start sm:self-auto">
             <TrendingUp className="w-3.5 h-3.5" />
-            <span>{wallets.length} nguồn tiền hoạt động</span>
+            <span>{wallets.length} nguá»“n tiá»n hoáº¡t Ä‘á»™ng</span>
           </div>
         </div>
       </div>
@@ -188,11 +188,11 @@ export const WalletPage = () => {
         {loading ? (
           <div className="col-span-3 py-12 text-center text-xs text-slate-400">
             <Loader2 className="w-6 h-6 animate-spin text-brand-600 mx-auto mb-2" />
-            <span>Đang tải danh sách ví...</span>
+            <span>Äang táº£i danh sĂ¡ch vĂ­...</span>
           </div>
         ) : wallets.length === 0 ? (
           <div className="col-span-3 py-12 text-center text-xs text-slate-400 bg-white rounded-3xl border border-slate-100">
-            Bạn chưa có ví nào. Hãy nhấn "Thêm ví mới" ở trên để bắt đầu!
+            Báº¡n chÆ°a cĂ³ vĂ­ nĂ o. HĂ£y nháº¥n "ThĂªm vĂ­ má»›i" á»Ÿ trĂªn Ä‘á»ƒ báº¯t Ä‘áº§u!
           </div>
         ) : (
           wallets.map((w) => (
@@ -219,7 +219,7 @@ export const WalletPage = () => {
                     <div>
                       <h4 className="font-display font-bold text-sm text-slate-900">{w.name}</h4>
                       <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">
-                        {w.type === 'cash' ? 'Tiền mặt' : w.type === 'bank' ? 'Ngân hàng' : 'Ví điện tử'}
+                        {w.type === 'cash' ? 'Tiá»n máº·t' : w.type === 'bank' ? 'NgĂ¢n hĂ ng' : 'VĂ­ Ä‘iá»‡n tá»­'}
                       </span>
                     </div>
                   </div>
@@ -228,14 +228,14 @@ export const WalletPage = () => {
                     type="button"
                     onClick={() => handleArchive(w.id)}
                     className="w-7 h-7 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center transition-colors"
-                    title="Ẩn ví"
+                    title="áº¨n vĂ­"
                   >
                     <Archive className="w-3.5 h-3.5" />
                   </button>
                 </div>
 
                 <div className="mt-6 pt-4 border-t border-slate-100 flex items-baseline justify-between">
-                  <span className="text-[11px] text-slate-400 font-medium">Số dư hiện tại</span>
+                  <span className="text-[11px] text-slate-400 font-medium">Sá»‘ dÆ° hiá»‡n táº¡i</span>
                   <span className="font-display font-black text-lg text-slate-900 tracking-tight">
                     {formatCurrency(w.balance)}
                   </span>
@@ -252,7 +252,7 @@ export const WalletPage = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
           <div className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
-              <h3 className="font-display font-bold text-base text-slate-900">Thêm Ví Mới</h3>
+              <h3 className="font-display font-bold text-base text-slate-900">ThĂªm VĂ­ Má»›i</h3>
               <button
                 type="button"
                 onClick={() => setShowAddModal(false)}
@@ -265,41 +265,41 @@ export const WalletPage = () => {
             <form onSubmit={handleCreateWallet} className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Tên ví / Tài khoản
+                  TĂªn vĂ­ / TĂ i khoáº£n
                 </label>
                 <input
                   type="text"
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="VD: Vietcombank, Ví ShopeePay, Tiền tiêu vặt..."
+                  placeholder="VD: Vietcombank, VĂ­ ShopeePay, Tiá»n tiĂªu váº·t..."
                   className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-full text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
                 />
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Loại ví
+                  Loáº¡i vĂ­
                 </label>
                 <select
                   value={type}
                   onChange={(e) => setType(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-full text-xs text-slate-900 focus:outline-none"
                 >
-                  <option value="cash">Tiền mặt (Cash)</option>
-                  <option value="bank">Tài khoản Ngân hàng (Bank)</option>
-                  <option value="ewallet">Ví điện tử (MoMo, ZaloPay...)</option>
+                  <option value="cash">Tiá»n máº·t (Cash)</option>
+                  <option value="bank">TĂ i khoáº£n NgĂ¢n hĂ ng (Bank)</option>
+                  <option value="ewallet">VĂ­ Ä‘iá»‡n tá»­ (MoMo, ZaloPay...)</option>
                 </select>
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Số dư ban đầu (VNĐ)
+                  Sá»‘ dÆ° ban Ä‘áº§u (VNÄ)
                 </label>
                 <input
                   type="number"
                   min="0"
-                  step="1000"
+                  step="1"
                   value={balance}
                   onChange={(e) => setBalance(e.target.value)}
                   placeholder="0"
@@ -309,7 +309,7 @@ export const WalletPage = () => {
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Màu đại diện
+                  MĂ u Ä‘áº¡i diá»‡n
                 </label>
                 <div className="flex items-center gap-2">
                   {['#10B981', '#3B82F6', '#8B5CF6', '#EC4899', '#F59E0B', '#EF4444'].map((c) => (
@@ -332,7 +332,7 @@ export const WalletPage = () => {
                   onClick={() => setShowAddModal(false)}
                   className="px-4 py-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold"
                 >
-                  Hủy
+                  Há»§y
                 </button>
                 <button
                   type="submit"
@@ -340,7 +340,7 @@ export const WalletPage = () => {
                   className="px-5 py-2 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-soft-sm flex items-center gap-1.5"
                 >
                   {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  <span>Tạo ví</span>
+                  <span>Táº¡o vĂ­</span>
                 </button>
               </div>
             </form>
@@ -353,7 +353,7 @@ export const WalletPage = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
           <div className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
-              <h3 className="font-display font-bold text-base text-slate-900">Chuyển Tiền Nội Bộ</h3>
+              <h3 className="font-display font-bold text-base text-slate-900">Chuyá»ƒn Tiá»n Ná»™i Bá»™</h3>
               <button
                 type="button"
                 onClick={() => setShowTransferModal(false)}
@@ -367,7 +367,7 @@ export const WalletPage = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                    Từ ví nguồn
+                    Tá»« vĂ­ nguá»“n
                   </label>
                   <select
                     value={fromWalletId}
@@ -382,7 +382,7 @@ export const WalletPage = () => {
 
                 <div>
                   <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                    Đến ví đích
+                    Äáº¿n vĂ­ Ä‘Ă­ch
                   </label>
                   <select
                     value={toWalletId}
@@ -398,13 +398,13 @@ export const WalletPage = () => {
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Số tiền chuyển (VNĐ)
+                  Sá»‘ tiá»n chuyá»ƒn (VNÄ)
                 </label>
                 <input
                   type="number"
                   required
                   min="1"
-                  step="1000"
+                  step="1"
                   value={transferAmount}
                   onChange={(e) => setTransferAmount(e.target.value)}
                   placeholder="VD: 500000"
@@ -414,13 +414,13 @@ export const WalletPage = () => {
 
               <div>
                 <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Ghi chú chuyển khoản
+                  Ghi chĂº chuyá»ƒn khoáº£n
                 </label>
                 <input
                   type="text"
                   value={transferNote}
                   onChange={(e) => setTransferNote(e.target.value)}
-                  placeholder="VD: Rút tiền ATM, Nạp ví MoMo..."
+                  placeholder="VD: RĂºt tiá»n ATM, Náº¡p vĂ­ MoMo..."
                   className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-full text-xs text-slate-900"
                 />
               </div>
@@ -431,7 +431,7 @@ export const WalletPage = () => {
                   onClick={() => setShowTransferModal(false)}
                   className="px-4 py-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold"
                 >
-                  Hủy
+                  Há»§y
                 </button>
                 <button
                   type="submit"
@@ -439,7 +439,7 @@ export const WalletPage = () => {
                   className="px-5 py-2 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-soft-sm flex items-center gap-1.5"
                 >
                   {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  <span>Xác nhận chuyển</span>
+                  <span>XĂ¡c nháº­n chuyá»ƒn</span>
                 </button>
               </div>
             </form>
@@ -451,3 +451,4 @@ export const WalletPage = () => {
   )
 }
 export default WalletPage
+
