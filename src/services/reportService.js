@@ -72,7 +72,7 @@ export async function getCategoryExpenseBreakdown(month = new Date().getMonth() 
     const rows = await fetchReportTransactions({
       startDate,
       endDate,
-      select: 'amount, transaction_date, id, category:categories(id, name, color)'
+      select: 'type, amount, transaction_date, id, category:categories(id, name, color)'
     })
     const expenses = rows.filter((row) => row.type === 'expense')
     const categoryMap = new Map()
