@@ -10,6 +10,7 @@ import {
   CheckCircle2, 
   XCircle, 
   Trash2, 
+  Pencil,
   X, 
   Loader2,
   Calendar
@@ -27,9 +28,11 @@ export const BudgetPage = () => {
   const [totalSpent, setTotalSpent] = useState(0)
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
 
   // Modal state
   const [showModal, setShowModal] = useState(false)
+  const [editingBudgetId, setEditingBudgetId] = useState(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [selectedCategoryId, setSelectedCategoryId] = useState('')
   const [amountLimit, setAmountLimit] = useState('')
@@ -38,11 +41,14 @@ export const BudgetPage = () => {
     try {
       setLoading(true)
       const res = await getBudgetProgress(currentMonth, currentYear)
+      if (res.error) throw res.error
       setBudgets(res.data || [])
       setTotalBudget(res.totalBudget || 0)
       setTotalSpent(res.totalSpent || 0)
+      setLoadError('')
     } catch (err) {
       console.error('Lỗi khi tải ngân sách:', err)
+      setLoadError(err.message || 'Không thể tải dữ liệu ngân sách. Vui lòng thử lại.')
     } finally {
       setLoading(false)
     }
@@ -83,12 +89,20 @@ export const BudgetPage = () => {
 
       setShowModal(false)
       setAmountLimit('')
+      setEditingBudgetId(null)
       await fetchBudgetData()
     } catch (err) {
       alert('Lỗi lưu ngân sách: ' + err.message)
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  const handleEditBudget = (budget) => {
+    setEditingBudgetId(budget.id)
+    setSelectedCategoryId(budget.category_id)
+    setAmountLimit(String(budget.budget_amount))
+    setShowModal(true)
   }
 
   const handleDeleteBudget = async (budgetId) => {
@@ -117,6 +131,7 @@ export const BudgetPage = () => {
             <div className="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-full border border-slate-200/80 shadow-2xs text-xs">
               <Calendar className="w-3.5 h-3.5 text-slate-400" />
               <select
+                aria-label="Chọn tháng ngân sách"
                 value={currentMonth}
                 onChange={(e) => setCurrentMonth(Number(e.target.value))}
                 className="bg-transparent font-semibold text-slate-700 outline-none"
@@ -126,10 +141,26 @@ export const BudgetPage = () => {
                 ))}
               </select>
             </div>
+            <div className="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-full border border-slate-200/80 shadow-2xs text-xs">
+              <select
+                aria-label="Chọn năm ngân sách"
+                value={currentYear}
+                onChange={(e) => setCurrentYear(Number(e.target.value))}
+                className="bg-transparent font-semibold text-slate-700 outline-none"
+              >
+                {Array.from({ length: 7 }, (_, i) => new Date().getFullYear() - 3 + i).map((year) => (
+                  <option key={year} value={year}>{year}</option>
+                ))}
+              </select>
+            </div>
 
             <button
               type="button"
-              onClick={() => setShowModal(true)}
+              onClick={() => {
+                setEditingBudgetId(null)
+                setAmountLimit('')
+                setShowModal(true)
+              }}
               className="px-4 py-2 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold flex items-center gap-1.5 shadow-soft-sm transition-transform active:scale-95 cursor-pointer"
             >
               <Plus className="w-4 h-4" />
@@ -195,6 +226,12 @@ export const BudgetPage = () => {
           Tiến độ theo từng Danh mục
         </h3>
 
+        {loadError && (
+          <div role="alert" className="mb-4 p-3 rounded-2xl bg-rose-50 border border-rose-200 text-rose-700 text-xs">
+            {loadError}
+          </div>
+        )}
+
         {loading ? (
           <div className="py-12 text-center text-xs text-slate-400 bg-white rounded-3xl border border-slate-100">
             <Loader2 className="w-6 h-6 animate-spin text-brand-600 mx-auto mb-2" />
@@ -225,6 +262,15 @@ export const BudgetPage = () => {
                     </div>
 
                     <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleEditBudget(b)}
+                        className="text-slate-400 hover:text-brand-600 transition-colors"
+                        title="Điều chỉnh ngân sách"
+                        aria-label={`Điều chỉnh ngân sách danh mục ${b.category?.name || ''}`}
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
                       <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full ${
                         b.status === 'exceeded'
                           ? 'bg-rose-50 text-rose-700 border border-rose-200'
@@ -284,7 +330,7 @@ export const BudgetPage = () => {
           <div className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-slate-100">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
               <h3 className="font-display font-bold text-base text-slate-900">
-                Đặt Ngân Sách Tháng {currentMonth}/{currentYear}
+                {editingBudgetId ? 'Điều chỉnh' : 'Đặt'} Ngân Sách Tháng {currentMonth}/{currentYear}
               </h3>
               <button
                 type="button"
@@ -319,8 +365,8 @@ export const BudgetPage = () => {
                 <input
                   type="number"
                   required
-                  min="10000"
-                  step="50000"
+                  min="1"
+                  step="1"
                   value={amountLimit}
                   onChange={(e) => setAmountLimit(e.target.value)}
                   placeholder="VD: 3000000"
@@ -342,7 +388,7 @@ export const BudgetPage = () => {
                   className="px-5 py-2 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-soft-sm flex items-center gap-1.5"
                 >
                   {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                  <span>Lưu hạn mức</span>
+                  <span>{editingBudgetId ? 'Cập nhật hạn mức' : 'Lưu hạn mức'}</span>
                 </button>
               </div>
             </form>
