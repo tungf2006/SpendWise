@@ -124,7 +124,7 @@ export async function askGeminiAssistant(userPrompt) {
           return { reply: json.reply, error: null, source: 'backend_api' }
         }
       }
-    } catch (networkErr) {
+    } catch {
       // Backend Express chưa chạy -> Chuyển sang fallback gọi SDK phía Client
       console.warn('[AI Assistant] Backend API cổng 5000 chưa khởi chạy, tự động fallback sang Client SDK.')
     }
@@ -133,8 +133,9 @@ export async function askGeminiAssistant(userPrompt) {
     const model = getGeminiModel('gemini-1.5-flash')
     if (!model) {
       return {
-        reply: 'Chưa cấu hình VITE_GEMINI_API_KEY trong file .env hoặc Backend chưa khởi chạy.',
-        error: new Error('Missing Gemini API Key')
+        reply: buildClientFallbackReply(userPrompt, context),
+        error: null,
+        source: 'client_fallback'
       }
     }
 
@@ -162,11 +163,22 @@ NGUYÊN TẮC TRẢ LỜI CỦA BẠN:
 
     return { reply: replyText, error: null, source: 'client_sdk' }
   } catch (err) {
-    console.error('Lỗi khi gọi Gemini Assistant:', err)
+    console.warn('Chuyển sang chế độ tư vấn dự phòng do lỗi kết nối Gemini:', err)
+    const fallbackContext = await buildFinancialContext().catch(() => ({}))
     return {
-      reply: 'Rất tiếc, trợ lý AI đang bận hoặc gặp sự cố kết nối. Vui lòng thử lại sau giây lát.',
-      error: err
+      reply: buildClientFallbackReply(userPrompt, fallbackContext),
+      error: null,
+      source: 'client_fallback'
     }
   }
+}
+
+function buildClientFallbackReply(prompt = '', context = {}) {
+  const fmt = (n) => `${(Number(n) || 0).toLocaleString('vi-VN')} VNĐ`
+  const sts = Number(context?.safe_to_spend_hom_nay || 0)
+  const days = Number(context?.so_ngay_con_lai_trong_thang || 1)
+  const bal = Number(context?.tong_so_du_vi || 0)
+  const rec = Number(context?.khoan_dinh_ky_sap_toi || 0)
+  return `📊 Dữ liệu tài chính hiện tại của bạn (${context?.ngay_hien_tai || 'Hôm nay'}):\n- Số tiền an toàn có thể tiêu hôm nay (Safe-to-spend): ${fmt(sts)}/ngày (còn ${days} ngày trong tháng).\n- Tổng số dư các ví: ${fmt(bal)}.\n- Khoản định kỳ sắp tới: ${fmt(rec)}.\n💡 Hãy duy trì mức chi tiêu trong giới hạn Safe-to-spend để bảo toàn ngân sách tháng nhé!`
 }
 
