@@ -4,7 +4,8 @@ import { Navbar } from './Navbar'
 import { BottomNav } from './BottomNav'
 import { AiChatWidget } from '@/components/ai/AiChatWidget'
 import { supabase } from '@/lib/supabaseClient'
-
+import { checkAndGenerateRecurringTransactions } from '@/services/recurringService'
+import { startNotificationAutoSync } from '@/services/notificationService'
 /**
  * Layout chung của toàn bộ ứng dụng SpendWise (AppLayout)
  * Phụ trách: TV2 (Hồ Nguyên Văn)
@@ -34,6 +35,51 @@ export const AppLayout = () => {
 
     testConnection()
   }, [])
+    useEffect(() => {
+        const checkRecurring = async () => {
+            const { data, error } =
+                await checkAndGenerateRecurringTransactions()
+
+            if (error) {
+                console.error('Lỗi giao dịch định kỳ:', error)
+                return
+            }
+
+            if (data.generatedCount > 0) {
+                console.log(
+                    `Đã tạo ${data.generatedCount} giao dịch định kỳ`
+                )
+            }
+        }
+
+        // Kiểm tra ngay khi vào ứng dụng
+        checkRecurring()
+
+        // Kiểm tra định kỳ mỗi giờ khi ứng dụng mở
+        const intervalId = setInterval(
+            checkRecurring,
+            60 * 60 * 1000
+        )
+
+        // Kiểm tra lại khi quay về tab ứng dụng
+        const handleVisibilityChange = () => {
+            if (!document.hidden) checkRecurring()
+        }
+
+        document.addEventListener(
+            'visibilitychange',
+            handleVisibilityChange
+        )
+
+        return () => {
+            clearInterval(intervalId)
+            document.removeEventListener(
+                'visibilitychange',
+                handleVisibilityChange
+            )
+        }
+    }, [])
+    useEffect(() => startNotificationAutoSync({ intervalMs: 300000, daysAhead: 3 }), [])
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-brand-500 selection:text-white">
