@@ -1,4 +1,4 @@
-# SPENDWISE – KNOWLEDGE BASE & CORE MEMORY (BỘ NÃO DỰ ÁN)
+﻿# SPENDWISE – KNOWLEDGE BASE & CORE MEMORY (BỘ NÃO DỰ ÁN)
 
 > **Mục đích:** File này lưu trữ toàn bộ kiến thức cốt lõi của dự án SpendWise. Mọi phiên chat mới của AI Agent (Antigravity) sẽ tự động nạp file này vào ngữ cảnh làm việc mà không cần rà soát lại tài liệu từ đầu.
 
@@ -57,7 +57,7 @@
 | **UC24** | Tạo giao dịch định kỳ | GOAL_REC (11) | TV3 (Lê Hoài Quốc) |
 | **UC25** | Xem thông báo trong ứng dụng | NOTI_QR (12) | TV3 (Lê Hoài Quốc) |
 | **UC26** | Chia hóa đơn & tạo VietQR | NOTI_QR (12) | TV1 (Trương Bích Vân) |
-| **UC25** | Xem thông báo trong ứng dụng | NOTI_QR (12) | TV4 (Lê Hoài Quốc) |
+| **UC25** | Xem thông báo trong ứng dụng | NOTI_QR (12) | TV3 (Lê Hoài Quốc) |
 | **UC26** | Chia hóa đơn & tạo VietQR | NOTI_QR (12) | TV1 (Trương Bích Vân) |
 
 ---

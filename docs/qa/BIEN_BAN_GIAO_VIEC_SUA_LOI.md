@@ -1,4 +1,4 @@
-# BIÊN BẢN GIAO VIỆC SỬA LỖI & YÊU CẦU HOÀN THIỆN
+﻿# BIÊN BẢN GIAO VIỆC SỬA LỖI & YÊU CẦU HOÀN THIỆN
 **Dự án:** SpendWise – Quản lý chi tiêu cá nhân thông minh  
 **Người lập biên bản:** Leader – Phan Thanh Tùng (Project Manager & AI/DB Lead)  
 **Ngày lập:** 03/11/2026  
@@ -12,7 +12,7 @@
 ## I. MỤC ĐÍCH & NGUYÊN TẮC THỰC HIỆN
 1. **Tuân thủ đúng phân công (Scope of Responsibility):**
    - Leader đã hoàn thiện và tích hợp phần việc của mình lên nhánh `main`: **UC21** (Trợ lý AI Gemini, `src/services/aiAssistantService.js`, `server/routes/aiRoutes.js`), cấu hình CSDL Supabase (Views, RPCs) và tối ưu cấu hình nền tảng.
-   - Toàn bộ các mã nguồn thuộc phạm vi của **TV1, TV2, TV3, TV4** được giữ nguyên bản gốc để các thành viên tự chủ động code, kiểm thử và mở Pull Request (PR) theo đúng trách nhiệm cá nhân.
+   - Toàn bộ các mã nguồn thuộc phạm vi của **TV1, TV2, TV3** được giữ nguyên bản gốc để các thành viên tự chủ động code, kiểm thử và mở Pull Request (PR) theo đúng trách nhiệm cá nhân.
 2. **Quy trình Git bắt buộc:**
    - Mỗi thành viên tạo đúng tên nhánh theo quy định (mục II).
    - Tuyệt đối **không push trực tiếp lên `main`**.
@@ -92,7 +92,7 @@
 
 ---
 
-### 4. TV4 – Lê Hoài Quốc (Full-stack Dev 2 - Smart & Auto)
+### 3. TV3 – Lê Hoài Quốc (Full-stack Dev - Smart & Core Data)
 - **Vấn đề phát hiện:**
   - Thuật toán bóc tách trong `src/services/quickEntryParser.js` và `server/routes/quickEntryRoutes.js` (**UC18**) bị lỗi nghiêm trọng khi dùng `includes('an')`: Khi nhập `"nhận lương 15tr"`, chuỗi không dấu `"nhan luong"` chứa chuỗi con `'an'`, dẫn đến bị gán nhầm sang danh mục `"Ăn uống"`.
   - Chưa bổ sung nhận diện cho các từ khóa thu nhập phổ biến như `"lương"`, `"thưởng"`, `"nhận"`.
