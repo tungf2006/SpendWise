@@ -3,7 +3,7 @@ import { removeVietnameseTones } from '@/utils/unaccent'
 
 /**
  * Service quản lý Giao dịch thu/chi, tìm kiếm không dấu và xuất CSV
- * Phụ trách: TV3 (Nguyễn Vũ Tấn Huy) - Nhóm chức năng TXN (UC12 - UC13)
+ * Phụ trách: Nhóm phát triển SpendWise (Leader Tùng & TV3 Quốc) - Nhóm chức năng TXN (UC12 - UC13)
  */
 
 /**

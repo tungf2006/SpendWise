@@ -17,11 +17,10 @@
 
 | Vai trò | Thành viên | Phụ trách chính | Nhánh Git |
 | :--- | :--- | :--- | :--- |
-| **Leader / Tech Lead** | **Phan Thanh Tùng** | Kiến trúc hệ thống, Supabase DB 8 bảng, Trợ lý AI Gemini (`UC21`), Điều phối PR | `master` / `feature/ai-lead` |
+| **Leader / Tech Lead** | **Phan Thanh Tùng** | Kiến trúc hệ thống, Supabase DB 8 bảng, Trợ lý AI Gemini (`UC21`), Điều phối PR, Đồng tiếp quản Dữ liệu lõi (`UC06-13`) | `main` / `feature/ai-lead` |
 | **TV1 (BA/QA Lead & Full-stack)** | **Trương Bích Vân** | Vẽ Use Case (1 tổng + 4 phân rã), Test Plan, Xác thực (`UC01-05`), Tiết kiệm (`UC22-23`), VietQR (`UC26`) | `feature/auth-goal-tv1` |
 | **TV2 (Frontend Lead & UI/PWA)** | **Hồ Nguyên Văn** | Wireframe UI, PWA, Ngân sách tháng (`UC14-15`), Dashboard (`UC16`), Báo cáo Chart.js (`UC17`) | `feature/dashboard-reports-tv2` |
-| **TV3 (Full-stack 1 - Core Data)** | **Nguyễn Vũ Tấn Huy** | Dữ liệu lõi, Quản lý Ví (`UC06-09`), Danh mục (`UC10-11`), Giao dịch & Xuất CSV (`UC12-13`) | `feature/wallets-txns-tv3` |
-| **TV4 (Full-stack 2 - Smart & Auto)** | **Lê Hoài Quốc** | Vẽ Class Diagram, Nhập nhanh câu tự nhiên (`UC18-19`), Safe-to-spend (`UC20`), Định kỳ & Chuông (`UC24-25`) | `feature/smart-features-tv4` |
+| **TV3 (Full-stack - Smart & Core Data)** | **Lê Hoài Quốc** | Vẽ Class Diagram, Nhập nhanh câu tự nhiên (`UC18-19`), Safe-to-spend (`UC20`), Định kỳ & Chuông (`UC24-25`), Đồng tiếp quản Dữ liệu lõi (`UC06-13`) | `feature/smart-features-tv4` |
 
 ---
 

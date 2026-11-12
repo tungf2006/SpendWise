@@ -56,8 +56,7 @@ Mở trình duyệt tại `http://localhost:5173/login`:
   * 👑 **Leader (Tùng):** `tung123@gmail.com` (Pass: `123456`)
   * 👩‍💻 **TV1 (Bích Vân):** `van@spendwise.vn` (Pass: `123456`)
   * 👨‍💻 **TV2 (Nguyên Văn):** `nguyenvan@spendwise.vn` (Pass: `123456`)
-  * 👨‍💻 **TV3 (Tấn Huy):** `huy@spendwise.vn` (Pass: `123456`)
-  * 👨‍💻 **TV4 (Hoài Quốc):** `quoc@spendwise.vn` (Pass: `123456`)
+  * 👨‍💻 **TV3 (Hoài Quốc):** `quoc@spendwise.vn` (Pass: `123456`)
 * *Lưu ý:* Nếu tài khoản chưa từng tạo trên Supabase, nút bấm sẽ tự động khởi tạo và đăng nhập tức thì.
 
 ---
@@ -76,8 +75,8 @@ Mở trình duyệt tại `http://localhost:5173/login`:
 2. **Quy ước đặt tên nhánh:**
    * **TV1 (Trương Bích Vân):** `feature/auth-goal-tv1` hoặc `feature/vietqr-tv1`
    * **TV2 (Hồ Nguyên Văn):** `feature/dashboard-reports-tv2` hoặc `feature/budget-tv2`
-   * **TV3 (Nguyễn Vũ Tấn Huy):** `feature/wallets-txns-tv3` hoặc `feature/categories-tv3`
-   * **TV4 (Lê Hoài Quốc):** `feature/smart-features-tv4` hoặc `feature/recurring-tv4`
+   * **TV3 (Lê Hoài Quốc):** `feature/smart-features-tv3` hoặc `feature/recurring-tv3`
+   * **Leader (Phan Thanh Tùng):** `feature/ai-assistant-lead` hoặc `feature/core-data-lead`
 3. **Commit đúng chuẩn Conventional Commits:**
    * `feat: them modal chuyen tien noi bo giua 2 vi`
    * `fix: sua loi tinh toan thanh tien do ngan sach`
@@ -119,31 +118,21 @@ Leader đã khởi tạo sẵn bộ khung 13 trang màn hình (`src/pages/`), c�
 
 ---
 
-### 👤 3. TV3 – Nguyễn Vũ Tấn Huy (Full-stack Dev 1 - Core Data)
-* **Tài liệu Lõi:**
-  * Đặc tả 8 Use Case dữ liệu lõi: **UC06, UC07, UC08, UC09, UC10, UC11, UC12, UC13** theo `docs/use-cases/TEMPLATE_USE_CASE.md`.
-  * Liệt kê các thuộc tính và phương thức các thực thể Ví, Danh mục, Giao dịch để gửi TV4 đưa vào Class Diagram.
-* **Lập trình (Giao diện & Dịch vụ):**
-  * Nhánh làm việc: `feature/wallets-txns-tv3`
-  * Trang phụ trách: `src/pages/WalletPage.jsx`, `CategoryPage.jsx`, `TransactionPage.jsx` (cùng các modal Thêm/Sửa/Xóa).
-  * Dịch vụ phụ trách: `src/services/walletService.js`, `categoryService.js`, `transactionService.js` (tìm kiếm `note_unaccent`, xuất CSV).
-
----
-
-### 👤 4. TV4 – Lê Hoài Quốc (Full-stack Dev 2 - Smart & Auto)
+### 👤 3. TV3 – Lê Hoài Quốc (Full-stack Dev - Smart & Core Data)
 * **Tài liệu & Sơ đồ:**
   * Dùng **draw.io** vẽ **Class Diagram tổng hợp** (8 Entity Supabase + các Service class).
   * Đặc tả 5 Use Case: **UC18, UC19, UC20, UC24, UC25** theo `docs/use-cases/TEMPLATE_USE_CASE.md`.
+  * Đồng tiếp quản Dữ liệu lõi (**UC06–UC13**).
 * **Lập trình (Giao diện & Dịch vụ):**
-  * Nhánh làm việc: `feature/smart-features-tv4`
-  * Trang phụ trách: Ô nhập nhanh câu tự nhiên & modal Preview trên `DashboardPage.jsx`, thẻ `<SafeToSpendCard/>`, trang `src/pages/RecurringPage.jsx`, chuông thông báo trên `Navbar.jsx`.
+  * Nhánh làm việc: `feature/smart-features-tv3`
+  * Trang phụ trách: Ô nhập nhanh câu tự nhiên & modal Preview trên `DashboardPage.jsx`, thẻ `<SafeToSpendCard/>`, trang `src/pages/RecurringPage.jsx`, chuông thông báo trên `Navbar.jsx`, cùng đồng bảo trì `WalletPage.jsx`, `CategoryPage.jsx`, `TransactionPage.jsx`.
   * Dịch vụ phụ trách: `src/services/quickEntryParser.js`, `safeToSpendService.js`, `recurringService.js`, `notificationService.js`.
 
 ---
 
-### 👤 5. Leader – Phan Thanh Tùng (Project Manager & AI/DB Lead)
-* **Tài liệu:** Thuyết minh Chương 1 (Giới thiệu), Chương 4 (Kiến trúc hệ thống, ERD), Đặc tả Use Case **UC21** (Trợ lý AI Gemini).
-* **Lập trình:** `src/services/aiAssistantService.js`, `src/components/ai/AiChatWidget.jsx`.
+### 👤 4. Leader – Phan Thanh Tùng (Project Manager & AI/DB Lead)
+* **Tài liệu:** Thuyết minh Chương 1 (Giới thiệu), Chương 4 (Kiến trúc hệ thống, ERD), Đặc tả Use Case **UC21** (Trợ lý AI Gemini), Đồng phụ trách đặc tả Dữ liệu lõi (**UC06–UC13**).
+* **Lập trình:** `src/services/aiAssistantService.js`, `src/components/ai/AiChatWidget.jsx`, cấu hình Supabase DB 8 bảng và RLS, đồng tiếp quản dịch vụ lõi `walletService.js`, `categoryService.js`, `transactionService.js`.
 * **Quản trị:** Điều phối họp Sprint ngắn, review & merge Pull Request từ 4 thành viên.
 
 ---

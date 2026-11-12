@@ -1,19 +1,18 @@
 # QUY TRÌNH PHỐI HỢP GIT & REVIEW CODE DỰ ÁN SPENDWISE
 
-> **Áp dụng cho:** Cả 5 thành viên nhóm SpendWise.
+> **Áp dụng cho:** Cả 4 thành viên nhóm SpendWise.
 > **Mục tiêu:** Tránh xung đột code (Merge Conflict), đảm bảo mã nguồn luôn build thành công trên nhánh chính.
 
 ---
 
 ## 1. NGUYÊN TẮC NHÁNH (BRANCHING STRATEGY)
-- Nhánh **`master`** là nhánh bảo vệ, chỉ chứa mã nguồn đã kiểm thử và build thành công (`npm run build`).
-- **CẤM** mọi thành viên push code trực tiếp lên `master`.
-- Mỗi thành viên khi làm task của mình phải tạo nhánh riêng từ `master` theo quy ước:
+- Nhánh **`main`** là nhánh bảo vệ, chỉ chứa mã nguồn đã kiểm thử và build thành công (`npm run build`).
+- **CẤM** mọi thành viên push code trực tiếp lên `main`.
+- Mỗi thành viên khi làm task của mình phải tạo nhánh riêng từ `main` theo quy ước:
   * TV1 (Trương Bích Vân - Auth & Goals & QR): `feature/auth-tv1`, `feature/goal-tv1`, `feature/vietqr-tv1`
   * TV2 (Hồ Nguyên Văn - UI/Dashboard & Budget & Report): `feature/dashboard-tv2`, `feature/budget-tv2`, `feature/report-tv2`
-  * TV3 (Nguyễn Vũ Tấn Huy - Wallets & Transactions & Categories): `feature/wallet-tv3`, `feature/category-tv3`, `feature/transaction-tv3`
-  * TV4 (Lê Hoài Quốc - Smart & Recurring & Notifications): `feature/safe-to-spend-tv4`, `feature/recurring-tv4`
-  * Leader (Phan Thanh Tùng - AI & DB Architecture): `feature/ai-assistant-lead`
+  * TV3 (Lê Hoài Quốc - Smart & Core Data): `feature/smart-features-tv3`, `feature/recurring-tv3`
+  * Leader (Phan Thanh Tùng - AI & DB Architecture & Core Data): `feature/ai-assistant-lead`, `feature/core-data-lead`
 
 ---
 

@@ -17,7 +17,7 @@ import {
 
 /**
  * Trang Quản lý Ví & Chuyển tiền nội bộ (WalletPage)
- * Phụ trách: TV3 (Nguyễn Vũ Tấn Huy) - Nhóm chức năng WALLET (UC06 - UC09)
+ * Phụ trách: Nhóm phát triển SpendWise (Leader Tùng & TV3 Quốc) - Nhóm chức năng WALLET (UC06 - UC09)
  */
 export const WalletPage = () => {
   const [wallets, setWallets] = useState([])

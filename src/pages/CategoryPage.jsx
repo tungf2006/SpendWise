@@ -5,7 +5,7 @@ import { Tag, Plus, Trash2, X, Loader2, Sparkles, AlertCircle } from 'lucide-rea
 
 /**
  * Trang Quản lý Danh mục (CategoryPage)
- * Phụ trách: TV3 (Nguyễn Vũ Tấn Huy) - Nhóm chức năng CAT (UC10 - UC11)
+ * Phụ trách: Nhóm phát triển SpendWise (Leader Tùng & TV3 Quốc) - Nhóm chức năng CAT (UC10 - UC11)
  */
 export const CategoryPage = () => {
   const [categories, setCategories] = useState([])

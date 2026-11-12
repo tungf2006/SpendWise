@@ -26,8 +26,8 @@
 | :--- | :--- | :--- | :--- | :---: |
 | **TV1 – Trương Bích Vân** | AUTH (UC01, UC05) | `feature/auth-tv1` | `src/services/authService.js`<br>`src/context/AuthContext.jsx` | 🔴 Khẩn cấp (Chặn tạo data) |
 | **TV2 – Hồ Nguyên Văn** | UI/DASH (UC16) | `feature/dashboard-tv2` | `src/components/layout/Navbar.jsx`<br>`src/pages/DashboardPage.jsx` | 🟡 Trung bình (Trải nghiệm UI) |
-| **TV3 – Nguyễn Vũ Tấn Huy** | WALLET, CAT, TXN (UC07, UC11, UC13) | `feature/wallet-tv3`<br>`feature/category-tv3`<br>`feature/transaction-tv3` | `src/pages/WalletPage.jsx`<br>`src/pages/CategoryPage.jsx`<br>`src/pages/TransactionPage.jsx`<br>`src/services/transactionService.js` | 🔴 Khẩn cấp (Thiếu nghiệp vụ CRUD) |
-| **TV4 – Lê Hoài Quốc** | QUICK, NOTI, REC (UC18, UC24, UC25) | `feature/safe-to-spend-tv4`<br>`feature/recurring-tv4` | `src/services/quickEntryParser.js`<br>`server/routes/quickEntryRoutes.js`<br>`src/services/recurringService.js`<br>`src/services/notificationService.js`<br>`src/components/layout/Navbar.jsx` | 🔴 Khẩn cấp (Thuật toán Parser & Cảnh báo) |
+| **Nhóm tiếp quản (Leader & TV3 Quốc)** | WALLET, CAT, TXN (UC07, UC11, UC13) | `feature/core-data-lead` | `src/pages/WalletPage.jsx`<br>`src/pages/CategoryPage.jsx`<br>`src/pages/TransactionPage.jsx`<br>`src/services/transactionService.js` | 🔴 Khẩn cấp (Thiếu nghiệp vụ CRUD) |
+| **TV3 – Lê Hoài Quốc** | QUICK, NOTI, REC (UC18, UC24, UC25) | `feature/safe-to-spend-tv3`<br>`feature/recurring-tv3` | `src/services/quickEntryParser.js`<br>`server/routes/quickEntryRoutes.js`<br>`src/services/recurringService.js`<br>`src/services/notificationService.js`<br>`src/components/layout/Navbar.jsx` | 🔴 Khẩn cấp (Thuật toán Parser & Cảnh báo) |
 
 ---
 
@@ -68,7 +68,7 @@
 
 ---
 
-### 3. TV3 – Nguyễn Vũ Tấn Huy (Full-stack Dev 1 - Core Data)
+### 3. Nhóm tiếp quản Dữ liệu lõi (Leader Phan Thanh Tùng & TV3 Lê Hoài Quốc)
 - **Vấn đề phát hiện:**
   - Theo đặc tả **UC07 (Sửa ví)**, **UC11 (Sửa danh mục)**, **UC13 (Sửa giao dịch)**: Cả 3 trang `WalletPage.jsx`, `CategoryPage.jsx`, `TransactionPage.jsx` mới chỉ có nút Thêm và Xóa, **hoàn toàn thiếu nút Sửa (Icon Pencil) và Modal cập nhật thông tin**.
   - Trong `src/services/transactionService.js`: Hàm `updateTransaction` chỉ mới cập nhật bảng `transactions`, **chưa hề hoàn lại và bù trừ số dư cho ví (`wallets.balance`)**, khiến số dư ví bị sai lệch khi người dùng sửa số tiền hoặc sửa ví thanh toán.
@@ -135,3 +135,4 @@
    git push origin feature/<ten-nhanh-cua-ban>
    ```
 3. **Review & Merge:** Sau khi nộp PR, Leader (Phan Thanh Tùng) sẽ chạy lại bộ kiểm thử tự động để đối soát và tiến hành Merge vào nhánh chính.
+

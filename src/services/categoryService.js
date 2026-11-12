@@ -2,7 +2,7 @@ import { supabase } from '@/lib/supabaseClient'
 
 /**
  * Service quản lý Danh mục thu/chi
- * Phụ trách: TV3 (Nguyễn Vũ Tấn Huy) - Nhóm chức năng CAT (UC10 - UC11)
+ * Phụ trách: Nhóm phát triển SpendWise (Leader Tùng & TV3 Quốc) - Nhóm chức năng CAT (UC10 - UC11)
  */
 
 /**

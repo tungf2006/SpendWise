@@ -23,7 +23,7 @@ import {
 
 /**
  * Trang Quản lý Giao dịch (TransactionPage)
- * Phụ trách: TV3 (Nguyễn Vũ Tấn Huy) - Nhóm chức năng TXN (UC12 - UC13)
+ * Phụ trách: Nhóm phát triển SpendWise (Leader Tùng & TV3 Quốc) - Nhóm chức năng TXN (UC12 - UC13)
  */
 export const TransactionPage = () => {
   const [isExporting, setIsExporting] = useCsvExportState(false)

@@ -2,7 +2,7 @@ import { supabase } from '@/lib/supabaseClient'
 
 /**
  * Service quản lý Ví và Chuyển tiền nội bộ
- * Phụ trách: TV3 (Nguyễn Vũ Tấn Huy) - Nhóm chức năng WALLET (UC06 - UC09)
+ * Phụ trách: Nhóm phát triển SpendWise (Leader Tùng & TV3 Quốc) - Nhóm chức năng WALLET (UC06 - UC09)
  */
 
 /**

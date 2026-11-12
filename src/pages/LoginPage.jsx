@@ -4,14 +4,13 @@ import { signIn, signUp } from '@/services/authService'
 import { Mail, Lock, ArrowRight, Loader2, AlertCircle, Sparkles, Zap } from 'lucide-react'
 
 /**
- * Danh sách tài khoản mẫu theo 5 thành viên chính thức của nhóm SpendWise
+ * Danh sách tài khoản mẫu theo 4 thành viên chính thức của nhóm SpendWise
  */
 const DEMO_ACCOUNTS = [
   { label: '👑 Leader (Tùng)', email: 'tung123@gmail.com', pass: '123456', name: 'Phan Thanh Tùng' },
   { label: '👩‍💻 TV1 (Bích Vân)', email: 'van@spendwise.vn', pass: '123456', name: 'Trương Bích Vân' },
   { label: '👨‍💻 TV2 (Nguyên Văn)', email: 'nguyenvan@spendwise.vn', pass: '123456', name: 'Hồ Nguyên Văn' },
-  { label: '👨‍💻 TV3 (Tấn Huy)', email: 'huy@spendwise.vn', pass: '123456', name: 'Nguyễn Vũ Tấn Huy' },
-  { label: '👨‍💻 TV4 (Hoài Quốc)', email: 'quoc@spendwise.vn', pass: '123456', name: 'Lê Hoài Quốc' },
+  { label: '👨‍💻 TV3 (Hoài Quốc)', email: 'quoc@spendwise.vn', pass: '123456', name: 'Lê Hoài Quốc' },
 ]
 
 /**
