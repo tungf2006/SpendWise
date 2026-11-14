@@ -1,6 +1,6 @@
 # SPENDWISE – HƯỚNG DẪN BẮT ĐẦU VÀ PHỐI HỢP CÔNG VIỆC NHÓM
 
-> **Dành cho:** Tất cả 5 thành viên nhóm dự án SpendWise.  
+> **Dành cho:** Tất cả 4 thành viên chính thức nhóm dự án SpendWise (Leader, TV1, TV2, TV3).  
 > **Chủ biên:** Leader – Phan Thanh Tùng (Project Manager & AI/DB Lead).  
 > **Mục tiêu:** Giúp mọi thành viên hiểu rõ nhiệm vụ, nhận nhánh làm việc, không bị xung đột code (Merge Conflict) và đạt tiến độ nộp bài ngày 29 (15/11).
 
@@ -10,10 +10,10 @@
 
 Mọi thành viên sau khi clone repo hoặc mở dự án trên máy tính, thực hiện theo đúng 3 bước:
 
-### Bước 1: Kéo mã nguồn mới nhất từ nhánh `master`
+### Bước 1: Kéo mã nguồn mới nhất từ nhánh `develop`
 ```bash
-git checkout master
-git pull origin master
+git checkout develop
+git pull origin develop
 ```
 
 ### Bước 2: Cài đặt thư viện dependencies
@@ -63,13 +63,13 @@ Mở trình duyệt tại `http://localhost:5173/login`:
 
 ## 2. QUY ƯỚC NHÁNH GIT (GIT BRANCHING & PULL REQUEST)
 
-> ⛔ **NGHIÊM CẤM:** Không thành viên nào được `git push` trực tiếp lên nhánh `master`. Nhánh `master` được bảo vệ và do Leader kiểm duyệt.
+> ⛔ **NGHIÊM CẤM:** Không thành viên nào được `git push` trực tiếp lên nhánh `main` hoặc `develop`. Cả hai nhánh đều được bật cơ chế bảo vệ (Branch Protection). Mọi chức năng mới và sửa lỗi bắt buộc phải thông qua Pull Request gửi vào nhánh `develop`.
 
 ### Quy trình 4 bước khi làm một chức năng:
-1. **Tạo nhánh mới từ `master`:**
+1. **Tạo nhánh mới từ `develop`:**
    ```bash
-   git checkout master
-   git pull origin master
+   git checkout develop
+   git pull origin develop
    git checkout -b <tên-nhánh-của-bạn>
    ```
 2. **Quy ước đặt tên nhánh:**
@@ -81,12 +81,13 @@ Mở trình duyệt tại `http://localhost:5173/login`:
    * `feat: them modal chuyen tien noi bo giua 2 vi`
    * `fix: sua loi tinh toan thanh tien do ngan sach`
    * `docs: bo sung dac ta use case UC06`
-4. **Mở Pull Request (PR):**
+4. **Mở Pull Request (PR) vào `develop`:**
    * Sau khi code xong và chạy `npm run build` không báo lỗi, push nhánh lên repo:
      ```bash
      git push -u origin <tên-nhánh-của-bạn>
      ```
-   * Mở Pull Request trên GitHub hướng về `master`, gắn tag Leader (`@PhanThanhTung`) để review và merge.
+   * Mở Pull Request trên GitHub hướng về nhánh **`develop`** (Base: `develop` <- Compare: `<tên-nhánh-của-bạn>`), gắn tag Leader (`@PhanThanhTung`) để review và merge.
+   * Sau khi các chức năng trên `develop` được kiểm thử hoàn tất, Leader sẽ thực hiện merge `develop` vào `main`.
 
 ---
 

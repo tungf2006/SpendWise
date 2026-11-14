@@ -11,12 +11,13 @@
 
 ## I. MỤC ĐÍCH & NGUYÊN TẮC THỰC HIỆN
 1. **Tuân thủ đúng phân công (Scope of Responsibility):**
-   - Leader đã hoàn thiện và tích hợp phần việc của mình lên nhánh `main`: **UC21** (Trợ lý AI Gemini, `src/services/aiAssistantService.js`, `server/routes/aiRoutes.js`), cấu hình CSDL Supabase (Views, RPCs) và tối ưu cấu hình nền tảng.
+   - Leader đã hoàn thiện và tích hợp phần việc nền tảng lên nhánh `main` và đồng bộ sang `develop`: **UC21** (Trợ lý AI Gemini, `src/services/aiAssistantService.js`, `server/routes/aiRoutes.js`), cấu hình CSDL Supabase (Views, RPCs) và tối ưu cấu hình nền tảng.
    - Toàn bộ các mã nguồn thuộc phạm vi của **TV1, TV2, TV3** được giữ nguyên bản gốc để các thành viên tự chủ động code, kiểm thử và mở Pull Request (PR) theo đúng trách nhiệm cá nhân.
 2. **Quy trình Git bắt buộc:**
-   - Mỗi thành viên tạo đúng tên nhánh theo quy định (mục II).
-   - Tuyệt đối **không push trực tiếp lên `main`**.
-   - Chạy `npm run lint` và `npm run build` trước khi mở PR.
+   - Mỗi thành viên tạo đúng tên nhánh tính năng `feature/*` tách từ nhánh **`develop`** theo quy định (mục II).
+   - Tuyệt đối **không push trực tiếp lên `main` và `develop`** (cả hai nhánh đều được bật Branch Protection).
+   - Mọi đóng góp phải tạo Pull Request trỏ vào nhánh **`develop`**.
+   - Chạy `npm run lint` và `npm run build` kiểm tra thành công trước khi mở PR.
 
 ---
 
@@ -92,7 +93,7 @@
 
 ---
 
-### 3. TV3 – Lê Hoài Quốc (Full-stack Dev - Smart & Core Data)
+### 4. TV3 – Lê Hoài Quốc (Full-stack Dev - Smart & Core Data)
 - **Vấn đề phát hiện:**
   - Thuật toán bóc tách trong `src/services/quickEntryParser.js` và `server/routes/quickEntryRoutes.js` (**UC18**) bị lỗi nghiêm trọng khi dùng `includes('an')`: Khi nhập `"nhận lương 15tr"`, chuỗi không dấu `"nhan luong"` chứa chuỗi con `'an'`, dẫn đến bị gán nhầm sang danh mục `"Ăn uống"`.
   - Chưa bổ sung nhận diện cho các từ khóa thu nhập phổ biến như `"lương"`, `"thưởng"`, `"nhận"`.
@@ -117,22 +118,30 @@
 ---
 
 ## IV. QUY TRÌNH PHỐI HỢP VÀ THỜI HẠN HOÀN THÀNH
-1. **Thời hạn (Deadline đề xuất):** Các thành viên hoàn thành và nộp Pull Request trước **20h00 ngày 05/11/2026**.
+1. **Thời hạn hoàn thành (Deadlines):**
+   - **Mốc ưu tiên khẩn cấp (P0 - Blocking bugs):** Trước **20h00 ngày 20/11/2026** đối với các lỗi chặn nghiêm trọng của **TV1** (lỗi tạo Profile & ràng buộc khóa ngoại `profiles.id`) và **TV3** (lỗi bóc tách Regex nhận nhầm danh mục Ăn uống và lỗi crash RPC `PGRST202`).
+   - **Hạn chót nộp toàn bộ Pull Request:** Trước **20h00 ngày 23/11/2026** cho tất cả các tính năng và giao diện hoàn chỉnh.
 2. **Quy trình nộp bài:**
    ```bash
-   # Bước 1: Kéo code mới nhất từ main
-   git checkout main
-   git pull origin main
+   # Bước 1: Kéo code mới nhất từ nhánh develop
+   git checkout develop
+   git pull origin develop
 
-   # Bước 2: Tạo nhánh riêng theo bảng mục II
+   # Bước 2: Tạo nhánh riêng từ develop theo bảng mục II
    git checkout -b feature/<ten-nhanh-cua-ban>
 
-   # Bước 3: Code và kiểm tra build
+   # Bước 3: Code và kiểm tra build cục bộ
    npm run build
 
    # Bước 4: Commit theo chuẩn Conventional Commits
    git commit -m "fix(<module>): mo ta loi da sua"
-   git push origin feature/<ten-nhanh-cua-ban>
+   git push -u origin feature/<ten-nhanh-cua-ban>
+
+   # Bước 5: Mở Pull Request vào nhánh develop trên GitHub
+   # Base branch: develop  <--  Compare branch: feature/<ten-nhanh-cua-ban>
    ```
-3. **Review & Merge:** Sau khi nộp PR, Leader (Phan Thanh Tùng) sẽ chạy lại bộ kiểm thử tự động để đối soát và tiến hành Merge vào nhánh chính.
+3. **Review, Test & Merge:**
+   - Sau khi thành viên mở PR vào `develop`, Leader (Phan Thanh Tùng) và QA Lead (Trương Bích Vân) sẽ đối soát mã nguồn, kiểm tra chức năng và chạy bộ kiểm thử tự động.
+   - Khi PR đạt tiêu chuẩn sẽ được duyệt merge vào `develop`.
+   - Sau khi toàn bộ các tính năng trên `develop` được kiểm thử thành công và nghiệm thu không còn lỗi, Leader sẽ tạo PR và merge từ `develop` vào `main` để phát hành chính thức.
 

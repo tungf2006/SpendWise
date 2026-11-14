@@ -1,4 +1,4 @@
-﻿# SPENDWISE – KNOWLEDGE BASE & CORE MEMORY (BỘ NÃO DỰ ÁN)
+# SPENDWISE – KNOWLEDGE BASE & CORE MEMORY (BỘ NÃO DỰ ÁN)
 
 > **Mục đích:** File này lưu trữ toàn bộ kiến thức cốt lõi của dự án SpendWise. Mọi phiên chat mới của AI Agent (Antigravity) sẽ tự động nạp file này vào ngữ cảnh làm việc mà không cần rà soát lại tài liệu từ đầu.
 
@@ -207,9 +207,29 @@ Mỗi phiên làm việc, Agent PHẢI tuân thủ 5 nguyên tắc hành động
 
 ---
 
-## 14. BỘ HỒ SƠ THUYẾT MINH THIẾT KẾ NỘP NGÀY 16/11 (ĐÃ DỌN DẸP THEO YÊU CẦU)
-- Thư mục cục bộ `NOP_BAI_16_11/` đã được người dùng xác nhận xóa vĩnh viễn khỏi workspace.
-- Các quy chuẩn thiết kế, checklist sửa 32 lỗi hình thức và cấu trúc tài liệu đồ án vẫn được bảo toàn nguyên vẹn trong hệ thống tài liệu `docs/` và bộ não `GEMINI.md`.
+## 14. BỘ HỒ SƠ THUYẾT MINH THIẾT KẾ NỘP GIẢNG VIÊN (KHUNG SƯỜN & LOGIC SƠ ĐỒ ĐÃ LƯU)
+- Thư mục cục bộ `NOP_BAI_16_11/` đã được người dùng xác nhận xóa vĩnh viễn khỏi workspace; các quy chuẩn thiết kế vẫn được bảo toàn trong `docs/` và `GEMINI.md`.
+- **Khung sườn gói nộp giảng viên (`Bao_Cao_Thuyet_Minh_Thiet_Ke_SpendWise.zip` – 39 tệp, 3 phân mục chính):**
+  1. `01_KIEN_TRUC_HE_THONG/`: `system_architecture.png`, `erd_8_tables.png`, `deployment_diagram.png`.
+  2. `02_LUOC_DO_USE_CASE/`: `so-do/` (5 sơ đồ PNG: `use_case_tong_quat.png`, `use_case_auth.png`, `use_case_core_data.png`, `use_case_goals_qr.png`, `use_case_smart_ai.png`) + `dac-ta-26-use-cases/` (`UC01.md`–`UC26.md`).
+  3. `03_LUOC_DO_LOP/`: 5 sơ đồ PNG (`class_diagram.png`, `class_diagram_01_overview.png`, `class_diagram_02_entities.png`, `class_diagram_03_services.png`, `class_diagram_04_method_fields.png`).
+- **Quy chuẩn kiến trúc & logic bắt buộc khi code (đối chiếu từ 13 sơ đồ đã đọc):**
+  - **3-Tier Hybrid Architecture + Deployment:**
+    - *Tầng 1 (Client React 19 + PWA, Port 5173):* 13 màn hình UI, Double-Bezel & Chart.js, PWA (`sw.js`, `manifest.json`), LocalStorage (JWT + Dark/Light), 13 Client Services (`src/services/`) gọi Supabase PostgREST/Auth (RLS 100%, `auth.uid() = user_id`), gọi trực tiếp `https://img.vietqr.io` cho ảnh QR Napas247.
+    - *Tầng 2 (API Gateway Express `server/server.js`, Node.js v24, Port 5000):* Bảo mật `GEMINI_API_KEY` phía server với các endpoint `POST /api/ai/chat` (`aiRoutes.js`), `POST /api/quick-entry/parse` (`quickEntryRoutes.js`), `POST /api/finance/safe-to-spend` (`financeRoutes.js`), `GET /health`.
+    - *Tầng 3 (Supabase PostgreSQL 15):* Triggers (`on_auth_user_created`/`handle_new_user`, `trg_transactions_unaccent`), Views (`v_monthly_summary`, `v_budget_progress`), RPC (`generate_due_recurring_transactions`, `sync_finance_notifications`).
+  - **Ràng buộc ERD 8 bảng (`UUID`, 14 FKs, `NUMERIC(15,2)`):**
+    - `profiles`: PK/FK `auth.users.id ON DELETE CASCADE`, `default_bank_bin`, `default_bank_account`.
+    - `wallets`: `type` (`cash | bank | ewallet`), `balance` (`NUMERIC(15,2) DEFAULT 0`), `is_archived`.
+    - `categories`: `user_id` nullable (`NULL` = hệ thống), `type` (`income | expense`), `keywords` (`TEXT[]`).
+    - `transactions`: `wallet_id` (`ON DELETE RESTRICT`), `to_wallet_id` (nullable khi `transfer`), `category_id` (nullable), `type` (`income | expense | transfer`), `amount > 0`, `note_unaccent`.
+    - `budgets`: `month` (`1..12`), `year` (`>= 2020`), `amount_limit > 0`, `UNIQUE(user_id, category_id, month, year)`.
+    - `saving_goals`: `wallet_id` nullable, `target_amount > 0`, `current_amount >= 0`, `status` (`in_progress | completed`).
+    - `recurring_rules`: `type` (`income | expense`), `amount > 0`, `frequency` (`weekly | monthly | yearly`), `day_of_month` (`1..31`), `next_due_date`, `is_active`.
+    - `notifications`: `type` (`budget_warning | budget_exceeded | recurring_due | system`), `is_read`.
+  - **Luồng nghiệp vụ từ Sơ đồ Use Case & Class Diagram (13 Service Modules):**
+    - UC01 tự động tạo hồ sơ + ví tiền mặt mặc định; UC09 chuyển tiền cập nhật số dư 2 ví; UC12/UC13 thêm/sửa/xóa giao dịch phải kiểm tra & bù trừ/hoàn lại số dư ví; UC23 nạp mục tiêu phải kiểm tra số dư ví và cập nhật cả ví lẫn mục tiêu; UC18 (`parseQuickEntry`) luôn mở Preview UC19 để người dùng xác nhận lưu; UC26 tính chia hóa đơn trước rồi mở rộng (`<<extend>>`) tạo mã VietQR.
+    - Toàn bộ tên hàm `export` ở `src/services/` bám đúng hợp đồng 13 modules trong `class_diagram_03_services.png` (`authService`, `walletService`, `categoryService`, `transactionService`, `budgetService`, `reportService`, `goalService`, `recurringService`, `notificationService`, `quickEntryParser`, `safeToSpendService`, `aiAssistantService`, `vietqrService`), trong đó `SafeToSpendService` phụ thuộc `BudgetService` và `AiAssistantService` phụ thuộc `BudgetService` + `SafeToSpendService`.
 
 ---
 

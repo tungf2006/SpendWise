@@ -15,12 +15,12 @@
 
 > 📌 **DÀNH CHO THÀNH VIÊN NHẬN VIỆC:** Mọi thành viên bắt buộc đọc hướng dẫn chi tiết tại **[HUONG_DAN_LAM_VIEC.md](HUONG_DAN_LAM_VIEC.md)** để biết nhánh Git cần tạo, danh sách file code và mẫu viết Use Case.
 
-| Vai trò | Thành viên | Phụ trách chính | Nhánh Git |
+| Vai trò | Thành viên | Phụ trách chính | Nhánh Git quy chuẩn |
 | :--- | :--- | :--- | :--- |
-| **Leader / Tech Lead** | **Phan Thanh Tùng** | Kiến trúc hệ thống, Supabase DB 8 bảng, Trợ lý AI Gemini (`UC21`), Điều phối PR, Đồng tiếp quản Dữ liệu lõi (`UC06-13`) | `main` / `feature/ai-lead` |
+| **Leader / Tech Lead** | **Phan Thanh Tùng** | Kiến trúc hệ thống, Supabase DB 8 bảng, Trợ lý AI Gemini (`UC21`), Điều phối PR, Đồng tiếp quản Dữ liệu lõi (`UC06-13`) | `main` / `develop` / `feature/ai-assistant-lead` |
 | **TV1 (BA/QA Lead & Full-stack)** | **Trương Bích Vân** | Vẽ Use Case (1 tổng + 4 phân rã), Test Plan, Xác thực (`UC01-05`), Tiết kiệm (`UC22-23`), VietQR (`UC26`) | `feature/auth-goal-tv1` |
 | **TV2 (Frontend Lead & UI/PWA)** | **Hồ Nguyên Văn** | Wireframe UI, PWA, Ngân sách tháng (`UC14-15`), Dashboard (`UC16`), Báo cáo Chart.js (`UC17`) | `feature/dashboard-reports-tv2` |
-| **TV3 (Full-stack - Smart & Core Data)** | **Lê Hoài Quốc** | Vẽ Class Diagram, Nhập nhanh câu tự nhiên (`UC18-19`), Safe-to-spend (`UC20`), Định kỳ & Chuông (`UC24-25`), Đồng tiếp quản Dữ liệu lõi (`UC06-13`) | `feature/smart-features-tv4` |
+| **TV3 (Full-stack - Smart & Core Data)** | **Lê Hoài Quốc** | Vẽ Class Diagram, Nhập nhanh câu tự nhiên (`UC18-19`), Safe-to-spend (`UC20`), Định kỳ & Chuông (`UC24-25`), Đồng tiếp quản Dữ liệu lõi (`UC06-13`) | `feature/smart-features-tv3` |
 
 ---
 
@@ -64,6 +64,11 @@ npm run dev
 # Khởi chạy Backend REST API (Node.js/Express) - http://localhost:5000
 npm run server
 ```
+
+### 4. Quy trình phối hợp nhánh Git chuẩn
+- **Mô hình luồng nhánh:** Tách nhánh `feature/*` từ `develop` -> Mở Pull Request vào `develop` -> Kiểm thử nghiệm thu hoàn tất -> Leader merge `develop` vào `main`.
+- **Nguyên tắc bảo vệ:** Tuyệt đối không push trực tiếp lên `main` và `develop` (Branch Protection được kích hoạt).
+- Chi tiết xem tại **[docs/git/WORKFLOW.md](docs/git/WORKFLOW.md)** và **[HUONG_DAN_LAM_VIEC.md](HUONG_DAN_LAM_VIEC.md)**.
 
 ---
 
