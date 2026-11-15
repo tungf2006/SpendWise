@@ -17,10 +17,10 @@
 
 | Vai trò | Thành viên | Phụ trách chính | Nhánh Git quy chuẩn |
 | :--- | :--- | :--- | :--- |
-| **Leader / Tech Lead** | **Phan Thanh Tùng** | Kiến trúc hệ thống, Supabase DB 8 bảng, Trợ lý AI Gemini (`UC21`), Điều phối PR, Đồng tiếp quản Dữ liệu lõi (`UC06-13`) | `main` / `develop` / `feature/ai-assistant-lead` |
-| **TV1 (BA/QA Lead & Full-stack)** | **Trương Bích Vân** | Vẽ Use Case (1 tổng + 4 phân rã), Test Plan, Xác thực (`UC01-05`), Tiết kiệm (`UC22-23`), VietQR (`UC26`) | `feature/auth-goal-tv1` |
-| **TV2 (Frontend Lead & UI/PWA)** | **Hồ Nguyên Văn** | Wireframe UI, PWA, Ngân sách tháng (`UC14-15`), Dashboard (`UC16`), Báo cáo Chart.js (`UC17`) | `feature/dashboard-reports-tv2` |
-| **TV3 (Full-stack - Smart & Core Data)** | **Lê Hoài Quốc** | Vẽ Class Diagram, Nhập nhanh câu tự nhiên (`UC18-19`), Safe-to-spend (`UC20`), Định kỳ & Chuông (`UC24-25`), Đồng tiếp quản Dữ liệu lõi (`UC06-13`) | `feature/smart-features-tv3` |
+| **Leader / Tech Lead** | **Phan Thanh Tùng** | Kiến trúc hệ thống, Bảo mật & Backend API, Supabase DB, Trợ lý AI Gemini (`UC21`), CI/CD, Đồng tiếp quản Dữ liệu lõi (`UC06-13`) | `feature/security-infra-lead`, `feature/ai-assistant-lead`, `feature/core-data-lead` |
+| **TV1 (BA/QA Lead & Full-stack)** | **Trương Bích Vân** | Vẽ Use Case (1 tổng + 4 phân rã), Test Plan, Xác thực (`UC01-05`), Tiết kiệm (`UC22-23`), VietQR (`UC26`) | `feature/auth-goal-tv1`, `feature/vietqr-tv1` |
+| **TV2 (Frontend Lead & UI/PWA)** | **Hồ Nguyên Văn** | Wireframe UI, PWA, Ngân sách tháng (`UC14-15`), Dashboard (`UC16`), Báo cáo Chart.js (`UC17`) | `feature/dashboard-reports-tv2`, `feature/budget-tv2` |
+| **TV3 (Full-stack - Smart & Core Data)** | **Lê Hoài Quốc** | Vẽ Class Diagram, Nhập nhanh câu tự nhiên (`UC18-19`), Safe-to-spend (`UC20`), Định kỳ & Chuông (`UC24-25`), Đồng tiếp quản Dữ liệu lõi (`UC06-13`) | `feature/smart-features-tv3`, `feature/recurring-tv3`, `feature/core-data-lead` |
 
 ---
 

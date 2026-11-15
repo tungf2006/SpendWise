@@ -9,11 +9,11 @@
 - Nhánh **`main`** là nhánh phát hành (Production/Release), chỉ chứa mã nguồn ổn định, đã kiểm thử toàn diện và build thành công (`npm run build`).
 - Nhánh **`develop`** là nhánh tích hợp trung tâm (Integration/Staging), nơi tiếp nhận các Pull Request từ các nhánh tính năng (`feature/*`).
 - **CẤM** mọi thành viên push code trực tiếp lên cả hai nhánh `main` và `develop` (cả hai nhánh đều áp dụng Branch Protection).
-- Mỗi thành viên khi làm task của mình phải tạo nhánh riêng từ **`develop`** theo quy ước:
-  * TV1 (Trương Bích Vân - Auth & Goals & QR): `feature/auth-tv1`, `feature/goal-tv1`, `feature/vietqr-tv1`
-  * TV2 (Hồ Nguyên Văn - UI/Dashboard & Budget & Report): `feature/dashboard-tv2`, `feature/budget-tv2`, `feature/report-tv2`
-  * TV3 (Lê Hoài Quốc - Smart & Core Data): `feature/smart-features-tv3`, `feature/recurring-tv3`
-  * Leader & Nhóm tiếp quản (Phan Thanh Tùng & TV3): `feature/ai-assistant-lead`, `feature/core-data-lead`
+- Mỗi thành viên khi làm task của mình phải tạo nhánh riêng từ **`develop`** theo quy ước thống nhất toàn dự án:
+  * **Leader (Phan Thanh Tùng – Bảo mật/Hạ tầng, AI & Đồng tiếp quản Core Data):** `feature/security-infra-lead`, `feature/ai-assistant-lead`, `feature/core-data-lead`
+  * **TV1 (Trương Bích Vân – Auth, Goals & VietQR):** `feature/auth-goal-tv1`, `feature/vietqr-tv1`
+  * **TV2 (Hồ Nguyên Văn – UI/Dashboard, Budget & Report):** `feature/dashboard-reports-tv2`, `feature/budget-tv2`
+  * **TV3 (Lê Hoài Quốc – Smart, Recurring/Thông báo & Đồng tiếp quản Core Data):** `feature/smart-features-tv3`, `feature/recurring-tv3`, `feature/core-data-lead`
 
 ---
 
@@ -25,9 +25,9 @@ git checkout develop
 git pull origin develop
 ```
 
-### Bước 2: Tạo nhánh tính năng mới
+### Bước 2: Tạo nhánh tính năng mới (theo đúng bảng quy ước ở mục 1)
 ```bash
-git checkout -b feature/wallet-tv3
+git checkout -b feature/core-data-lead
 ```
 
 ### Bước 3: Code và kiểm tra lỗi cục bộ
