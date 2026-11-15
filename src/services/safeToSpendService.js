@@ -98,9 +98,16 @@ async function requestSafeToSpend({ remainingBudget, upcomingRecurring, daysLeft
   const baseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000')
     .replace(/\/+$/, '')
 
+  const { data: sessionData } = await supabase.auth.getSession()
+  const accessToken = sessionData?.session?.access_token
+  const headers = { 'Content-Type': 'application/json' }
+  if (accessToken) {
+    headers.Authorization = `Bearer ${accessToken}`
+  }
+
   const response = await fetch(`${baseUrl}/api/finance/safe-to-spend`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers,
     body: JSON.stringify({ remainingBudget, upcomingRecurring, daysLeft }),
   })
 

@@ -2,30 +2,58 @@ import { Router } from 'express'
 
 const router = Router()
 
+const SAFE_TO_SPEND_FORMULA = 'max(0, (remainingBudget - upcomingRecurring) / daysLeft)'
+
+function validateSafeToSpendBody(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) {
+    return ['Body phải là JSON object.']
+  }
+
+  const errors = []
+  const { remainingBudget, upcomingRecurring, daysLeft } = input
+
+  if (typeof remainingBudget !== 'number' || !Number.isFinite(remainingBudget)) {
+    errors.push('remainingBudget phải là một số hợp lệ.')
+  }
+
+  if (typeof upcomingRecurring !== 'number' || !Number.isFinite(upcomingRecurring) || upcomingRecurring < 0) {
+    errors.push('upcomingRecurring phải là một số không âm.')
+  }
+
+  if (!Number.isInteger(daysLeft) || daysLeft < 1 || daysLeft > 31) {
+    errors.push('daysLeft phải là số nguyên từ 1 đến 31 (bao gồm hôm nay).')
+  }
+
+  return errors
+}
+
 /**
  * POST /api/finance/safe-to-spend
- * Tính toán chỉ số Safe-to-spend trên Server
- * Phụ trách: TV4 (Lê Hoài Quốc) - Nhóm chức năng STS (UC20)
+ * Tính toán chỉ số Safe-to-spend trên Server (UC20)
  */
 router.post('/safe-to-spend', (req, res) => {
   try {
-    const { remainingBudget = 0, upcomingRecurring = 0, daysLeft = 1 } = req.body
+    const errors = validateSafeToSpendBody(req.body)
+    if (errors.length > 0) {
+      return res.status(400).json({
+        success: false,
+        errors,
+        message: errors.join(' ')
+      })
+    }
 
-    const budget = Math.max(0, Number(remainingBudget) || 0)
-    const recurring = Math.max(0, Number(upcomingRecurring) || 0)
-    const days = Math.max(1, Number(daysLeft) || 1)
-
-    const availablePool = Math.max(0, budget - recurring)
-    const safeToSpendToday = Math.round(availablePool / days)
+    const { remainingBudget, upcomingRecurring, daysLeft } = req.body
+    const availablePool = Math.max(0, remainingBudget - upcomingRecurring)
+    const safeToSpendToday = Math.round(availablePool / daysLeft)
 
     return res.status(200).json({
       success: true,
       data: {
         safeToSpendToday,
-        remainingBudget: budget,
-        upcomingRecurring: recurring,
-        daysLeft: days,
-        formula: 'max(0, (remainingBudget - upcomingRecurring) / daysLeft)'
+        remainingBudget,
+        upcomingRecurring,
+        daysLeft,
+        formula: SAFE_TO_SPEND_FORMULA
       }
     })
   } catch (error) {
@@ -37,7 +65,7 @@ router.post('/safe-to-spend', (req, res) => {
  * GET /api/finance/health
  * Kiểm tra trạng thái hoạt động của Backend
  */
-router.get('/health', (req, res) => {
+router.get('/health', (_req, res) => {
   res.status(200).json({
     status: 'online',
     service: 'SpendWise Backend REST API',

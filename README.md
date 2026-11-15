@@ -49,11 +49,11 @@ Sao chép file `.env.example` thành `.env`:
 ```bash
 cp .env.example .env
 ```
-Mở file `.env` và điền cấu hình Supabase do Leader cung cấp:
+Mở file `.env` và điền cấu hình Supabase + địa chỉ Backend do Leader cung cấp (tuyệt đối **không** đặt `VITE_GEMINI_API_KEY` ở `.env` phía Frontend; khóa `GEMINI_API_KEY` được cấu hình riêng ở `server/.env`):
 ```env
 VITE_SUPABASE_URL=https://ndeohlqneywsducsyqsb.supabase.co
 VITE_SUPABASE_ANON_KEY=sb_publishable_...
-VITE_GEMINI_API_KEY=your_gemini_api_key_here
+VITE_API_BASE_URL=http://localhost:5000
 ```
 
 ### 3. Chạy ứng dụng ở môi trường phát triển

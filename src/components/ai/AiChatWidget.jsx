@@ -1,20 +1,54 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Sparkles, Send, X, Bot, User, RefreshCw, AlertCircle } from 'lucide-react'
+import { Sparkles, Send, X, Bot, User, RefreshCw } from 'lucide-react'
 import { askGeminiAssistant, QUICK_REPLY_CHIPS } from '@/services/aiAssistantService'
+
+/**
+ * Render đoạn text có đánh dấu in đậm **...** và in nghiêng *...* an toàn bằng React elements.
+ */
+function renderFormattedMessage(text = '') {
+  const lines = String(text).split('\n')
+  return lines.map((line, lineIdx) => {
+    const tokens = line.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/g)
+    return (
+      <React.Fragment key={`line-${lineIdx}`}>
+        {tokens.map((token, tokenIdx) => {
+          if (token.startsWith('**') && token.endsWith('**') && token.length > 4) {
+            return <strong key={`tok-${lineIdx}-${tokenIdx}`} className="font-semibold">{token.slice(2, -2)}</strong>
+          }
+          if (token.startsWith('*') && token.endsWith('*') && token.length > 2) {
+            return <em key={`tok-${lineIdx}-${tokenIdx}`} className="italic opacity-90">{token.slice(1, -1)}</em>
+          }
+          return <React.Fragment key={`tok-${lineIdx}-${tokenIdx}`}>{token}</React.Fragment>
+        })}
+        {lineIdx < lines.length - 1 && <br />}
+      </React.Fragment>
+    )
+  })
+}
+
+function createChatMessage(sender, text, isError = false) {
+  return {
+    id: `${sender}-${Date.now()}`,
+    sender,
+    text,
+    timestamp: new Date(),
+    isError
+  }
+}
+
+const INITIAL_WELCOME_MESSAGE = {
+  id: 'welcome',
+  sender: 'bot',
+  text: 'Xin chào! Tôi là Trợ lý AI SpendWise. Tôi có thể giúp bạn tra cứu chi tiêu, phân tích ngân sách hoặc tư vấn số tiền bạn có thể an toàn tiêu hôm nay.',
+  timestamp: null
+}
 
 /**
  * Component Khung chat Trợ lý AI Gemini với 4 nút gợi ý nhanh (Quick Reply Chips)
  * Phụ trách: Leader (Phan Thanh Tùng) - Nhóm chức năng AIBOT (UC21)
  */
 export const AiChatWidget = ({ isOpen, onClose }) => {
-  const [messages, setMessages] = useState([
-    {
-      id: 'welcome',
-      sender: 'bot',
-      text: 'Xin chào! Tôi là Trợ lý AI SpendWise. Tôi có thể giúp bạn tra cứu chi tiêu, phân tích ngân sách hoặc tư vấn số tiền bạn có thể an toàn tiêu hôm nay.',
-      timestamp: new Date()
-    }
-  ])
+  const [messages, setMessages] = useState([INITIAL_WELCOME_MESSAGE])
   const [inputValue, setInputValue] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const messagesEndRef = useRef(null)
@@ -29,18 +63,24 @@ export const AiChatWidget = ({ isOpen, onClose }) => {
     }
   }, [messages, isOpen])
 
+  useEffect(() => {
+    if (!isOpen) return undefined
+    const handleKeyUp = (event) => {
+      if (event.key === 'Escape' && !isLoading) {
+        onClose?.()
+      }
+    }
+    window.addEventListener('keydown', handleKeyUp)
+    return () => window.removeEventListener('keydown', handleKeyUp)
+  }, [isOpen, isLoading, onClose])
+
   if (!isOpen) return null
 
   const handleSend = async (textToSend) => {
     const prompt = (textToSend || inputValue).trim()
     if (!prompt || isLoading) return
 
-    const userMessage = {
-      id: `user-${Date.now()}`,
-      sender: 'user',
-      text: prompt,
-      timestamp: new Date()
-    }
+    const userMessage = createChatMessage('user', prompt)
 
     setMessages((prev) => [...prev, userMessage])
     setInputValue('')
@@ -48,24 +88,16 @@ export const AiChatWidget = ({ isOpen, onClose }) => {
 
     try {
       const { reply, error } = await askGeminiAssistant(prompt)
-      const botMessage = {
-        id: `bot-${Date.now()}`,
-        sender: 'bot',
-        text: reply || (error ? 'Đã xảy ra lỗi khi kết nối với Gemini AI.' : 'Không nhận được câu trả lời.'),
-        timestamp: new Date(),
-        isError: !!error
-      }
+      const botMessage = createChatMessage(
+        'bot',
+        reply || (error ? 'Đã xảy ra lỗi khi kết nối với Gemini AI.' : 'Không nhận được câu trả lời.'),
+        !!error
+      )
       setMessages((prev) => [...prev, botMessage])
-    } catch (err) {
+    } catch {
       setMessages((prev) => [
         ...prev,
-        {
-          id: `bot-${Date.now()}`,
-          sender: 'bot',
-          text: 'Xin lỗi, tôi gặp sự cố khi xử lý câu hỏi của bạn. Vui lòng thử lại sau.',
-          timestamp: new Date(),
-          isError: true
-        }
+        createChatMessage('bot', 'Xin lỗi, tôi gặp sự cố khi xử lý câu hỏi của bạn. Vui lòng thử lại sau.', true)
       ])
     } finally {
       setIsLoading(false)
@@ -79,12 +111,23 @@ export const AiChatWidget = ({ isOpen, onClose }) => {
     }
   }
 
+  const handleBackdropClick = (e) => {
+    if (e.target === e.currentTarget && !isLoading) {
+      onClose?.()
+    }
+  }
+
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/60 backdrop-blur-sm transition-all duration-300">
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="ai-chat-title"
+      onClick={handleBackdropClick}
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/60 backdrop-blur-sm transition-all duration-300"
+    >
       {/* Khung chat thiết kế Double-Bezel cao cấp */}
       <div className="w-full sm:max-w-xl h-[85vh] sm:h-[650px] bg-white rounded-t-[2rem] sm:rounded-[2rem] p-1.5 shadow-2xl ring-1 ring-black/5 flex flex-col overflow-hidden animate-in fade-in slide-in-from-bottom-6 duration-300">
         <div className="flex-1 bg-slate-50 rounded-t-[calc(2rem-0.375rem)] sm:rounded-[calc(2rem-0.375rem)] flex flex-col overflow-hidden border border-slate-200/60">
-          
           {/* Header */}
           <div className="px-5 py-3.5 bg-white border-b border-slate-100 flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -93,7 +136,9 @@ export const AiChatWidget = ({ isOpen, onClose }) => {
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h3 className="font-display font-bold text-slate-900 text-sm">Trợ lý AI Gemini</h3>
+                  <h3 id="ai-chat-title" className="font-display font-bold text-slate-900 text-sm">
+                    Trợ lý AI Gemini
+                  </h3>
                   <span className="px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-semibold text-[10px] tracking-wide border border-emerald-200/60">
                     Live Context
                   </span>
@@ -103,6 +148,7 @@ export const AiChatWidget = ({ isOpen, onClose }) => {
             </div>
 
             <button
+              type="button"
               onClick={onClose}
               className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition-colors"
               aria-label="Đóng khung chat"
@@ -114,9 +160,10 @@ export const AiChatWidget = ({ isOpen, onClose }) => {
           {/* Quick Reply Chips */}
           <div className="px-4 py-2 bg-slate-100/60 border-b border-slate-200/40 flex items-center gap-2 overflow-x-auto no-scrollbar">
             <span className="text-[10px] uppercase font-bold text-slate-400 whitespace-nowrap pl-1">Gợi ý:</span>
-            {QUICK_REPLY_CHIPS.map((chip, index) => (
+            {QUICK_REPLY_CHIPS.map((chip) => (
               <button
-                key={index}
+                key={chip}
+                type="button"
                 onClick={() => handleSend(chip)}
                 disabled={isLoading}
                 className="whitespace-nowrap px-3 py-1 rounded-full bg-white hover:bg-slate-900 hover:text-white text-slate-700 text-xs font-medium border border-slate-200 shadow-2xs transition-all duration-200 active:scale-95 disabled:opacity-50"
@@ -152,13 +199,15 @@ export const AiChatWidget = ({ isOpen, onClose }) => {
                       : 'bg-white text-slate-800 border border-slate-200/70 rounded-tl-none'
                   }`}
                 >
-                  <div className="whitespace-pre-wrap">{msg.text}</div>
+                  <div className="whitespace-pre-wrap">{renderFormattedMessage(msg.text)}</div>
                   <div
                     className={`mt-1 text-[9px] ${
                       msg.sender === 'user' ? 'text-slate-400 text-right' : 'text-slate-400'
                     }`}
                   >
-                    {new Date(msg.timestamp).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                    {msg.timestamp
+                      ? new Date(msg.timestamp).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+                      : 'Sẵn sàng'}
                   </div>
                 </div>
               </div>
@@ -191,6 +240,7 @@ export const AiChatWidget = ({ isOpen, onClose }) => {
             />
 
             <button
+              type="button"
               onClick={() => handleSend()}
               disabled={!inputValue.trim() || isLoading}
               className="w-10 h-10 rounded-full bg-slate-900 hover:bg-slate-800 disabled:bg-slate-300 text-white flex items-center justify-center shadow-sm transition-all duration-200 active:scale-95 shrink-0"
@@ -199,7 +249,6 @@ export const AiChatWidget = ({ isOpen, onClose }) => {
               <Send className="w-4 h-4" />
             </button>
           </div>
-
         </div>
       </div>
     </div>
