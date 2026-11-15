@@ -72,11 +72,11 @@ Mở trình duyệt tại `http://localhost:5173/login`:
    git pull origin develop
    git checkout -b <tên-nhánh-của-bạn>
    ```
-2. **Quy ước đặt tên nhánh:**
-   * **TV1 (Trương Bích Vân):** `feature/auth-goal-tv1` hoặc `feature/vietqr-tv1`
-   * **TV2 (Hồ Nguyên Văn):** `feature/dashboard-reports-tv2` hoặc `feature/budget-tv2`
-   * **TV3 (Lê Hoài Quốc):** `feature/smart-features-tv3` hoặc `feature/recurring-tv3`
-   * **Leader (Phan Thanh Tùng):** `feature/ai-assistant-lead` hoặc `feature/core-data-lead`
+2. **Quy ước đặt tên nhánh (Thống nhất với `docs/git/WORKFLOW.md` & `README.md`):**
+   * **Leader (Phan Thanh Tùng):** `feature/security-infra-lead`, `feature/ai-assistant-lead`, `feature/core-data-lead`
+   * **TV1 (Trương Bích Vân):** `feature/auth-goal-tv1`, `feature/vietqr-tv1`
+   * **TV2 (Hồ Nguyên Văn):** `feature/dashboard-reports-tv2`, `feature/budget-tv2`
+   * **TV3 (Lê Hoài Quốc):** `feature/smart-features-tv3`, `feature/recurring-tv3`, `feature/core-data-lead`
 3. **Commit đúng chuẩn Conventional Commits:**
    * `feat: them modal chuyen tien noi bo giua 2 vi`
    * `fix: sua loi tinh toan thanh tien do ngan sach`
