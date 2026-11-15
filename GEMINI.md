@@ -67,10 +67,12 @@
   1. `Presentation Layer`: React 19 + Tailwind CSS + Lucide Icons + Chart.js.
   2. `Service Layer` (`src/services/`): Xử lý logic thuần túy độc lập với UI.
   3. `Data Layer`: Supabase (PostgreSQL 15 + Row Level Security trên 100% các bảng).
-- **Biến môi trường (`.env`):**
-  - `VITE_SUPABASE_URL`: URL kết nối Supabase (`https://ndeohlqneywsducsyqsb.supabase.co`).
-  - `VITE_SUPABASE_ANON_KEY`: Publishable Anon Key.
-  - `VITE_GEMINI_API_KEY`: API Key của Google Gemini.
+- **Biến môi trường:**
+  - `.env` (Frontend): `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_API_BASE_URL` (mặc định `http://localhost:5000`). **Tuyệt đối không** khai báo `VITE_GEMINI_API_KEY` ở `.env` Client.
+  - `server/.env` (Backend Express): `PORT`, `CORS_ORIGIN`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `GEMINI_API_KEY`, `GEMINI_MODEL`.
+- **Kiểm thử tự động & CI/CD:**
+  - Bộ test Vitest + Supertest (`npm test`, `vite.config.js` -> `test`) kiểm thử các Service thuần (`safeToSpendService`, `recurringService`, `vietqrService`) và Backend API (`server/__tests__/api.test.js`).
+  - GitHub Actions CI (`.github/workflows/ci.yml`): tự động kiểm tra chặn rò rỉ `VITE_GEMINI_API_KEY`, chạy `npm run lint`, `npm test`, `npm run build` và xác minh bundle `dist/` sạch cho mọi PR/push vào `main` và `develop`.
 
 ---
 
@@ -216,8 +218,8 @@ Mỗi phiên làm việc, Agent PHẢI tuân thủ 5 nguyên tắc hành động
 - **Quy chuẩn kiến trúc & logic bắt buộc khi code (đối chiếu từ 13 sơ đồ đã đọc):**
   - **3-Tier Hybrid Architecture + Deployment:**
     - *Tầng 1 (Client React 19 + PWA, Port 5173):* 13 màn hình UI, Double-Bezel & Chart.js, PWA (`sw.js`, `manifest.json`), LocalStorage (JWT + Dark/Light), 13 Client Services (`src/services/`) gọi Supabase PostgREST/Auth (RLS 100%, `auth.uid() = user_id`), gọi trực tiếp `https://img.vietqr.io` cho ảnh QR Napas247.
-    - *Tầng 2 (API Gateway Express `server/server.js`, Node.js v24, Port 5000):* Bảo mật `GEMINI_API_KEY` phía server với các endpoint `POST /api/ai/chat` (`aiRoutes.js`), `POST /api/quick-entry/parse` (`quickEntryRoutes.js`), `POST /api/finance/safe-to-spend` (`financeRoutes.js`), `GET /health`.
-    - *Tầng 3 (Supabase PostgreSQL 15):* Triggers (`on_auth_user_created`/`handle_new_user`, `trg_transactions_unaccent`), Views (`v_monthly_summary`, `v_budget_progress`), RPC (`generate_due_recurring_transactions`, `sync_finance_notifications`).
+    - *Tầng 2 (API Gateway Express `server/app.js` + `server/server.js`, Node.js v24, Port 5000):* Bảo mật tuyệt đối `GEMINI_API_KEY` phía server (đã gỡ fallback SDK ở Client `src/lib/geminiClient.js`), tách `createApp()` để test bằng Supertest, giới hạn JSON `100kb`, security headers, CORS từ `CORS_ORIGIN`, Rate Limiter (`server/middleware/rateLimiter.js`), JWT Auth (`server/middleware/authMiddleware.js`), với các endpoint `POST /api/ai/chat` (`requireAuth` + `aiChatRateLimiter`), `POST /api/quick-entry/parse` (`optionalAuth`), `POST /api/finance/safe-to-spend` (`optionalAuth`), `GET /api/finance/health`.
+    - *Tầng 3 (Supabase PostgreSQL 15):* Triggers (`on_auth_user_created`/`handle_new_user` có `SET search_path = ''` & `ON CONFLICT DO NOTHING` + backfill user cũ, `trg_transactions_unaccent`), Views (`v_monthly_summary`, `v_budget_progress`), 4 RPCs atomic (`generate_due_recurring_transactions`, `deposit_to_goal`, `transfer_funds`, `sync_finance_notifications` phân biệt `budget_warning` vs `budget_exceeded`), file migration chuẩn `supabase/migrations/20261115_p0_rpc_and_schema_fixes.sql`.
   - **Ràng buộc ERD 8 bảng (`UUID`, 14 FKs, `NUMERIC(15,2)`):**
     - `profiles`: PK/FK `auth.users.id ON DELETE CASCADE`, `default_bank_bin`, `default_bank_account`.
     - `wallets`: `type` (`cash | bank | ewallet`), `balance` (`NUMERIC(15,2) DEFAULT 0`), `is_archived`.

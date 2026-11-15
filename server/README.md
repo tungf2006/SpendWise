@@ -8,8 +8,8 @@
 
 ## 1. MỤC TIÊU CỦA PHÂN HỆ BACKEND
 1. **Tách biệt hoàn toàn Kiến trúc BE & FE:** Đáp ứng 100% tiêu chí đồ án về phân định rõ ràng giữa Client (Giao diện) và Server (Nghiệp vụ & API).
-2. **Bảo mật API Key:** Xử lý và gọi Google Gemini API tại máy chủ Backend, giấu kín `VITE_GEMINI_API_KEY` không để lộ ra phía trình duyệt người dùng.
-3. **Cung cấp RESTful Endpoints:** Cho phép tính toán Safe-to-spend, bóc tách câu tự nhiên NLP và phục vụ mở rộng trong tương lai.
+2. **Bảo mật API Key:** Xử lý và gọi Google Gemini API tại máy chủ Backend, giấu kín `GEMINI_API_KEY` trong `server/.env` không để lộ ra phía trình duyệt người dùng.
+3. **Bảo vệ API Gateway:** Xác thực Supabase JWT (`Authorization: Bearer <token>`) cho endpoint nhạy cảm và áp dụng Rate Limiting chống lạm dụng.
 
 ---
 

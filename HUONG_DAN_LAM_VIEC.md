@@ -21,13 +21,14 @@ git pull origin develop
 npm install
 ```
 
-### Bước 3: Cấu hình biến môi trường `.env`
-Sao chép file `.env.example` thành file `.env` (nếu chưa có):
+### Bước 3: Cấu hình biến môi trường `.env` và `server/.env`
+Sao chép file `.env.example` thành file `.env` ở thư mục gốc (chỉ chứa cấu hình Frontend công khai, **không** chứa `GEMINI_API_KEY`):
 ```env
 VITE_SUPABASE_URL=https://ndeohlqneywsducsyqsb.supabase.co
 VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-VITE_GEMINI_API_KEY=AIzaSy...
+VITE_API_BASE_URL=http://localhost:5000
 ```
+*(Để dùng Trợ lý AI Gemini thật, sao chép `server/.env.example` thành `server/.env` và điền `GEMINI_API_KEY=AIzaSy...` ở phía Backend Server).*
 
 ### Bước 4: Chạy thử nghiệm môi trường phát triển (Cả FE và BE)
 * **Khởi chạy Frontend (Giao diện React 19):**

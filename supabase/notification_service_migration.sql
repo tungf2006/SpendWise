@@ -56,11 +56,13 @@ v_user_id uuid := (SELECT auth.uid());
   v_rule record;
   v_percent numeric;
   v_threshold integer;
+  v_noti_type text;
   v_title text;
   v_message text;
   v_event_key text;
   v_rows integer;
   v_budgets_created integer := 0;
+  v_exceeded_created integer := 0;
   v_recurring_created integer := 0;
 BEGIN
   IF v_user_id IS NULL THEN
@@ -94,9 +96,11 @@ GROUP BY b.id, b.amount_limit, c.name
 
 IF v_percent >= 100 THEN
       v_threshold := 100;
+      v_noti_type := 'budget_exceeded';
       v_title := 'Ngân sách đã đạt hoặc vượt hạn mức';
     ELSIF v_percent >= 80 THEN
       v_threshold := 80;
+      v_noti_type := 'budget_warning';
       v_title := 'Ngân sách sắp vượt hạn mức';
 ELSE
       CONTINUE;
@@ -114,10 +118,13 @@ END IF;
       v_budget.id, pg_catalog.to_char(v_month_begin, 'YYYY-MM'), v_threshold);
 
 INSERT INTO public.notifications (user_id, title, message, type, event_key)
-VALUES (v_user_id, v_title, v_message, 'budget_warning', v_event_key)
+VALUES (v_user_id, v_title, v_message, v_noti_type, v_event_key)
     ON CONFLICT (user_id, event_key) DO NOTHING;
 GET DIAGNOSTICS v_rows = ROW_COUNT;
 v_budgets_created := v_budgets_created + v_rows;
+IF v_noti_type = 'budget_exceeded' THEN
+    v_exceeded_created := v_exceeded_created + v_rows;
+END IF;
 END LOOP;
 
   -- 2. Nhắc các khoản đang hoạt động, hạn từ hôm nay đến N ngày tới.
@@ -147,6 +154,7 @@ END LOOP;
 
 RETURN pg_catalog.jsonb_build_object(
         'budget_warning', v_budgets_created,
+        'budget_exceeded', v_exceeded_created,
         'recurring_due', v_recurring_created
        );
 END;
