@@ -1,8 +1,88 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import request from 'supertest'
+import http from 'node:http'
 import { createApp } from '../app.js'
 import { resetRateLimiters } from '../middleware/rateLimiter.js'
 import { clearAuthCache } from '../middleware/authMiddleware.js'
+
+function request(app) {
+  return {
+    get: (url) => makeRequest(app, 'GET', url),
+    post: (url) => makeRequest(app, 'POST', url)
+  }
+}
+
+function makeRequest(app, method, url) {
+  const headers = {}
+  let bodyData = null
+  const chain = {
+    set(key, val) {
+      headers[key.toLowerCase()] = val
+      return chain
+    },
+    send(data) {
+      bodyData = data
+      return chain
+    },
+    then(resolve, reject) {
+      return execute().then(resolve, reject)
+    },
+    catch(reject) {
+      return execute().catch(reject)
+    }
+  }
+
+  async function execute() {
+    const pipe = '\\\\.\\pipe\\sp-test-' + Math.random().toString(36).slice(2)
+    const server = http.createServer(app)
+    await new Promise((res, rej) => {
+      server.listen(pipe, res).on('error', rej)
+    })
+
+    try {
+      let payload = ''
+      if (typeof bodyData === 'string') {
+        payload = bodyData
+        if (!headers['content-type']) headers['content-type'] = 'application/json'
+      } else if (bodyData && typeof bodyData === 'object') {
+        payload = JSON.stringify(bodyData)
+        if (!headers['content-type']) headers['content-type'] = 'application/json'
+      }
+      if (payload) {
+        headers['content-length'] = Buffer.byteLength(payload)
+      }
+
+      return await new Promise((res, rej) => {
+        const req = http.request({
+          socketPath: pipe,
+          path: url,
+          method,
+          headers
+        }, response => {
+          let raw = ''
+          response.on('data', chunk => { raw += chunk })
+          response.on('end', () => {
+            let parsedBody = raw
+            try {
+              parsedBody = JSON.parse(raw)
+            } catch {}
+            res({
+              status: response.statusCode,
+              body: parsedBody,
+              headers: response.headers
+            })
+          })
+        })
+        req.on('error', rej)
+        if (payload) req.write(payload)
+        req.end()
+      })
+    } finally {
+      await new Promise(r => server.close(r))
+    }
+  }
+
+  return chain
+}
 
 function createFakeJwt(payloadOverrides = {}) {
   const encode = (obj) => Buffer.from(JSON.stringify(obj)).toString('base64url')

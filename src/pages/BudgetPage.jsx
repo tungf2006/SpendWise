@@ -4,8 +4,7 @@ import { formatCurrency } from '@/utils/formatCurrency'
 import { getBudgetProgress, setBudget, updateBudget, deleteBudget } from '@/services/budgetService'
 import { getCategories } from '@/services/categoryService'
 import { 
-  PieChart, 
-  Plus, 
+    Plus, 
   AlertTriangle, 
   CheckCircle2, 
   XCircle, 

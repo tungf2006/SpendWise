@@ -93,36 +93,36 @@ async function getUpcomingRecurring(userId, todayDate, endOfMonthDate) {
   }, 0)
 }
 
-/** Gửi dữ liệu ngân sách lên REST API để tính Safe-to-spend. */
+/** Gửi dữ liệu ngân sách lên REST API để tính Safe-to-spend (có fallback thuần túy). */
 async function requestSafeToSpend({ remainingBudget, upcomingRecurring, daysLeft }) {
   const baseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000')
     .replace(/\/+$/, '')
 
-  const { data: sessionData } = await supabase.auth.getSession()
-  const accessToken = sessionData?.session?.access_token
-  const headers = { 'Content-Type': 'application/json' }
-  if (accessToken) {
-    headers.Authorization = `Bearer ${accessToken}`
-  }
-
-  const response = await fetch(`${baseUrl}/api/finance/safe-to-spend`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({ remainingBudget, upcomingRecurring, daysLeft }),
-  })
-
-  let result
   try {
-    result = await response.json()
-  } catch {
-    throw new Error('Phản hồi của API Safe-to-spend không phải JSON hợp lệ.')
+    const { data: sessionData } = await supabase.auth.getSession()
+    const accessToken = sessionData?.session?.access_token
+    const headers = { 'Content-Type': 'application/json' }
+    if (accessToken) {
+      headers.Authorization = `Bearer ${accessToken}`
+    }
+
+    const response = await fetch(`${baseUrl}/api/finance/safe-to-spend`, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ remainingBudget, upcomingRecurring, daysLeft }),
+    })
+
+    if (response.ok) {
+      const result = await response.json()
+      if (result?.success && result?.data) {
+        return result.data
+      }
+    }
+  } catch (netErr) {
+    console.warn('[SafeToSpend] API backend offline, sử dụng giải thuật nội bộ SpendWise:', netErr?.message)
   }
 
-  if (!response.ok || result?.success !== true || !result?.data) {
-    throw new Error(result?.errors?.join(' ') || result?.message || 'Lỗi khi gọi API Safe-to-spend.')
-  }
-
-  return result.data
+  return buildSafeToSpendData({ remainingBudget, upcomingRecurring, daysLeft })
 }
 
 /**

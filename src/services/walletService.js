@@ -38,15 +38,24 @@ export async function createWallet(walletData) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) throw new Error('Người dùng chưa đăng nhập')
 
+    const trimmedName = (walletData?.name || '').trim()
+    if (!trimmedName) {
+      throw new Error('Tên ví không được để trống')
+    }
+
+    const validTypes = ['cash', 'bank', 'ewallet']
+    const walletType = validTypes.includes(walletData?.type) ? walletData.type : 'cash'
+    const initialBalance = Number(walletData?.balance) || 0
+
     const { data, error } = await supabase
       .from('wallets')
       .insert({
         user_id: user.id,
-        name: walletData.name,
-        type: walletData.type,
-        balance: walletData.balance || 0,
-        icon: walletData.icon || 'wallet',
-        color: walletData.color || '#3B82F6',
+        name: trimmedName,
+        type: walletType,
+        balance: initialBalance,
+        icon: walletData?.icon || 'wallet',
+        color: walletData?.color || '#3B82F6',
         is_archived: false
       })
       .select()
@@ -66,9 +75,27 @@ export async function createWallet(walletData) {
  */
 export async function updateWallet(walletId, updates) {
   try {
+    if (!walletId) {
+      throw new Error('Thiếu ID ví cần cập nhật')
+    }
+
+    const formattedUpdates = { ...updates }
+
+    if ('name' in updates) {
+      const trimmedName = (updates.name || '').trim()
+      if (!trimmedName) {
+        throw new Error('Tên ví không được để trống')
+      }
+      formattedUpdates.name = trimmedName
+    }
+
+    if ('balance' in updates && updates.balance !== undefined && updates.balance !== null) {
+      formattedUpdates.balance = Number(updates.balance) || 0
+    }
+
     const { data, error } = await supabase
       .from('wallets')
-      .update(updates)
+      .update(formattedUpdates)
       .eq('id', walletId)
       .select()
       .single()
@@ -108,23 +135,56 @@ export async function deleteWallet(walletId) {
 
 /**
  * Chuyển tiền nội bộ giữa 2 ví (UC09)
- * Trừ tiền ví nguồn, cộng tiền ví đích và ghi 1 bản ghi giao dịch 'transfer'
+ * Sử dụng RPC atomic transfer_funds trên PostgreSQL để chống race condition TOCTOU
  * @param {{ fromWalletId: string, toWalletId: string, amount: number, note?: string, date?: string }} transferData 
  * @returns {Promise<{ data: any, error: any }>}
  */
 export async function transferFunds({ fromWalletId, toWalletId, amount, note = '', date = null }) {
   try {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Người dùng chưa đăng nhập')
-
+    const numAmount = Number(amount)
+    if (!fromWalletId || !toWalletId) {
+      throw new Error('Thiếu ví nguồn hoặc ví đích')
+    }
     if (fromWalletId === toWalletId) {
       throw new Error('Ví nguồn và ví đích không được trùng nhau')
     }
-    if (amount <= 0) {
+    if (isNaN(numAmount) || numAmount <= 0) {
       throw new Error('Số tiền chuyển phải lớn hơn 0')
     }
 
-    // 1. Lấy thông tin 2 ví để kiểm tra số dư
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Người dùng chưa đăng nhập')
+
+    // 1. Thử gọi RPC atomic transfer_funds
+    const { data: rpcData, error: rpcError } = await supabase.rpc('transfer_funds', {
+      p_from_wallet_id: fromWalletId,
+      p_to_wallet_id: toWalletId,
+      p_amount: numAmount,
+      p_note: note || '',
+      p_date: date || null
+    })
+
+    if (!rpcError && rpcData) {
+      return {
+        data: {
+          transactionId: rpcData.transactionId || rpcData.transaction_id,
+          fromWalletBalance: rpcData.fromWalletBalance !== undefined ? rpcData.fromWalletBalance : rpcData.from_wallet_balance,
+          toWalletBalance: rpcData.toWalletBalance !== undefined ? rpcData.toWalletBalance : rpcData.to_wallet_balance,
+          amount: rpcData.amount || numAmount,
+          transactionDate: rpcData.transactionDate || rpcData.transaction_date,
+          note: rpcData.note || note
+        },
+        error: null
+      }
+    }
+
+    // Nếu RPC không tồn tại (PGRST202 hoặc 42883), thực hiện fallback an toàn ở Client
+    const isRpcMissing = rpcError && (rpcError.code === 'PGRST202' || rpcError.code === '42883')
+    if (!isRpcMissing && rpcError) {
+      throw rpcError
+    }
+
+    // --- CLIENT FALLBACK LOGIC ---
     const { data: fromWallet, error: fromErr } = await supabase
       .from('wallets')
       .select('*')
@@ -139,27 +199,24 @@ export async function transferFunds({ fromWalletId, toWalletId, amount, note = '
       .single()
     if (toErr) throw toErr
 
-    if (Number(fromWallet.balance) < Number(amount)) {
+    if (Number(fromWallet.balance) < numAmount) {
       throw new Error('Số dư ví nguồn không đủ để thực hiện chuyển tiền')
     }
 
-    // 2. Cập nhật số dư ví nguồn
-    const newFromBalance = Number(fromWallet.balance) - Number(amount)
+    const newFromBalance = Number(fromWallet.balance) - numAmount
     const { error: updateFromErr } = await supabase
       .from('wallets')
       .update({ balance: newFromBalance })
       .eq('id', fromWalletId)
     if (updateFromErr) throw updateFromErr
 
-    // 3. Cập nhật số dư ví đích
-    const newToBalance = Number(toWallet.balance) + Number(amount)
+    const newToBalance = Number(toWallet.balance) + numAmount
     const { error: updateToErr } = await supabase
       .from('wallets')
       .update({ balance: newToBalance })
       .eq('id', toWalletId)
     if (updateToErr) throw updateToErr
 
-    // 4. Tạo bản ghi giao dịch chuyển khoản nội bộ
     const txnDate = date || new Date().toISOString().split('T')[0]
     const transferNote = note || `Chuyển từ ${fromWallet.name} sang ${toWallet.name}`
 
@@ -171,7 +228,7 @@ export async function transferFunds({ fromWalletId, toWalletId, amount, note = '
         to_wallet_id: toWalletId,
         category_id: null,
         type: 'transfer',
-        amount: Number(amount),
+        amount: numAmount,
         transaction_date: txnDate,
         note: transferNote
       })
@@ -182,9 +239,12 @@ export async function transferFunds({ fromWalletId, toWalletId, amount, note = '
 
     return {
       data: {
-        transaction,
+        transactionId: transaction?.id,
         fromWalletBalance: newFromBalance,
-        toWalletBalance: newToBalance
+        toWalletBalance: newToBalance,
+        amount: numAmount,
+        transactionDate: txnDate,
+        note: transferNote
       },
       error: null
     }

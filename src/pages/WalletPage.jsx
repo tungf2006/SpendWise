@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react'
 import { PageHeader } from '@/components/common/PageHeader'
+import { Toast } from '@/components/common/Toast'
+import { ConfirmDialog } from '@/components/common/ConfirmDialog'
 import { formatCurrency } from '@/utils/formatCurrency'
-import { getWallets, createWallet, transferFunds, archiveWallet } from '@/services/walletService'
+import { getWallets, createWallet, updateWallet, transferFunds, archiveWallet } from '@/services/walletService'
 import { 
   Wallet, 
   Plus, 
@@ -9,9 +11,9 @@ import {
   Smartphone, 
   CreditCard, 
   Archive, 
+  Pencil,
   X, 
   Loader2,
-  CheckCircle2,
   TrendingUp
 } from 'lucide-react'
 
@@ -25,14 +27,29 @@ export const WalletPage = () => {
 
   // Modals state
   const [showAddModal, setShowAddModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
   const [showTransferModal, setShowTransferModal] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Archive dialog state
+  const [archiveTargetId, setArchiveTargetId] = useState(null)
+  const [isArchiving, setIsArchiving] = useState(false)
+
+  // Toast state
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' })
 
   // Add form
   const [name, setName] = useState('')
   const [type, setType] = useState('cash')
   const [balance, setBalance] = useState('')
   const [color, setColor] = useState('#10B981')
+
+  // Edit form
+  const [editingWallet, setEditingWallet] = useState(null)
+  const [editName, setEditName] = useState('')
+  const [editType, setEditType] = useState('cash')
+  const [editBalance, setEditBalance] = useState('')
+  const [editColor, setEditColor] = useState('#10B981')
 
   // Transfer form
   const [fromWalletId, setFromWalletId] = useState('')
@@ -51,6 +68,7 @@ export const WalletPage = () => {
       }
     } catch (err) {
       console.error('Lỗi khi tải danh sách ví:', err)
+      setToast({ show: true, message: 'Lỗi khi tải danh sách ví', type: 'error' })
     } finally {
       setLoading(false)
     }
@@ -62,12 +80,15 @@ export const WalletPage = () => {
 
   const handleCreateWallet = async (e) => {
     e.preventDefault()
-    if (!name.trim()) return
+    if (!name.trim()) {
+      setToast({ show: true, message: 'Tên ví không được để trống', type: 'warning' })
+      return
+    }
 
     setIsSubmitting(true)
     try {
       const { error } = await createWallet({
-        name,
+        name: name.trim(),
         type,
         balance: Number(balance) || 0,
         color
@@ -79,8 +100,48 @@ export const WalletPage = () => {
       setName('')
       setBalance('')
       await fetchWalletsList()
+      setToast({ show: true, message: 'Tạo ví mới thành công!', type: 'success' })
     } catch (err) {
-      alert('Lỗi tạo ví: ' + err.message)
+      setToast({ show: true, message: 'Lỗi tạo ví: ' + err.message, type: 'error' })
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleOpenEditModal = (wallet) => {
+    setEditingWallet(wallet)
+    setEditName(wallet.name || '')
+    setEditType(wallet.type || 'cash')
+    setEditBalance(wallet.balance !== undefined ? String(wallet.balance) : '0')
+    setEditColor(wallet.color || '#3B82F6')
+    setShowEditModal(true)
+  }
+
+  const handleUpdateWallet = async (e) => {
+    e.preventDefault()
+    if (!editName.trim()) {
+      setToast({ show: true, message: 'Tên ví không được để trống', type: 'warning' })
+      return
+    }
+    if (!editingWallet) return
+
+    setIsSubmitting(true)
+    try {
+      const { error } = await updateWallet(editingWallet.id, {
+        name: editName.trim(),
+        type: editType,
+        balance: Number(editBalance) || 0,
+        color: editColor
+      })
+
+      if (error) throw error
+
+      setShowEditModal(false)
+      setEditingWallet(null)
+      await fetchWalletsList()
+      setToast({ show: true, message: 'Cập nhật ví thành công!', type: 'success' })
+    } catch (err) {
+      setToast({ show: true, message: 'Lỗi cập nhật ví: ' + err.message, type: 'error' })
     } finally {
       setIsSubmitting(false)
     }
@@ -89,12 +150,12 @@ export const WalletPage = () => {
   const handleTransfer = async (e) => {
     e.preventDefault()
     if (!fromWalletId || !toWalletId || !transferAmount || Number(transferAmount) <= 0) {
-      alert('Vui lòng chọn ví và nhập số tiền hợp lệ')
+      setToast({ show: true, message: 'Vui lòng chọn ví và nhập số tiền hợp lệ', type: 'warning' })
       return
     }
 
     if (fromWalletId === toWalletId) {
-      alert('Ví nguồn và ví đích không được trùng nhau')
+      setToast({ show: true, message: 'Ví nguồn và ví đích không được trùng nhau', type: 'warning' })
       return
     }
 
@@ -113,23 +174,27 @@ export const WalletPage = () => {
       setTransferAmount('')
       setTransferNote('')
       await fetchWalletsList()
-      alert('Chuyển tiền nội bộ thành công!')
+      setToast({ show: true, message: 'Chuyển tiền nội bộ thành công!', type: 'success' })
     } catch (err) {
-      alert('Lỗi chuyển tiền: ' + err.message)
+      setToast({ show: true, message: 'Lỗi chuyển tiền: ' + err.message, type: 'error' })
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  const handleArchive = async (walletId) => {
-    if (!window.confirm('Bạn có muốn ẩn ví này khỏi danh sách sử dụng?')) return
-
+  const handleConfirmArchive = async () => {
+    if (!archiveTargetId) return
+    setIsArchiving(true)
     try {
-      const { error } = await archiveWallet(walletId)
+      const { error } = await archiveWallet(archiveTargetId)
       if (error) throw error
       await fetchWalletsList()
+      setToast({ show: true, message: 'Đã ẩn ví thành công khỏi danh sách!', type: 'success' })
     } catch (err) {
-      alert('Lỗi khi ẩn ví: ' + err.message)
+      setToast({ show: true, message: 'Lỗi khi ẩn ví: ' + err.message, type: 'error' })
+    } finally {
+      setIsArchiving(false)
+      setArchiveTargetId(null)
     }
   }
 
@@ -224,14 +289,24 @@ export const WalletPage = () => {
                     </div>
                   </div>
 
-                  <button
-                    type="button"
-                    onClick={() => handleArchive(w.id)}
-                    className="w-7 h-7 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center transition-colors"
-                    title="Ẩn ví"
-                  >
-                    <Archive className="w-3.5 h-3.5" />
-                  </button>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => handleOpenEditModal(w)}
+                      className="w-7 h-7 rounded-full hover:bg-slate-100 text-slate-400 hover:text-brand-600 flex items-center justify-center transition-colors cursor-pointer"
+                      title="Sửa ví"
+                    >
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setArchiveTargetId(w.id)}
+                      className="w-7 h-7 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 flex items-center justify-center transition-colors cursor-pointer"
+                      title="Ẩn ví"
+                    >
+                      <Archive className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 </div>
 
                 <div className="mt-6 pt-4 border-t border-slate-100 flex items-baseline justify-between">
@@ -256,7 +331,7 @@ export const WalletPage = () => {
               <button
                 type="button"
                 onClick={() => setShowAddModal(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center"
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -317,7 +392,7 @@ export const WalletPage = () => {
                       key={c}
                       type="button"
                       onClick={() => setColor(c)}
-                      className={`w-7 h-7 rounded-full border-2 transition-transform ${
+                      className={`w-7 h-7 rounded-full border-2 transition-transform cursor-pointer ${
                         color === c ? 'scale-110 border-slate-900' : 'border-transparent'
                       }`}
                       style={{ backgroundColor: c }}
@@ -330,17 +405,123 @@ export const WalletPage = () => {
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold"
+                  className="px-4 py-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold cursor-pointer"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-5 py-2 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-soft-sm flex items-center gap-1.5"
+                  className="px-5 py-2 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-soft-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                 >
                   {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   <span>Tạo ví</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Wallet Modal (UC07) */}
+      {showEditModal && editingWallet && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+              <h3 className="font-display font-bold text-base text-slate-900">Chỉnh Sửa Ví</h3>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowEditModal(false)
+                  setEditingWallet(null)
+                }}
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateWallet} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Tên ví / Tài khoản
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  placeholder="VD: Vietcombank, Ví MoMo..."
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-full text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Loại ví
+                </label>
+                <select
+                  value={editType}
+                  onChange={(e) => setEditType(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-full text-xs text-slate-900 focus:outline-none"
+                >
+                  <option value="cash">Tiền mặt (Cash)</option>
+                  <option value="bank">Tài khoản Ngân hàng (Bank)</option>
+                  <option value="ewallet">Ví điện tử (MoMo, ZaloPay...)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Số dư hiện tại (VNĐ)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="1000"
+                  value={editBalance}
+                  onChange={(e) => setEditBalance(e.target.value)}
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-full text-xs text-slate-900 font-display font-bold"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Màu đại diện
+                </label>
+                <div className="flex items-center gap-2">
+                  {['#10B981', '#3B82F6', '#8B5CF6', '#EC4899', '#F59E0B', '#EF4444'].map((c) => (
+                    <button
+                      key={c}
+                      type="button"
+                      onClick={() => setEditColor(c)}
+                      className={`w-7 h-7 rounded-full border-2 transition-transform cursor-pointer ${
+                        editColor === c ? 'scale-110 border-slate-900' : 'border-transparent'
+                      }`}
+                      style={{ backgroundColor: c }}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div className="pt-3 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowEditModal(false)
+                    setEditingWallet(null)
+                  }}
+                  className="px-4 py-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold cursor-pointer"
+                >
+                  Hủy
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-5 py-2 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-soft-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                  <span>Lưu thay đổi</span>
                 </button>
               </div>
             </form>
@@ -357,7 +538,7 @@ export const WalletPage = () => {
               <button
                 type="button"
                 onClick={() => setShowTransferModal(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center"
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -429,14 +610,14 @@ export const WalletPage = () => {
                 <button
                   type="button"
                   onClick={() => setShowTransferModal(false)}
-                  className="px-4 py-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold"
+                  className="px-4 py-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold cursor-pointer"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-5 py-2 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-soft-sm flex items-center gap-1.5"
+                  className="px-5 py-2 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-soft-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                 >
                   {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   <span>Xác nhận chuyển</span>
@@ -447,6 +628,26 @@ export const WalletPage = () => {
         </div>
       )}
 
+      {/* Confirm Archive Dialog */}
+      <ConfirmDialog
+        isOpen={Boolean(archiveTargetId)}
+        title="Ẩn ví khỏi danh sách sử dụng"
+        message="Ví bị ẩn sẽ không xuất hiện trong các bộ chọn khi tạo giao dịch mới, nhưng các giao dịch lịch sử trước đây vẫn được giữ nguyên. Bạn có chắc chắn muốn ẩn ví này?"
+        confirmText="Ẩn ví"
+        cancelText="Giữ lại"
+        confirmVariant="warning"
+        isLoading={isArchiving}
+        onConfirm={handleConfirmArchive}
+        onCancel={() => setArchiveTargetId(null)}
+      />
+
+      {/* Toast Notification */}
+      <Toast
+        show={toast.show}
+        message={toast.message}
+        type={toast.type}
+        onClose={() => setToast((prev) => ({ ...prev, show: false }))}
+      />
     </div>
   )
 }

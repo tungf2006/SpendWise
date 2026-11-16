@@ -56,7 +56,7 @@ export function parseQuickEntry(input) {
     result.confidence.date = true
   } else {
     // Thử bắt định dạng dd/mm
-    const dateMatch = rawText.match(/\b(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{2,4}))?\b/)
+    const dateMatch = rawText.match(/\b(\d{1,2})[/-](\d{1,2})(?:[/-](\d{2,4}))?\b/)
     if (dateMatch) {
       const day = parseInt(dateMatch[1], 10)
       const month = parseInt(dateMatch[2], 10) - 1

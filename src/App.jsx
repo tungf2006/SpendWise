@@ -1,5 +1,5 @@
 import React from 'react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from '@/context/AuthContext'
 import { ProtectedRoute } from '@/components/common/ProtectedRoute'
 import { AppLayout } from '@/components/layout/AppLayout'
@@ -37,12 +37,16 @@ export function App() {
             }
           >
             <Route index element={<DashboardPage />} />
+            <Route path="dashboard" element={<Navigate to="/" replace />} />
             <Route path="transactions" element={<TransactionPage />} />
             <Route path="wallets" element={<WalletPage />} />
             <Route path="categories" element={<CategoryPage />} />
             <Route path="budgets" element={<BudgetPage />} />
+            <Route path="budget" element={<Navigate to="/budgets" replace />} />
             <Route path="reports" element={<ReportPage />} />
+            <Route path="report" element={<Navigate to="/reports" replace />} />
             <Route path="goals" element={<GoalPage />} />
+            <Route path="goal" element={<Navigate to="/goals" replace />} />
             <Route path="recurring" element={<RecurringPage />} />
             <Route path="bill-split" element={<BillSplitVietQR />} />
             <Route path="profile" element={<ProfilePage />} />

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { PageHeader } from '@/components/common/PageHeader'
 import { formatCurrency } from '@/utils/formatCurrency'
-import { getFinancialSummary, getCategoryExpenseBreakdown, getPeriodComparison, getIncomeExpenseTrend } from '@/services/reportService'
+import { getCategoryExpenseBreakdown, getPeriodComparison, getIncomeExpenseTrend } from '@/services/reportService'
 import { 
   Chart as ChartJS, 
   ArcElement, 
@@ -12,7 +12,7 @@ import {
   BarElement 
 } from 'chart.js'
 import { Doughnut, Bar } from 'react-chartjs-2'
-import { TrendingUp, TrendingDown, DollarSign, Calendar, ArrowUpRight, ArrowDownRight, Loader2 } from 'lucide-react'
+import { TrendingUp, TrendingDown, DollarSign, Calendar, Loader2 } from 'lucide-react'
 
 // Đăng ký các module cốt lõi của Chart.js
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement)

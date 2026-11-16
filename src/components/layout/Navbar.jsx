@@ -1,6 +1,6 @@
 import React from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { Sparkles, Bell, User as UserIcon } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { Sparkles } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 
 export const Navbar = ({
@@ -8,7 +8,6 @@ export const Navbar = ({
   onOpenAiChat = () => {}
 }) => {
   const { user, profile } = useAuth()
-  const navigate = useNavigate()
 
   const displayName = profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Phan Thanh Tùng'
   const initials = displayName
