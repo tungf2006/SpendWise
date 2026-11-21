@@ -16,7 +16,6 @@ import { Repeat, Plus, Pencil, Trash2, X, Loader2, Clock, CalendarClock } from '
 
 /** Trang quản lý Giao dịch định kỳ (RecurringRule) - UC24. */
 const FREQUENCY_LABELS = {
-  daily: 'Hằng ngày',
   weekly: 'Hằng tuần',
   monthly: 'Hằng tháng',
   yearly: 'Hằng năm'
@@ -206,6 +205,7 @@ export const RecurringPage = () => {
         ? 'Đã cập nhật Giao dịch định kỳ.'
         : 'Đã tạo Giao dịch định kỳ.')
       await loadRecurringData()
+      window.dispatchEvent(new Event('spendwise:finance-updated')) // SPENDWISE_UC24_UC25_P0_FIX:page
     } catch (error) {
       setFormError(getErrorMessage(error))
     } finally {
@@ -222,6 +222,7 @@ export const RecurringPage = () => {
       if (error) throw error
       setSuccessMessage(successText)
       await loadRecurringData()
+      window.dispatchEvent(new Event('spendwise:finance-updated'))
     } catch (error) {
       setPageError(getErrorMessage(error))
     } finally {
@@ -449,8 +450,7 @@ export const RecurringPage = () => {
                     onChange={(event) => changeField('frequency', event.target.value)} className={fieldClass}>
                     <option value="weekly">Hằng tuần</option>
                     <option value="monthly">Hằng tháng</option>
-                    <option value="daily">Hằng ngày (cần cập nhật schema)</option>
-                    {form.frequency === 'yearly' && <option value="yearly">Hằng năm (dữ liệu cũ)</option>}
+                    <option value="yearly">Hằng năm</option>
                   </select>
                 </div>
                 <div>
@@ -498,12 +498,6 @@ export const RecurringPage = () => {
                 <p className="rounded-xl bg-sky-50 px-3 py-2 text-xs text-sky-800">
                   Sau kỳ ngày {formatDate(form.next_due_date)}, ngày đến hạn kế tiếp dự kiến là{' '}
                   <strong>{formatDate(nextDuePreview)}</strong>.
-                </p>
-              )}
-              {form.frequency === 'daily' && (
-                <p className="rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800">
-                  Tần suất hằng ngày trong tài liệu Word chưa được CHECK của schema GitHub chấp nhận.
-                  Cần cập nhật ràng buộc ở Supabase trước khi lưu.
                 </p>
               )}
               {formError && <p role="alert" className="text-xs text-rose-700">{formError}</p>}

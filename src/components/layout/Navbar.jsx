@@ -1,6 +1,7 @@
 import React from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Sparkles, Bell, User as UserIcon } from 'lucide-react'
+import { Sparkles, User as UserIcon } from 'lucide-react'
+import { NotificationBell } from '@/components/notifications/NotificationBell' // SPENDWISE_UC24_UC25_P0_FIX:navbar
 import { useAuth } from '@/context/AuthContext'
 
 export const Navbar = ({
@@ -122,6 +123,7 @@ export const Navbar = ({
             </span>
           </button>
 
+          <NotificationBell />
           {/* User Profile Pill */}
           <Link
             to="/profile"

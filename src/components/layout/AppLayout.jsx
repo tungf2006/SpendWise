@@ -45,7 +45,8 @@ export const AppLayout = () => {
                 return
             }
 
-            if (data.generatedCount > 0) {
+            if (data?.generatedCount > 0) {
+                window.dispatchEvent(new Event('spendwise:finance-updated')) // SPENDWISE_UC24_UC25_P0_FIX:layout
                 console.log(
                     `Đã tạo ${data.generatedCount} giao dịch định kỳ`
                 )

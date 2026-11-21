@@ -3,9 +3,9 @@ import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js'
 import { Doughnut } from 'react-chartjs-2'
 import { Link } from 'react-router-dom'
 import { formatCurrency } from '@/utils/formatCurrency'
-import { parseQuickEntry } from '@/services/quickEntryParser'
+import { parseQuickEntry, resolveQuickWallet } from '@/services/quickEntryParser'
 import { calculateSafeToSpend } from '@/services/safeToSpendService'
-import { getWallets } from '@/services/walletService'
+import { getWallets, transferFunds } from '@/services/walletService'
 import { getTransactions, createTransaction } from '@/services/transactionService'
 import { getCategories } from '@/services/categoryService'
 import { getFinancialSummary, getCategoryExpenseBreakdown } from '@/services/reportService'
@@ -94,51 +94,74 @@ export const DashboardPage = () => {
 
   useEffect(() => {
     loadDashboardData()
+    // SPENDWISE_UC24_UC25_P0_FIX:dashboard – cập nhật Safe-to-spend khi finance thay đổi.
+    const onFinanceUpdated = () => { void loadDashboardData() }
+    window.addEventListener('spendwise:finance-updated', onFinanceUpdated)
+    return () => window.removeEventListener('spendwise:finance-updated', onFinanceUpdated)
   }, [])
+
+  // UC18/UC19: reparse on DB data change
+  useEffect(() => {
+    setParsedData(parseQuickEntry(quickInput, { categories, wallets }))
+  }, [categories, wallets])
 
   const handleQuickInputChange = (e) => {
     const val = e.target.value
     setQuickInput(val)
-    setParsedData(parseQuickEntry(val))
+    setParsedData(parseQuickEntry(val, { categories, wallets }))
   }
 
   const handleQuickSave = async () => {
-    if (!parsedData || !parsedData.amount) return
-
+    if (!parsedData?.amount) return
     setIsSavingQuick(true)
     try {
-      // Tìm wallet_id phù hợp từ tên ví đã parse hoặc lấy ví đầu tiên
-      const matchedWallet = wallets.find(w => 
-        w.name.toLowerCase().includes(parsedData.walletKeyword || '')
-      ) || wallets[0]
-
-      // Tìm category_id phù hợp từ tên category đã parse
-      const matchedCategory = categories.find(c => 
-        c.name.toLowerCase().includes(parsedData.categoryName?.toLowerCase() || '')
-      )
-
-      if (!matchedWallet) {
-        alert('Vui lòng tạo ít nhất 1 ví tiền trước khi lưu giao dịch.')
-        setIsSavingQuick(false)
-        return
+      let response
+      if (parsedData.type === 'transfer') {
+        if (!parsedData.walletKeyword || !parsedData.toWalletKeyword) {
+          throw new Error('Vui lòng nhập cả ví nguồn và ví đích (ví dụ: từ vcb sang momo).')
+        }
+        const fromWallet = resolveQuickWallet(wallets, parsedData.walletKeyword)
+        const toWallet = resolveQuickWallet(wallets, parsedData.toWalletKeyword)
+        if (!fromWallet || !toWallet) {
+          throw new Error('Không tìm thấy ví nguồn hoặc ví đích trong danh sách ví hiện có.')
+        }
+        if (fromWallet.id === toWallet.id) {
+          throw new Error('Ví nguồn và ví đích không được trùng nhau.')
+        }
+        response = await transferFunds({
+          fromWalletId: fromWallet.id,
+          toWalletId: toWallet.id,
+          amount: parsedData.amount,
+          date: parsedData.date,
+          note: parsedData.rawText
+        })
+      } else {
+        const matchedWallet = parsedData.walletKeyword
+          ? resolveQuickWallet(wallets, parsedData.walletKeyword)
+          : wallets[0]
+        if (!matchedWallet) {
+          throw new Error('Không tìm thấy ví đã nhập hoặc chưa có ví tiền để lưu giao dịch.')
+        }
+        const matchedCategory = parsedData.categoryName
+          ? categories.find(c => c.type === parsedData.type && c.name === parsedData.categoryName)
+          : null
+        if (parsedData.categoryName && !matchedCategory) {
+          throw new Error(`Không tìm thấy danh mục "${parsedData.categoryName}" trong cơ sở dữ liệu.`)
+        }
+        response = await createTransaction({
+          wallet_id: matchedWallet.id,
+          category_id: matchedCategory?.id || null,
+          type: parsedData.type,
+          amount: parsedData.amount,
+          transaction_date: parsedData.date,
+          note: parsedData.rawText
+        })
       }
-
-      const { error } = await createTransaction({
-        wallet_id: matchedWallet.id,
-        category_id: matchedCategory?.id || null,
-        type: parsedData.type || 'expense',
-        amount: parsedData.amount,
-        transaction_date: parsedData.date,
-        note: parsedData.rawText || quickInput
-      })
-
-      if (error) throw error
-
+      if (response.error) throw response.error
       setQuickSaveSuccess(true)
       setQuickInput('')
       setParsedData(null)
       await loadDashboardData()
-
       setTimeout(() => setQuickSaveSuccess(false), 3000)
     } catch (err) {
       alert('Không thể lưu giao dịch: ' + err.message)
@@ -318,7 +341,7 @@ export const DashboardPage = () => {
 
               {/* Loại giao dịch */}
               <span className="px-3 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200 font-medium">
-                Loại: {parsedData.type === 'income' ? 'Thu nhập' : 'Chi tiêu'}
+                Loại: {parsedData.type === 'transfer' ? 'Chuyển tiền' : parsedData.type === 'income' ? 'Thu nhập' : 'Chi tiêu'}
               </span>
 
               {/* Ngày */}
@@ -332,7 +355,7 @@ export const DashboardPage = () => {
                   ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' 
                   : 'bg-amber-50 text-amber-700 border border-amber-300'
               }`}>
-                Danh mục: {parsedData.categoryName || 'Mặc định (Chung)'}
+                Danh mục: {parsedData.type === 'transfer' ? 'Không áp dụng' : (parsedData.categoryName || 'Mặc định (Chung)')}
               </span>
 
               {/* Ví */}
@@ -341,7 +364,7 @@ export const DashboardPage = () => {
                   ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
                   : 'bg-slate-100 text-slate-600 border border-slate-200'
               }`}>
-                Ví: {parsedData.walletKeyword || 'Ví mặc định'}
+                Ví: {parsedData.type === 'transfer' ? `${parsedData.wallet || '?'} → ${parsedData.toWallet || '?'}` : (parsedData.wallet || 'Ví mặc định')}
               </span>
             </div>
           )}

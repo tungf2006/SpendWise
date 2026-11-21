@@ -1,156 +1,240 @@
+/** UC18/UC19 - frontend parser, self-contained. Keep parsing rules in sync with server/routes/quickEntryRoutes.js. */
 /**
- * SPENDWISE – BỘ PHÂN TÍCH CÂU TỰ NHIÊN (QUICK ENTRY PARSER)
- * Hiện thực thuật toán bóc tách Rule-based: Số tiền, Ngày, Ví, Loại, Danh mục.
+ * SpendWise Quick Entry parser (UC18/UC19).
+ * Inlined in the entrypoint so no shared/ or server/services/ directory is required.
+ * The fallback names and keywords mirror supabase/init_schema.sql on develop (2026-11-20).
  */
-import { removeVietnameseTones } from '@/utils/unaccent'
 
-export function parseQuickEntry(input) {
-  if (!input || typeof input !== 'string') return null
+const TIME_ZONE = 'Asia/Ho_Chi_Minh'
 
-  const rawText = input.trim()
-  const cleanText = removeVietnameseTones(rawText)
+// DB categories (including user-created ones) override these fallback keyword rules.
+const FALLBACK_CATEGORIES = [
+  { name: 'Ăn uống', type: 'expense', keywords: ['an', 'uong', 'com', 'pho', 'bun', 'cafe', 'ca phe', 'coffee', 'tra sua', 'nhau', 'bua sang', 'bua trua', 'bua toi', 'highlands', 'kfc', 'banh mi', 'lau', 'pizza'] },
+  { name: 'Di chuyển', type: 'expense', keywords: ['xang', 'do xang', 'grab', 'be', 'gojek', 'taxi', 'xe buyt', 'gui xe', 've xe', 'sua xe', 'di lai'] },
+  { name: 'Hóa đơn & Tiện ích', type: 'expense', keywords: ['tien nha', 'tien tro', 'thue nha', 'thue phong', 'tien phong', 'dien', 'nuoc', 'internet', 'wifi', '4g', '5g', 'rac', 'hoa don'] },
+  { name: 'Mua sắm', type: 'expense', keywords: ['shopee', 'lazada', 'tiktok', 'tiki', 'quan ao', 'giay dep', 'my pham', 'sieu thi', 'bach hoa xanh', 'winmart', 'tap hoa', 'mua sam', 'mua', 'ban phim'] },
+  { name: 'Giải trí & Học tập', type: 'expense', keywords: ['xem phim', 'cgv', 'cinema', 'netflix', 'spotify', 'sach', 'khoa hoc', 'hoc phi', 'game', 'du lich'] },
+  { name: 'Y tế & Sức khỏe', type: 'expense', keywords: ['thuoc', 'kham benh', 'benh vien', 'nha khoa', 'gym', 'the thao'] },
+  { name: 'Lương', type: 'income', keywords: ['luong', 'ung luong', 'salary'] },
+  { name: 'Thưởng & Thu nhập phụ', type: 'income', keywords: ['thuong', 'bonus', 'thu nhap phu', 'freelance', 'part time', 'ban do', 'lai tiet kiem', 'li xi', 'hoc bong'] },
+]
 
-  const result = {
-    originalText: rawText,
-    amount: null,
-    date: new Date().toISOString().split('T')[0], // Mặc định hôm nay
-    dateLabel: 'Hôm nay',
-    type: 'expense', // Mặc định chi tiêu
-    wallet: null,
-    category: null,
-    note: rawText,
-    confidence: {
-      amount: false,
-      date: false,
-      wallet: false,
-      category: false,
+const WALLET_ALIASES = [
+  { keyword: 'momo', label: 'Ví MoMo', aliases: ['momo', 'vi momo'] },
+  { keyword: 'zalopay', label: 'ZaloPay', aliases: ['zalopay', 'zalo pay'] },
+  { keyword: 'vietcombank', label: 'Vietcombank', aliases: ['vietcombank', 'vcb'] },
+  { keyword: 'techcombank', label: 'Techcombank', aliases: ['techcombank', 'tcb'] },
+  { keyword: 'mb', label: 'MB Bank', aliases: ['mb bank', 'mbbank', 'mb'] },
+  { keyword: 'tien mat', label: 'Tiền mặt', aliases: ['tien mat', 'cash'] },
+  { keyword: 'ngan hang', label: 'Ngân hàng', aliases: ['ngan hang', 'bank'] },
+]
+
+const INCOME_KEYWORDS = [
+  'luong', 'ung luong', 'salary', 'thuong', 'bonus', 'thu nhap', 'thu nhap phu',
+  'nhan tien', 'nhan duoc tien', 'duoc cho', 'ban do', 'ban duoc',
+  'lai tiet kiem', 'li xi', 'hoc bong', 'freelance',
+]
+
+export function normalizeQuickText(value) {
+  return String(value ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/đ/gi, 'd')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+/** Entire normalized word/phrase, not substring (e.g. `an` cannot match `ban`). */
+function phraseRegex(phrase) {
+  const words = normalizeQuickText(phrase).split(' ').filter(Boolean)
+  if (!words.length) return null
+  return new RegExp(`(?<![a-z0-9])${words.map(escapeRegExp).join('\\s+')}(?![a-z0-9])`, 'u')
+}
+
+function hasPhrase(haystack, phrase) {
+  const regex = phraseRegex(phrase)
+  return Boolean(regex && regex.test(haystack))
+}
+
+function localParts(now) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: TIME_ZONE, year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(now)
+  const get = (type) => Number(parts.find((part) => part.type === type).value)
+  return { year: get('year'), month: get('month'), day: get('day') }
+}
+
+function dateString(year, month, day) {
+  return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+}
+
+function addCalendarDays({ year, month, day }, offset) {
+  // Arithmetic on UTC *calendar components*, never conversion of local midnight to ISO.
+  const d = new Date(Date.UTC(year, month - 1, day + offset))
+  return dateString(d.getUTCFullYear(), d.getUTCMonth() + 1, d.getUTCDate())
+}
+
+function parseDate(raw, normalized, now) {
+  const today = localParts(now)
+  // Explicit dates take precedence over relative dates.
+  const match = raw.match(/(?<![\d/\-])([0-9]{1,2})[/-]([0-9]{1,2})(?:[/-]([0-9]{2}|[0-9]{4}))?(?![\d/\-])/u)
+  if (match) {
+    const day = Number(match[1]); const month = Number(match[2])
+    const year = match[3] ? (match[3].length === 2 ? 2000 + Number(match[3]) : Number(match[3])) : today.year
+    const maxDay = new Date(Date.UTC(year, month, 0)).getUTCDate()
+    if (!Number.isInteger(year) || year < 1 || month < 1 || month > 12 || day < 1 || day > maxDay) return null
+    return dateString(year, month, day)
+  }
+  if (hasPhrase(normalized, 'hom kia')) return addCalendarDays(today, -2)
+  if (hasPhrase(normalized, 'hom qua')) return addCalendarDays(today, -1)
+  return dateString(today.year, today.month, today.day)
+}
+
+function asAmount(n) {
+  return Number.isSafeInteger(n) && n > 0 ? n : null
+}
+
+function parseAmount(normalized) {
+  // 1tr5=1,500,000; 1tr25=1,250,000; 1tr250=1,250,000.
+  // Explicit `k` means thousands: 1tr25k=1,025,000. Do not consume date digits.
+  const million = normalized.match(/(?<![a-z0-9])([0-9]+(?:[.,][0-9]+)?)\s*(?:trieu|tr|m)(?:([0-9]{1,6})(k)?|[ \t]+([0-9]{1,3})k)?(?![a-z0-9])/u)
+  if (million) {
+    const major = Math.round(Number(million[1].replace(',', '.')) * 1_000_000)
+    let extra = 0
+    if (million[2]) {
+      extra = million[3] ? Number(million[2]) * 1_000 : Number(million[2]) * 10 ** (6 - million[2].length)
+    } else if (million[4]) {
+      extra = Number(million[4]) * 1_000
+    }
+    return asAmount(major + extra)
+  }
+  const thousand = normalized.match(/(?<![a-z0-9])([0-9]+(?:[.,][0-9]+)?)\s*(?:k|nghin|ngan)(?![a-z0-9])/u)
+  if (thousand) return asAmount(Math.round(Number(thousand[1].replace(',', '.')) * 1_000))
+
+  // Guard against 2026 in `15/11/2026` being interpreted as an amount.
+  const plain = normalized.match(/(?<![a-z0-9/.,-])([0-9]{1,3}(?:[.,][0-9]{3})+|[0-9]{4,12})(?![a-z0-9/.,-])/u)
+  if (plain) return asAmount(Number(plain[1].replace(/[.,]/g, '')))
+  return null
+}
+
+function walletCandidates(wallets) {
+  const fromDB = Array.isArray(wallets)
+    ? wallets.filter((w) => w && typeof w.name === 'string' && w.name.trim()).map((w) => ({
+        keyword: normalizeQuickText(w.name), label: w.name, aliases: [w.name],
+      }))
+    : []
+  return [...WALLET_ALIASES, ...fromDB]
+}
+
+function findWalletInText(normalized, wallets) {
+  const hits = []
+  for (const wallet of walletCandidates(wallets)) {
+    for (const phrase of wallet.aliases) {
+      const regex = phraseRegex(phrase)
+      const match = regex?.exec(normalized)
+      if (match) hits.push({ wallet, index: match.index, length: match[0].length })
     }
   }
+  // Earliest match wins; for ties, the longer/specific phrase wins.
+  hits.sort((a, b) => a.index - b.index || b.length - a.length)
+  return hits[0]?.wallet ?? null
+}
 
-  // 1. BÓC TÁCH LOẠI (INCOME vs EXPENSE)
-  const incomeKeywords = ['luong', 'thuong', 'nhan tien', 'thu nhap', 'duoc cho', 'ban duoc', 'tien ve']
-  for (const kw of incomeKeywords) {
-    if (cleanText.includes(kw)) {
-      result.type = 'income'
-      break
-    }
+/** Find a loaded Supabase wallet record by its canonical keyword or label. */
+export function resolveQuickWallet(wallets, keywordOrLabel) {
+  if (!Array.isArray(wallets) || !keywordOrLabel) return null
+  const search = normalizeQuickText(keywordOrLabel)
+  const canonical = WALLET_ALIASES.find((w) => w.keyword === search ||
+    normalizeQuickText(w.label) === search || w.aliases.some((alias) => normalizeQuickText(alias) === search))
+  const list = wallets.filter((w) => w && typeof w.name === 'string')
+  const exact = list.find((w) => normalizeQuickText(w.name) === search)
+  if (exact) return exact
+  if (canonical) {
+    return list.find((w) => canonical.aliases.some((alias) => hasPhrase(normalizeQuickText(w.name), alias))) ?? null
   }
+  return null
+}
 
-  // 2. BÓC TÁCH NGÀY (TRANSACTION_DATE)
-  const today = new Date()
-  if (cleanText.includes('hom kia')) {
-    const d = new Date(today)
-    d.setDate(today.getDate() - 2)
-    result.date = d.toISOString().split('T')[0]
-    result.dateLabel = 'Hôm kia'
-    result.confidence.date = true
-  } else if (cleanText.includes('hom qua')) {
-    const d = new Date(today)
-    d.setDate(today.getDate() - 1)
-    result.date = d.toISOString().split('T')[0]
-    result.dateLabel = 'Hôm qua'
-    result.confidence.date = true
-  } else if (cleanText.includes('hom nay')) {
-    result.date = today.toISOString().split('T')[0]
-    result.dateLabel = 'Hôm nay'
-    result.confidence.date = true
-  } else {
-    // Thử bắt định dạng dd/mm
-    const dateMatch = rawText.match(/\b(\d{1,2})[\/\-](\d{1,2})(?:[\/\-](\d{2,4}))?\b/)
-    if (dateMatch) {
-      const day = parseInt(dateMatch[1], 10)
-      const month = parseInt(dateMatch[2], 10) - 1
-      const year = dateMatch[3] ? parseInt(dateMatch[3], 10) : today.getFullYear()
-      const d = new Date(year, month, day)
-      if (!isNaN(d.getTime())) {
-        result.date = d.toISOString().split('T')[0]
-        result.dateLabel = `${dateMatch[1]}/${dateMatch[2]}`
-        result.confidence.date = true
+function matchCategory(normalized, type, categories) {
+  if (type === 'transfer') return null
+  const db = Array.isArray(categories) ? categories.filter((cat) => cat && cat.type === type && typeof cat.name === 'string') : []
+  const withKeywords = (cats) => {
+    const matches = []
+    for (const cat of cats) {
+      for (const keyword of (Array.isArray(cat.keywords) ? cat.keywords : [])) {
+        if (typeof keyword === 'string' && hasPhrase(normalized, keyword)) {
+          matches.push({ name: cat.name, length: normalizeQuickText(keyword).length })
+        }
       }
     }
+    matches.sort((a, b) => b.length - a.length)
+    return matches[0]?.name ?? null
   }
+  // Dynamic DB keywords first, then schema-derived fallback synonyms.
+  const dbMatch = withKeywords(db)
+  if (dbMatch) return dbMatch
+  const fallbackName = withKeywords(FALLBACK_CATEGORIES.filter((cat) => cat.type === type))
+  if (!fallbackName) return null
+  if (!Array.isArray(categories)) return fallbackName
+  // Never emit a category name that is absent from the provided DB list.
+  const nameAliases = {
+    'Hóa đơn & Tiện ích': ['Hóa đơn & Nhà cửa'],
+    'Giải trí & Học tập': ['Giải trí & Du lịch'],
+  }
+  const possibleNames = [fallbackName, ...(nameAliases[fallbackName] ?? [])]
+  return db.find((cat) => possibleNames.some((name) => normalizeQuickText(cat.name) === normalizeQuickText(name)))?.name ?? null
+}
 
-  // 3. BÓC TÁCH VÍ (WALLET)
-  const walletRules = [
-    { key: 'momo', label: 'Ví MoMo' },
-    { key: 'zalopay', label: 'ZaloPay' },
-    { key: 'vcb', label: 'Vietcombank' },
-    { key: 'vietcombank', label: 'Vietcombank' },
-    { key: 'techcombank', label: 'Techcombank' },
-    { key: 'tcb', label: 'Techcombank' },
-    { key: 'mb', label: 'MB Bank' },
-    { key: 'tien mat', label: 'Tiền mặt' },
-    { key: 'cash', label: 'Tiền mặt' },
-  ]
-  for (const w of walletRules) {
-    if (cleanText.includes(w.key)) {
-      result.wallet = w.label
-      result.confidence.wallet = true
-      break
+/**
+ * @param {string} input Vietnamese natural language text
+ * @param {{categories?: object[], wallets?: object[], now?: Date}} options
+ * @returns {object|null} Null for blank text or invalid explicit calendar date.
+ */
+export function parseQuickEntry(input, { categories, wallets, now = new Date() } = {}) {
+  if (typeof input !== 'string' || !input.trim()) return null
+  const originalText = input.trim()
+  const normalized = normalizeQuickText(originalText)
+  const date = parseDate(originalText, normalized, now)
+  if (!date) return null // Reject e.g. 31/02 rather than silently moving to March.
+
+  const isTransfer = hasPhrase(normalized, 'chuyen') && hasPhrase(normalized, 'tu') && hasPhrase(normalized, 'sang')
+  const hasIncomeHint = INCOME_KEYWORDS.some((kw) => hasPhrase(normalized, kw))
+  // Fallback to DB income keywords only when a specific income category matches.
+  const dbIncome = matchCategory(normalized, 'income', categories)
+  const type = isTransfer ? 'transfer' : (hasIncomeHint || dbIncome ? 'income' : 'expense')
+
+  let source = null
+  let target = null
+  if (type === 'transfer') {
+    // A source must appear after "từ", a destination after "sang".
+    const transferParts = /(?<![a-z0-9])tu\s+(.+?)\s+sang\s+(.+?)(?=$|[,.!?])/u.exec(normalized)
+    if (transferParts) {
+      source = findWalletInText(transferParts[1], wallets)
+      target = findWalletInText(transferParts[2], wallets)
     }
+  } else {
+    source = findWalletInText(normalized, wallets)
   }
+  const categoryName = matchCategory(normalized, type, categories)
 
-  // 4. BÓC TÁCH DANH MỤC (CATEGORY)
-  const categoryRules = [
-    { name: 'Ăn uống', keywords: ['cafe', 'ca phe', 'coffee', 'tra sua', 'pho', 'bun', 'com', 'an trua', 'an sang', 'an toi', 'lau', 'nuong', 'pizza', 'banh mi'] },
-    { name: 'Di chuyển', keywords: ['xang', 'do xang', 'grab', 'be', 'gojek', 'xe buyt', 'gui xe', 'taxi'] },
-    { name: 'Mua sắm', keywords: ['mua sach', 'shopee', 'lazada', 'tiki', 'quan ao', 'giay', 'sieu thi', 'tap hoa'] },
-    { name: 'Nhà cửa', keywords: ['tien phong', 'tien nha', 'dien', 'nuoc', 'internet', 'wifi', 'rac'] },
-    { name: 'Giải trí', keywords: ['xem phim', 'cinema', 'game', 'netflix', 'spotify', 'du lich'] },
-    { name: 'Lương & Thưởng', keywords: ['luong', 'thuong', 'bonus', 'part time'] },
-  ]
-  for (const cat of categoryRules) {
-    const match = cat.keywords.some(kw => cleanText.includes(kw))
-    if (match) {
-      result.category = cat.name
-      result.confidence.category = true
-      break
-    }
+  return {
+    amount: parseAmount(normalized),
+    type,
+    date,
+    wallet: source?.label ?? null,
+    walletKeyword: source?.keyword ?? null,
+    category: categoryName,
+    categoryName,
+    note: originalText,
+    originalText,
+    rawText: originalText,
+    // The two extra fields are required to persist transfer.to_wallet_id safely.
+    toWallet: target?.label ?? null,
+    toWalletKeyword: target?.keyword ?? null,
   }
-
-  // 5. BÓC TÁCH SỐ TIỀN (AMOUNT)
-  // Quy tắc 1tr2, 1.5tr, 1.5 triệu, 35k, 500 nghìn, 200000
-  let amountFound = null
-
-  // Bắt "1tr2", "2tr5", "1m2"
-  const trMatch = cleanText.match(/(\d+)\s*(?:tr|trieu|m)\s*(\d+)/i)
-  if (trMatch) {
-    const major = parseInt(trMatch[1], 10) * 1000000
-    const minorStr = trMatch[2]
-    const minor = parseInt(minorStr, 10) * (minorStr.length === 1 ? 100000 : minorStr.length === 2 ? 10000 : 1000)
-    amountFound = major + minor
-  }
-
-  // Bắt "1.5tr", "1.5 triệu", "2.2tr"
-  if (!amountFound) {
-    const floatTrMatch = cleanText.match(/(\d+(?:[.,]\d+)?)\s*(?:tr|trieu|m)\b/i)
-    if (floatTrMatch) {
-      const val = parseFloat(floatTrMatch[1].replace(',', '.'))
-      amountFound = Math.round(val * 1000000)
-    }
-  }
-
-  // Bắt "35k", "150k"
-  if (!amountFound) {
-    const kMatch = cleanText.match(/(\d+)\s*(?:k|nghin|ngan)\b/i)
-    if (kMatch) {
-      amountFound = parseInt(kMatch[1], 10) * 1000
-    }
-  }
-
-  // Bắt số nguyên thuần túy (VD: "200000", "50.000")
-  if (!amountFound) {
-    const numMatch = cleanText.match(/\b(\d{1,3}(?:[.,]\d{3})+|\d{4,9})\b/)
-    if (numMatch) {
-      const cleanNum = numMatch[1].replace(/[.,]/g, '')
-      amountFound = parseInt(cleanNum, 10)
-    }
-  }
-
-  if (amountFound && amountFound > 0) {
-    result.amount = amountFound
-    result.confidence.amount = true
-  }
-
-  return result
 }
