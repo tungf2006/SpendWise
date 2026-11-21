@@ -231,6 +231,12 @@ Mỗi phiên làm việc, Agent PHẢI tuân thủ 5 nguyên tắc hành động
     - `notifications`: `type` (`budget_warning | budget_exceeded | recurring_due | system`), `is_read`.
   - **Luồng nghiệp vụ từ Sơ đồ Use Case & Class Diagram (13 Service Modules):**
     - UC01 tự động tạo hồ sơ + ví tiền mặt mặc định; UC09 chuyển tiền cập nhật số dư 2 ví; UC12/UC13 thêm/sửa/xóa giao dịch phải kiểm tra & bù trừ/hoàn lại số dư ví; UC23 nạp mục tiêu phải kiểm tra số dư ví và cập nhật cả ví lẫn mục tiêu; UC18 (`parseQuickEntry`) luôn mở Preview UC19 để người dùng xác nhận lưu; UC26 tính chia hóa đơn trước rồi mở rộng (`<<extend>>`) tạo mã VietQR.
+    - Đã khắc phục triệt để toàn bộ lỗi P0/P1 Dữ liệu lõi (UC06–UC13, R1–R4 trên nhánh `feature/core-data-lead`):
+      * Shared UI & Utils: `Toast.jsx`, `ConfirmDialog.jsx` (Double-Bezel, thay thế 100% `alert()` và `window.confirm()`), `PageHeader.jsx` (`flex-wrap` responsive mobile), `src/utils/date.js` (`getLocalDateString` chống lệch ngày UTC+7).
+      * Ví (UC06–UC09): `walletService.js` dùng atomic RPC `transfer_funds` (kèm fallback `PGRST202`/`42883` có compensating rollback) + whitelist trường trong `updateWallet`; `WalletPage.jsx` có Modal Sửa ví Double-Bezel (cho phép giữ số dư âm, hỗ trợ `Escape`/backdrop), Error Banner + Retry và ConfirmDialog ẩn ví.
+      * Danh mục (UC10–UC11): `categoryService.js` xuất `normalizeKeywords` xử lý chuỗi rỗng `"" -> []` + whitelist `updateCategory`; `CategoryPage.jsx` có Modal Sửa danh mục Double-Bezel (`Escape`/backdrop), chấm màu, chip từ khóa, skeleton loading, Error Banner + Retry và ConfirmDialog xóa (bắt lỗi FK `23503`).
+      * Giao dịch (UC12–UC13): `transactionService.js` tính Net Delta chuẩn xác + compensating rollback cho cả Thêm/Sửa/Xóa 3 loại `income`/`expense`/`transfer`, lọc theo Ví bao gồm cả ví nhận (`to_wallet_id`); `TransactionPage.jsx` có Modal Sửa giao dịch Double-Bezel (`Escape`/backdrop), Error Banner + Retry, bộ lọc khoảng ngày kèm cảnh báo `startDate > endDate`, phân trang `pageSize=20` tự lùi trang khi xóa phần tử cuối, tự reset danh mục khi đổi loại Thu/Chi.
+      * Xuất CSV & Test (R4): Hợp nhất CSV chống Formula Injection (`=`, `+`, `-`, `@`), xuất đủ ví nhận và thu hồi URL an toàn; hoàn thiện 4 bộ Unit Test Vitest cho Core Data + CSV (68/68 tests toàn repo).
     - Toàn bộ tên hàm `export` ở `src/services/` bám đúng hợp đồng 13 modules trong `class_diagram_03_services.png` (`authService`, `walletService`, `categoryService`, `transactionService`, `budgetService`, `reportService`, `goalService`, `recurringService`, `notificationService`, `quickEntryParser`, `safeToSpendService`, `aiAssistantService`, `vietqrService`), trong đó `SafeToSpendService` phụ thuộc `BudgetService` và `AiAssistantService` phụ thuộc `BudgetService` + `SafeToSpendService`.
 
 ---
@@ -247,4 +253,3 @@ Mỗi phiên làm việc, Agent PHẢI tuân thủ 5 nguyên tắc hành động
   4. `pptx` (`skills/pptx/SKILL.md`): Xử lý bài trình chiếu slide PowerPoint.
 - **NGUYÊN TẮC BẮT BUỘC (MANDATORY ENFORCEMENT):**
   - Bất cứ khi nào Agent nhận yêu cầu liên quan đến tài liệu Word (`.docx`), PDF (`.pdf`), Excel (`.xlsx`) hoặc PowerPoint (`.pptx`), Agent **BẮT BUỘC PHẢI** đọc nội dung `SKILL.md` và các tài liệu tham khảo/scripts liên quan của skill đó trước khi thực thi để đảm bảo định dạng văn bản chuẩn chỉ, không lỗi render, không hỏng XML/metadata.
-

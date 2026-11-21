@@ -6,6 +6,28 @@ import { supabase } from '@/lib/supabaseClient'
  */
 
 /**
+ * Chuẩn hóa mảng từ khóa danh mục (keywords)
+ * Xử lý chuỗi rỗng "" -> [], tách dấu phẩy, trim, lowercase, loại bỏ rỗng
+ * @param {string | string[] | null | undefined} keywords
+ * @returns {string[]}
+ */
+export function normalizeKeywords(keywords) {
+  if (!keywords) return []
+  if (Array.isArray(keywords)) {
+    return keywords
+      .map((k) => (typeof k === 'string' ? k.trim().toLowerCase() : ''))
+      .filter(Boolean)
+  }
+  if (typeof keywords === 'string') {
+    return keywords
+      .split(',')
+      .map((k) => k.trim().toLowerCase())
+      .filter(Boolean)
+  }
+  return []
+}
+
+/**
  * Lấy tất cả danh mục (bao gồm danh mục hệ thống user_id = null và danh mục riêng của user) (UC10)
  * @param {'income' | 'expense' | null} type Lọc theo loại thu hoặc chi (tuỳ chọn)
  * @returns {Promise<{ data: any[], error: any }>}
@@ -30,7 +52,7 @@ export async function getCategories(type = null) {
 
 /**
  * Thêm danh mục tùy chỉnh cho người dùng (UC10)
- * @param {{ name: string, type: 'income' | 'expense', keywords?: string[], icon?: string, color?: string }} categoryData 
+ * @param {{ name: string, type: 'income' | 'expense', keywords?: string[] | string, icon?: string, color?: string }} categoryData 
  * @returns {Promise<{ data: any, error: any }>}
  */
 export async function createCategory(categoryData) {
@@ -38,19 +60,23 @@ export async function createCategory(categoryData) {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) throw new Error('Người dùng chưa đăng nhập')
 
-    const keywords = Array.isArray(categoryData.keywords) 
-      ? categoryData.keywords 
-      : (categoryData.keywords ? categoryData.keywords.split(',').map(s => s.trim().toLowerCase()) : [])
+    const trimmedName = (categoryData?.name || '').trim()
+    if (!trimmedName) {
+      throw new Error('Tên danh mục không được để trống')
+    }
+
+    const categoryType = categoryData?.type === 'income' ? 'income' : 'expense'
+    const keywords = normalizeKeywords(categoryData?.keywords)
 
     const { data, error } = await supabase
       .from('categories')
       .insert({
         user_id: user.id,
-        name: categoryData.name,
-        type: categoryData.type,
+        name: trimmedName,
+        type: categoryType,
         keywords,
-        icon: categoryData.icon || 'tag',
-        color: categoryData.color || '#10B981'
+        icon: categoryData?.icon || 'tag',
+        color: categoryData?.color || '#10B981'
       })
       .select()
       .single()
@@ -65,14 +91,39 @@ export async function createCategory(categoryData) {
  * Sửa thông tin danh mục tùy chỉnh (UC11)
  * Lưu ý: Chỉ sửa được danh mục có user_id = auth.uid()
  * @param {string} categoryId 
- * @param {{ name?: string, type?: 'income' | 'expense', keywords?: string[], icon?: string, color?: string }} updates 
+ * @param {{ name?: string, type?: 'income' | 'expense', keywords?: string[] | string, icon?: string, color?: string }} updates 
  * @returns {Promise<{ data: any, error: any }>}
  */
 export async function updateCategory(categoryId, updates) {
   try {
-    const formattedUpdates = { ...updates }
-    if (updates.keywords && !Array.isArray(updates.keywords)) {
-      formattedUpdates.keywords = updates.keywords.split(',').map(s => s.trim().toLowerCase())
+    if (!categoryId) {
+      throw new Error('Thiếu ID danh mục cần cập nhật')
+    }
+
+    const formattedUpdates = {}
+
+    if ('name' in updates) {
+      const trimmedName = (updates.name || '').trim()
+      if (!trimmedName) {
+        throw new Error('Tên danh mục không được để trống')
+      }
+      formattedUpdates.name = trimmedName
+    }
+
+    if ('type' in updates) {
+      formattedUpdates.type = updates.type === 'income' ? 'income' : 'expense'
+    }
+
+    if ('icon' in updates) {
+      formattedUpdates.icon = updates.icon || 'tag'
+    }
+
+    if ('color' in updates) {
+      formattedUpdates.color = updates.color || '#10B981'
+    }
+
+    if ('keywords' in updates) {
+      formattedUpdates.keywords = normalizeKeywords(updates.keywords)
     }
 
     const { data, error } = await supabase
@@ -95,6 +146,10 @@ export async function updateCategory(categoryId, updates) {
  */
 export async function deleteCategory(categoryId) {
   try {
+    if (!categoryId) {
+      throw new Error('Thiếu ID danh mục cần xóa')
+    }
+
     const { error } = await supabase
       .from('categories')
       .delete()
