@@ -231,12 +231,12 @@ Mỗi phiên làm việc, Agent PHẢI tuân thủ 5 nguyên tắc hành động
     - `notifications`: `type` (`budget_warning | budget_exceeded | recurring_due | system`), `is_read`.
   - **Luồng nghiệp vụ từ Sơ đồ Use Case & Class Diagram (13 Service Modules):**
     - UC01 tự động tạo hồ sơ + ví tiền mặt mặc định; UC09 chuyển tiền cập nhật số dư 2 ví; UC12/UC13 thêm/sửa/xóa giao dịch phải kiểm tra & bù trừ/hoàn lại số dư ví; UC23 nạp mục tiêu phải kiểm tra số dư ví và cập nhật cả ví lẫn mục tiêu; UC18 (`parseQuickEntry`) luôn mở Preview UC19 để người dùng xác nhận lưu; UC26 tính chia hóa đơn trước rồi mở rộng (`<<extend>>`) tạo mã VietQR.
-    - Đã khắc phục triệt để toàn bộ lỗi P0/P1 Dữ liệu lõi (UC06–UC13, R1–R4 trên nhánh `feature/security-infra-lead`):
-      * Shared UI: `Toast.jsx`, `ConfirmDialog.jsx` (Double-Bezel, thay thế 100% `alert()` và `window.confirm()`).
-      * Ví (UC06–UC09): `walletService.js` chuyển sang atomic RPC `transfer_funds` chống race condition TOCTOU (kèm fallback an toàn `PGRST202`); `WalletPage.jsx` có Modal Sửa ví và ConfirmDialog ẩn ví.
-      * Danh mục (UC10–UC11): `categoryService.js` xuất hàm `normalizeKeywords` xử lý chuỗi rỗng `"" -> []`, fix lỗi SQL type mismatch trong `updateCategory`; `CategoryPage.jsx` có Modal Sửa danh mục tùy chỉnh, hiển thị chấm màu và chip từ khóa, skeleton loading, banner báo lỗi và ConfirmDialog xóa.
-      * Giao dịch (UC12–UC13): `transactionService.js` tính toán hiệu số số dư ròng (Net Delta) chuẩn xác 100% khi Thêm/Sửa/Xóa cho cả 3 loại `income`, `expense`, `transfer` (hoàn trả và bù trừ cả 2 ví); `TransactionPage.jsx` có Modal Sửa giao dịch (hiện mượt desktop/mobile), bộ lọc ngày `startDate`/`endDate`, phân trang `pageSize=20`, tự reset danh mục khi đổi loại Thu/Chi.
-      * Xuất CSV & Test (R4): Hợp nhất CSV chống Formula Injection (`=`, `+`, `-`, `@`), xuất đủ ví nhận và thu hồi URL an toàn; hoàn thiện 4 bộ Unit Test Vitest cho Core Data + CSV (đạt 64/64 test passed, 0 lint error, build thành công).
+    - Đã khắc phục triệt để toàn bộ lỗi P0/P1 Dữ liệu lõi (UC06–UC13, R1–R4 trên nhánh `feature/core-data-lead`):
+      * Shared UI & Utils: `Toast.jsx`, `ConfirmDialog.jsx` (Double-Bezel, thay thế 100% `alert()` và `window.confirm()`), `PageHeader.jsx` (`flex-wrap` responsive mobile), `src/utils/date.js` (`getLocalDateString` chống lệch ngày UTC+7).
+      * Ví (UC06–UC09): `walletService.js` dùng atomic RPC `transfer_funds` (kèm fallback `PGRST202`/`42883` có compensating rollback) + whitelist trường trong `updateWallet`; `WalletPage.jsx` có Modal Sửa ví Double-Bezel (cho phép giữ số dư âm, hỗ trợ `Escape`/backdrop), Error Banner + Retry và ConfirmDialog ẩn ví.
+      * Danh mục (UC10–UC11): `categoryService.js` xuất `normalizeKeywords` xử lý chuỗi rỗng `"" -> []` + whitelist `updateCategory`; `CategoryPage.jsx` có Modal Sửa danh mục Double-Bezel (`Escape`/backdrop), chấm màu, chip từ khóa, skeleton loading, Error Banner + Retry và ConfirmDialog xóa (bắt lỗi FK `23503`).
+      * Giao dịch (UC12–UC13): `transactionService.js` tính Net Delta chuẩn xác + compensating rollback cho cả Thêm/Sửa/Xóa 3 loại `income`/`expense`/`transfer`, lọc theo Ví bao gồm cả ví nhận (`to_wallet_id`); `TransactionPage.jsx` có Modal Sửa giao dịch Double-Bezel (`Escape`/backdrop), Error Banner + Retry, bộ lọc khoảng ngày kèm cảnh báo `startDate > endDate`, phân trang `pageSize=20` tự lùi trang khi xóa phần tử cuối, tự reset danh mục khi đổi loại Thu/Chi.
+      * Xuất CSV & Test (R4): Hợp nhất CSV chống Formula Injection (`=`, `+`, `-`, `@`), xuất đủ ví nhận và thu hồi URL an toàn; hoàn thiện 4 bộ Unit Test Vitest cho Core Data + CSV (68/68 tests toàn repo).
     - Toàn bộ tên hàm `export` ở `src/services/` bám đúng hợp đồng 13 modules trong `class_diagram_03_services.png` (`authService`, `walletService`, `categoryService`, `transactionService`, `budgetService`, `reportService`, `goalService`, `recurringService`, `notificationService`, `quickEntryParser`, `safeToSpendService`, `aiAssistantService`, `vietqrService`), trong đó `SafeToSpendService` phụ thuộc `BudgetService` và `AiAssistantService` phụ thuộc `BudgetService` + `SafeToSpendService`.
 
 ---
@@ -253,21 +253,3 @@ Mỗi phiên làm việc, Agent PHẢI tuân thủ 5 nguyên tắc hành động
   4. `pptx` (`skills/pptx/SKILL.md`): Xử lý bài trình chiếu slide PowerPoint.
 - **NGUYÊN TẮC BẮT BUỘC (MANDATORY ENFORCEMENT):**
   - Bất cứ khi nào Agent nhận yêu cầu liên quan đến tài liệu Word (`.docx`), PDF (`.pdf`), Excel (`.xlsx`) hoặc PowerPoint (`.pptx`), Agent **BẮT BUỘC PHẢI** đọc nội dung `SKILL.md` và các tài liệu tham khảo/scripts liên quan của skill đó trước khi thực thi để đảm bảo định dạng văn bản chuẩn chỉ, không lỗi render, không hỏng XML/metadata.
-
-
----
-
-## 16. KẾT QUẢ KIỂM ĐỊNH KỸ THUẬT & RESPONSIVE (TECHNICAL QA AUDIT - 15/11/2026)
-1. **Console & JavaScript Code Quality:**
-   - Đã xử lý triệt để các cảnh báo linter: làm sạch unused imports (`Navbar.jsx`, `DashboardPage.jsx`, `ReportPage.jsx`, `BudgetPage.jsx`, `GoalPage.jsx`, `BillSplitVietQR.jsx`), chuẩn hóa biểu thức chính quy ngày tháng trong `quickEntryParser.js`.
-   - Khắc phục nguy cơ TDZ (Temporal Dead Zone) trong `AuthContext.jsx` bằng việc định nghĩa `fetchProfile` với `useCallback` trước khi `useEffect` kích hoạt; thêm optional chaining `subscription?.unsubscribe?.()`.
-2. **Network Requests & Định tuyến (Routing Resilience):**
-   - Đã khai báo các Route chuyển hướng (`<Navigate replace />`) cho `/dashboard` -> `/`, `/budget` -> `/budgets`, `/report` -> `/reports`, `/goal` -> `/goals` trong `src/App.jsx`, loại bỏ hoàn toàn lỗi 404 Not Found khi người dùng nhập URL số ít.
-   - Bổ sung cơ chế fallback nội bộ trong `safeToSpendService.js`: Khi backend Express API tạm thời offline hoặc gặp sự cố mạng, ứng dụng tự động chuyển sang giải thuật tính toán client-side (`buildSafeToSpendData`) mà không phát sinh lỗi đỏ console hay ngắt quãng giao diện Dashboard.
-3. **Responsive Mobile 390px & Layout Double-Bezel:**
-   - Chuẩn hóa `PageHeader.jsx` với `flex-wrap` ở vùng nút thao tác (actions), chống tràn ngang màn hình trên thiết bị di động có chiều rộng 360px - 390px.
-   - Thêm `min-w-0 flex-1` và `truncate` cho tiêu đề ghi chú/ví tiền trong danh sách giao dịch (`TransactionPage.jsx`, `DashboardPage.jsx`), đồng thời thêm `shrink-0` cho cột số tiền và cụm nút thao tác (Sửa/Xóa) để không bao giờ bị đè chữ hay xô lệch thẻ Double-Bezel.
-   - Đảm bảo 100% biểu đồ Chart.js (`Doughnut`, `Bar`) có container giới hạn chiều cao cố định (`h-64`, `h-32`), thuộc tính `maintainAspectRatio: false` và `responsive: true`.
-4. **Kiểm thử tự động & Build:**
-   - 64/64 test Vitest + Supertest đạt trạng thái PASSED.
-   - Bản build production (`vite build`) thành công 100% trong 1.75s, không có lỗi cú pháp.

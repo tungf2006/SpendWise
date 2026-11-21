@@ -11,15 +11,24 @@ import { getCategories } from '@/services/categoryService'
 import { getFinancialSummary, getCategoryExpenseBreakdown } from '@/services/reportService'
 
 ChartJS.register(ArcElement, Tooltip, Legend)
-import {
-  Sparkles,
-  Wallet,
-  ArrowUpRight,
-  ArrowDownLeft,
+import { 
+  Sparkles, 
+  TrendingUp, 
+  TrendingDown, 
+  Wallet, 
+  ArrowUpRight, 
+  ArrowDownLeft, 
   ChevronRight,
+  Plus,
   Send,
+  AlertTriangle,
   CheckCircle,
   HelpCircle,
+  Calendar,
+  Layers,
+  Fuel,
+  Coffee,
+  ShoppingBag,
   CreditCard,
   Loader2
 } from 'lucide-react'
@@ -415,10 +424,10 @@ export const DashboardPage = () => {
                 const isTransfer = txn.type === 'transfer'
 
                 return (
-                  <div key={txn.id} className="py-3.5 flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <div key={txn.id} className="py-3.5 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
                       <div
-                        className={`w-9 h-9 rounded-full flex items-center justify-center text-white shrink-0 ${
+                        className={`w-9 h-9 rounded-full flex items-center justify-center text-white ${
                           isIncome ? 'bg-emerald-500' : isTransfer ? 'bg-indigo-500' : 'bg-slate-900'
                         }`}
                       >
@@ -430,8 +439,8 @@ export const DashboardPage = () => {
                           <ArrowUpRight className="w-4 h-4 text-rose-300" />
                         )}
                       </div>
-                      <div className="min-w-0 flex-1">
-                        <h4 className="text-xs sm:text-sm font-semibold text-slate-900 truncate">
+                      <div>
+                        <h4 className="text-xs sm:text-sm font-semibold text-slate-900">
                           {txn.note || txn.category?.name || 'Giao dịch không tên'}
                         </h4>
                         <div className="flex items-center gap-2 text-[11px] text-slate-400 mt-0.5">
@@ -449,7 +458,7 @@ export const DashboardPage = () => {
                     </div>
 
                     <span
-                      className={`font-display font-bold text-xs sm:text-sm shrink-0 ${
+                      className={`font-display font-bold text-xs sm:text-sm ${
                         isIncome ? 'text-emerald-600' : isTransfer ? 'text-indigo-600' : 'text-slate-900'
                       }`}
                     >

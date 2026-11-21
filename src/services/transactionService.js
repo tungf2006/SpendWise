@@ -1,6 +1,67 @@
 import { supabase } from '@/lib/supabaseClient'
 import { removeVietnameseTones } from '@/utils/unaccent'
 import { downloadTransactionsCsv } from '@/utils/transactionCsv'
+import { getLocalDateString } from '@/utils/date'
+
+const VALID_TRANSACTION_TYPES = ['income', 'expense', 'transfer']
+
+/**
+ * Áp dụng thay đổi số dư cho các ví liên quan kèm cơ chế hoàn tác (compensating rollback)
+ * nếu bất kỳ bước cập nhật nào thất bại giữa chừng.
+ * @param {Map<string, number>} deltas Map<walletId, deltaAmount>
+ * @returns {Promise<Array<{ id: string, previousBalance: number }>>} Danh sách snapshot đã áp dụng để rollback nếu bước sau lỗi
+ */
+async function applyWalletDeltas(deltas) {
+  const applied = []
+
+  try {
+    for (const [walletId, delta] of deltas.entries()) {
+      if (!walletId || delta === 0) continue
+
+      const { data: wallet, error: fetchErr } = await supabase
+        .from('wallets')
+        .select('balance')
+        .eq('id', walletId)
+        .single()
+      if (fetchErr) throw fetchErr
+      if (!wallet) throw new Error('Không tìm thấy ví liên quan để cập nhật số dư')
+
+      const previousBalance = Number(wallet.balance)
+      const nextBalance = previousBalance + delta
+
+      const { error: updateErr } = await supabase
+        .from('wallets')
+        .update({ balance: nextBalance })
+        .eq('id', walletId)
+      if (updateErr) throw updateErr
+
+      applied.push({ id: walletId, previousBalance })
+    }
+
+    return applied
+  } catch (err) {
+    await rollbackWalletBalances(applied)
+    throw err
+  }
+}
+
+/**
+ * Hoàn tác số dư các ví đã cập nhật trước đó (best-effort rollback)
+ * @param {Array<{ id: string, previousBalance: number }>} applied
+ */
+async function rollbackWalletBalances(applied) {
+  for (let i = applied.length - 1; i >= 0; i -= 1) {
+    const item = applied[i]
+    try {
+      await supabase
+        .from('wallets')
+        .update({ balance: item.previousBalance })
+        .eq('id', item.id)
+    } catch {
+      // Bỏ qua lỗi phụ khi rollback để giữ nguyên lỗi gốc
+    }
+  }
+}
 
 /**
  * Service quản lý Giao dịch thu/chi, tìm kiếm không dấu và xuất CSV
@@ -53,7 +114,8 @@ export async function getTransactions({
       query = query.lte('transaction_date', endDate)
     }
     if (walletId) {
-      query = query.eq('wallet_id', walletId)
+      // Lọc cả giao dịch mà ví là ví nguồn (wallet_id) lẫn ví nhận chuyển khoản (to_wallet_id)
+      query = query.or(`wallet_id.eq.${walletId},to_wallet_id.eq.${walletId}`)
     }
     if (categoryId) {
       query = query.eq('category_id', categoryId)
@@ -85,8 +147,12 @@ export async function createTransaction(txnData) {
     if (!user) throw new Error('Người dùng chưa đăng nhập')
 
     const amount = Number(txnData.amount)
-    if (isNaN(amount) || amount <= 0) {
+    if (!Number.isFinite(amount) || amount <= 0) {
       throw new Error('Số tiền giao dịch phải lớn hơn 0')
+    }
+
+    if (!VALID_TRANSACTION_TYPES.includes(txnData.type)) {
+      throw new Error('Loại giao dịch không hợp lệ')
     }
 
     if (!txnData.wallet_id) {
@@ -102,13 +168,24 @@ export async function createTransaction(txnData) {
       }
     }
 
-    const txnDate = txnData.transaction_date || new Date().toISOString().split('T')[0]
+    const txnDate = txnData.transaction_date || getLocalDateString()
     const note = txnData.note || ''
     const noteUnaccent = removeVietnameseTones(note)
     const toWalletId = txnData.type === 'transfer' ? txnData.to_wallet_id : null
     const categoryId = txnData.type === 'transfer' ? null : (txnData.category_id || null)
 
-    // 1. Thêm bản ghi giao dịch
+    // 1. Tính trước deltas cho các ví liên quan
+    const deltas = new Map()
+    if (txnData.type === 'income') {
+      deltas.set(txnData.wallet_id, amount)
+    } else if (txnData.type === 'expense') {
+      deltas.set(txnData.wallet_id, -amount)
+    } else if (txnData.type === 'transfer') {
+      deltas.set(txnData.wallet_id, -amount)
+      deltas.set(txnData.to_wallet_id, amount)
+    }
+
+    // 2. Thêm bản ghi giao dịch
     const { data: transaction, error: insertErr } = await supabase
       .from('transactions')
       .insert({
@@ -132,57 +209,18 @@ export async function createTransaction(txnData) {
 
     if (insertErr) throw insertErr
 
-    // 2. Cập nhật số dư ví
-    if (txnData.type === 'income') {
-      const { data: wallet, error: wErr } = await supabase
-        .from('wallets')
-        .select('balance')
-        .eq('id', txnData.wallet_id)
-        .single()
-      if (wErr) throw wErr
-      const { error: upErr } = await supabase
-        .from('wallets')
-        .update({ balance: Number(wallet.balance) + amount })
-        .eq('id', txnData.wallet_id)
-      if (upErr) throw upErr
-    } else if (txnData.type === 'expense') {
-      const { data: wallet, error: wErr } = await supabase
-        .from('wallets')
-        .select('balance')
-        .eq('id', txnData.wallet_id)
-        .single()
-      if (wErr) throw wErr
-      const { error: upErr } = await supabase
-        .from('wallets')
-        .update({ balance: Number(wallet.balance) - amount })
-        .eq('id', txnData.wallet_id)
-      if (upErr) throw upErr
-    } else if (txnData.type === 'transfer') {
-      // Trừ ví nguồn
-      const { data: srcWallet, error: srcErr } = await supabase
-        .from('wallets')
-        .select('balance')
-        .eq('id', txnData.wallet_id)
-        .single()
-      if (srcErr) throw srcErr
-      const { error: upSrcErr } = await supabase
-        .from('wallets')
-        .update({ balance: Number(srcWallet.balance) - amount })
-        .eq('id', txnData.wallet_id)
-      if (upSrcErr) throw upSrcErr
-
-      // Cộng ví đích
-      const { data: dstWallet, error: dstErr } = await supabase
-        .from('wallets')
-        .select('balance')
-        .eq('id', txnData.to_wallet_id)
-        .single()
-      if (dstErr) throw dstErr
-      const { error: upDstErr } = await supabase
-        .from('wallets')
-        .update({ balance: Number(dstWallet.balance) + amount })
-        .eq('id', txnData.to_wallet_id)
-      if (upDstErr) throw upDstErr
+    // 3. Cập nhật số dư ví (nếu lỗi, tự động hoàn tác ví và xóa bản ghi vừa chèn)
+    try {
+      await applyWalletDeltas(deltas)
+    } catch (walletErr) {
+      if (transaction?.id) {
+        try {
+          await supabase.from('transactions').delete().eq('id', transaction.id)
+        } catch {
+          // Bỏ qua lỗi phụ khi rollback
+        }
+      }
+      throw walletErr
     }
 
     return { data: transaction, error: null }
@@ -218,8 +256,12 @@ export async function updateTransaction(id, updates) {
     const newWalletId = updates.wallet_id !== undefined ? updates.wallet_id : oldTxn.wallet_id
     const newToWalletId = updates.to_wallet_id !== undefined ? updates.to_wallet_id : oldTxn.to_wallet_id
 
-    if (isNaN(newAmount) || newAmount <= 0) {
+    if (!Number.isFinite(newAmount) || newAmount <= 0) {
       throw new Error('Số tiền giao dịch phải lớn hơn 0')
+    }
+
+    if (!VALID_TRANSACTION_TYPES.includes(newType)) {
+      throw new Error('Loại giao dịch không hợp lệ')
     }
 
     if (newType === 'transfer') {
@@ -259,31 +301,16 @@ export async function updateTransaction(id, updates) {
       addDelta(newToWalletId, +newAmount)
     }
 
-    // 4. Áp dụng deltas vào các ví liên quan
-    for (const [wId, delta] of deltas.entries()) {
-      if (delta === 0) continue
-      const { data: wallet, error: wErr } = await supabase
-        .from('wallets')
-        .select('balance')
-        .eq('id', wId)
-        .single()
-      if (wErr) throw wErr
-
-      const updatedBalance = Number(wallet.balance) + delta
-      const { error: upErr } = await supabase
-        .from('wallets')
-        .update({ balance: updatedBalance })
-        .eq('id', wId)
-      if (upErr) throw upErr
-    }
-
-    // 5. Cập nhật bản ghi giao dịch
-    const formattedUpdates = { ...updates }
+    // 4. Chuẩn hóa payload whitelist cho bảng transactions
+    const formattedUpdates = {}
+    if (updates.wallet_id !== undefined) formattedUpdates.wallet_id = newWalletId
+    if (updates.type !== undefined) formattedUpdates.type = newType
+    if (updates.amount !== undefined) formattedUpdates.amount = newAmount
+    if (updates.transaction_date !== undefined) formattedUpdates.transaction_date = updates.transaction_date
+    if (updates.category_id !== undefined) formattedUpdates.category_id = updates.category_id || null
     if (updates.note !== undefined) {
+      formattedUpdates.note = updates.note || ''
       formattedUpdates.note_unaccent = removeVietnameseTones(updates.note || '')
-    }
-    if (updates.amount !== undefined) {
-      formattedUpdates.amount = newAmount
     }
     if (newType !== 'transfer') {
       formattedUpdates.to_wallet_id = null
@@ -294,6 +321,10 @@ export async function updateTransaction(id, updates) {
       formattedUpdates.category_id = null
     }
 
+    // 5. Áp dụng deltas vào các ví liên quan (có tự động rollback nếu lỗi giữa chừng)
+    const appliedWallets = await applyWalletDeltas(deltas)
+
+    // 6. Cập nhật bản ghi giao dịch (nếu lỗi, hoàn tác lại số dư các ví vừa sửa)
     const { data: updatedTxn, error: updateErr } = await supabase
       .from('transactions')
       .update(formattedUpdates)
@@ -306,7 +337,10 @@ export async function updateTransaction(id, updates) {
       `)
       .single()
 
-    if (updateErr) throw updateErr
+    if (updateErr) {
+      await rollbackWalletBalances(appliedWallets)
+      throw updateErr
+    }
 
     return { data: updatedTxn, error: null }
   } catch (err) {
@@ -335,69 +369,32 @@ export async function deleteTransaction(id) {
     if (!txn) throw new Error('Không tìm thấy giao dịch cần xóa')
 
     const amount = Number(txn.amount)
+    const deltas = new Map()
 
-    // 2. Hoàn lại số dư ví trước khi xóa
     if (txn.type === 'income') {
-      const { data: wallet, error: wErr } = await supabase
-        .from('wallets')
-        .select('balance')
-        .eq('id', txn.wallet_id)
-        .single()
-      if (wErr) throw wErr
-      const { error: upErr } = await supabase
-        .from('wallets')
-        .update({ balance: Number(wallet.balance) - amount })
-        .eq('id', txn.wallet_id)
-      if (upErr) throw upErr
+      deltas.set(txn.wallet_id, -amount)
     } else if (txn.type === 'expense') {
-      const { data: wallet, error: wErr } = await supabase
-        .from('wallets')
-        .select('balance')
-        .eq('id', txn.wallet_id)
-        .single()
-      if (wErr) throw wErr
-      const { error: upErr } = await supabase
-        .from('wallets')
-        .update({ balance: Number(wallet.balance) + amount })
-        .eq('id', txn.wallet_id)
-      if (upErr) throw upErr
+      deltas.set(txn.wallet_id, +amount)
     } else if (txn.type === 'transfer') {
-      // Hoàn trả ví nguồn: +amount
-      const { data: srcWallet, error: srcErr } = await supabase
-        .from('wallets')
-        .select('balance')
-        .eq('id', txn.wallet_id)
-        .single()
-      if (srcErr) throw srcErr
-      const { error: upSrcErr } = await supabase
-        .from('wallets')
-        .update({ balance: Number(srcWallet.balance) + amount })
-        .eq('id', txn.wallet_id)
-      if (upSrcErr) throw upSrcErr
-
-      // Thu hồi ví đích: -amount
+      deltas.set(txn.wallet_id, +amount)
       if (txn.to_wallet_id) {
-        const { data: dstWallet, error: dstErr } = await supabase
-          .from('wallets')
-          .select('balance')
-          .eq('id', txn.to_wallet_id)
-          .single()
-        if (dstErr) throw dstErr
-        const { error: upDstErr } = await supabase
-          .from('wallets')
-          .update({ balance: Number(dstWallet.balance) - amount })
-          .eq('id', txn.to_wallet_id)
-        if (upDstErr) throw upDstErr
+        deltas.set(txn.to_wallet_id, -amount)
       }
     }
 
-    // 3. Xóa giao dịch khỏi bảng transactions
+    // 2. Hoàn lại số dư ví (có rollback nếu ví thứ 2 lỗi)
+    const appliedWallets = await applyWalletDeltas(deltas)
+
+    // 3. Xóa giao dịch khỏi bảng transactions (nếu lỗi, khôi phục lại số dư ví)
     const { error: deleteErr } = await supabase
       .from('transactions')
       .delete()
       .eq('id', id)
 
-    if (deleteErr) throw deleteErr
+    if (deleteErr) {
+      await rollbackWalletBalances(appliedWallets)
+      throw deleteErr
+    }
 
     return { error: null }
   } catch (err) {

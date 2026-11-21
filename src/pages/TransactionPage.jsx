@@ -3,6 +3,7 @@ import { PageHeader } from '@/components/common/PageHeader'
 import { Toast } from '@/components/common/Toast'
 import { ConfirmDialog } from '@/components/common/ConfirmDialog'
 import { formatCurrency } from '@/utils/formatCurrency'
+import { getLocalDateString } from '@/utils/date'
 import { getTransactions, createTransaction, updateTransaction, deleteTransaction } from '@/services/transactionService'
 import { exportAllTransactionsCSV } from '@/services/transactionCsvExport'
 import { getWallets } from '@/services/walletService'
@@ -20,10 +21,12 @@ import {
   Loader2,
   Calendar,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  AlertCircle,
+  RefreshCw
 } from 'lucide-react'
 
-const getTodayIso = () => new Date().toISOString().split('T')[0]
+const getTodayLocal = () => getLocalDateString()
 
 /**
  * Trang Quản lý Giao dịch (TransactionPage)
@@ -36,6 +39,7 @@ export const TransactionPage = () => {
   const [wallets, setWallets] = useState([])
   const [categories, setCategories] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1)
@@ -64,7 +68,7 @@ export const TransactionPage = () => {
   const [formCategoryId, setFormCategoryId] = useState('')
   const [formType, setFormType] = useState('expense')
   const [formAmount, setFormAmount] = useState('')
-  const [formDate, setFormDate] = useState(getTodayIso)
+  const [formDate, setFormDate] = useState(getTodayLocal)
   const [formNote, setFormNote] = useState('')
 
   // Edit Transaction Modal state
@@ -78,9 +82,23 @@ export const TransactionPage = () => {
   const [editDate, setEditDate] = useState('')
   const [editNote, setEditNote] = useState('')
 
+  const isDateRangeInvalid = Boolean(startDate && endDate && startDate > endDate)
+
+  const refreshWalletsMeta = useCallback(async () => {
+    const wRes = await getWallets()
+    if (!wRes.error && wRes.data) {
+      setWallets(wRes.data)
+    }
+  }, [])
+
+  const notifyFinanceUpdated = () => {
+    window.dispatchEvent(new CustomEvent('spendwise:finance-updated'))
+  }
+
   const fetchTransactionsList = useCallback(async () => {
     try {
       setLoading(true)
+      setError(null)
       const { data, count, error: fetchErr } = await getTransactions({
         page: currentPage,
         limit: pageSize,
@@ -96,26 +114,59 @@ export const TransactionPage = () => {
       setTotalCount(count || 0)
     } catch (err) {
       console.error('Lỗi khi tải giao dịch:', err)
-      setToast({ show: true, message: 'Lỗi khi tải danh sách giao dịch: ' + (err?.message || ''), type: 'error' })
+      const message = err?.message || 'Không thể tải danh sách giao dịch'
+      setError(message)
+      setToast({ show: true, message: 'Lỗi khi tải danh sách giao dịch: ' + message, type: 'error' })
     } finally {
       setLoading(false)
     }
   }, [currentPage, selectedWallet, selectedCategory, selectedType, startDate, endDate, searchKeyword])
 
   useEffect(() => {
+    let cancelled = false
     async function loadMeta() {
-      const [wRes, cRes] = await Promise.all([getWallets(), getCategories()])
-      setWallets(wRes.data || [])
-      setCategories(cRes.data || [])
-      if (wRes.data && wRes.data.length > 0) {
-        setFormWalletId(wRes.data[0].id)
-        if (wRes.data.length > 1) {
-          setFormToWalletId(wRes.data[1].id)
+      try {
+        const [wRes, cRes] = await Promise.all([getWallets(), getCategories()])
+        if (cancelled) return
+        if (wRes.error) {
+          console.error('Lỗi tải ví:', wRes.error)
+        }
+        if (cRes.error) {
+          console.error('Lỗi tải danh mục:', cRes.error)
+        }
+        const walletList = wRes.data || []
+        setWallets(walletList)
+        setCategories(cRes.data || [])
+        if (walletList.length > 0) {
+          setFormWalletId(walletList[0].id)
+          if (walletList.length > 1) {
+            setFormToWalletId(walletList[1].id)
+          }
+        }
+      } catch (err) {
+        if (!cancelled) {
+          console.error('Lỗi tải dữ liệu bộ lọc:', err)
         }
       }
     }
     loadMeta()
+    return () => {
+      cancelled = true
+    }
   }, [])
+
+  useEffect(() => {
+    if (!showAddModal && !showEditModal) return
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && !isSubmitting) {
+        setShowAddModal(false)
+        setShowEditModal(false)
+        setEditingTxn(null)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [showAddModal, showEditModal, isSubmitting])
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -178,7 +229,8 @@ export const TransactionPage = () => {
       setFormAmount('')
       setFormNote('')
       setFormCategoryId('')
-      await fetchTransactionsList()
+      await Promise.all([fetchTransactionsList(), refreshWalletsMeta()])
+      notifyFinanceUpdated()
       setToast({ show: true, message: 'Thêm giao dịch thành công!', type: 'success' })
     } catch (err) {
       setToast({ show: true, message: 'Lỗi khi thêm giao dịch: ' + err.message, type: 'error' })
@@ -194,7 +246,7 @@ export const TransactionPage = () => {
     setEditWalletId(txn.wallet_id || '')
     setEditToWalletId(txn.to_wallet_id || '')
     setEditCategoryId(txn.category_id || '')
-    setEditDate(txn.transaction_date || getTodayIso())
+    setEditDate(txn.transaction_date || getTodayLocal())
     setEditNote(txn.note || '')
     setShowEditModal(true)
   }
@@ -236,7 +288,8 @@ export const TransactionPage = () => {
 
       setShowEditModal(false)
       setEditingTxn(null)
-      await fetchTransactionsList()
+      await Promise.all([fetchTransactionsList(), refreshWalletsMeta()])
+      notifyFinanceUpdated()
       setToast({ show: true, message: 'Cập nhật giao dịch thành công!', type: 'success' })
     } catch (err) {
       setToast({ show: true, message: 'Lỗi khi cập nhật giao dịch: ' + err.message, type: 'error' })
@@ -251,7 +304,13 @@ export const TransactionPage = () => {
     try {
       const { error: delErr } = await deleteTransaction(deleteTargetId)
       if (delErr) throw delErr
-      await fetchTransactionsList()
+      if (transactions.length === 1 && currentPage > 1) {
+        setCurrentPage((p) => Math.max(1, p - 1))
+        await refreshWalletsMeta()
+      } else {
+        await Promise.all([fetchTransactionsList(), refreshWalletsMeta()])
+      }
+      notifyFinanceUpdated()
       setToast({ show: true, message: 'Xóa giao dịch thành công! Số dư ví đã được hoàn tác.', type: 'success' })
     } catch (err) {
       setToast({ show: true, message: 'Lỗi khi xóa: ' + err.message, type: 'error' })
@@ -412,9 +471,33 @@ export const TransactionPage = () => {
               </button>
             )}
           </div>
+          {isDateRangeInvalid && (
+            <p className="text-[11px] font-medium text-amber-700 bg-amber-50 border border-amber-200/80 rounded-xl px-3 py-1.5 flex items-center gap-1.5">
+              <AlertCircle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+              <span>Ngày bắt đầu đang lớn hơn ngày kết thúc. Vui lòng điều chỉnh lại khoảng ngày lọc.</span>
+            </p>
+          )}
 
         </div>
       </div>
+
+      {/* Error Banner */}
+      {error && (
+        <div className="rounded-2xl bg-rose-50 border border-rose-200/80 p-4 flex items-center justify-between gap-3 text-rose-800">
+          <div className="flex items-center gap-2 text-xs sm:text-sm font-medium">
+            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+            <span>{error}</span>
+          </div>
+          <button
+            type="button"
+            onClick={fetchTransactionsList}
+            className="px-3 py-1 rounded-full bg-white text-xs font-semibold text-rose-700 border border-rose-200 hover:bg-rose-100 flex items-center gap-1 transition-colors cursor-pointer shrink-0"
+          >
+            <RefreshCw className="w-3 h-3" />
+            <span>Thử lại</span>
+          </button>
+        </div>
+      )}
 
       {/* Transactions Table / List */}
       <div className="rounded-[2rem] bg-white/70 p-2 shadow-soft-md ring-1 ring-slate-900/5">
@@ -551,8 +634,19 @@ export const TransactionPage = () => {
 
       {/* Add Transaction Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-200">
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={() => {
+            if (!isSubmitting) setShowAddModal(false)
+          }}
+        >
+          <div
+            className="w-full max-w-md rounded-[2rem] bg-white/80 p-1.5 shadow-2xl ring-1 ring-slate-900/5 animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="rounded-[calc(2rem-0.375rem)] bg-white p-6 border border-slate-100">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
               <h3 className="font-display font-bold text-base text-slate-900">Thêm Giao dịch Mới</h3>
               <button
@@ -641,6 +735,7 @@ export const TransactionPage = () => {
                       onChange={(e) => setFormToWalletId(e.target.value)}
                       className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-full text-xs text-slate-900 focus:outline-none"
                     >
+                      <option value="">-- Chọn ví nhận --</option>
                       {wallets.map((w) => (
                         <option key={w.id} value={w.id}>{w.name}</option>
                       ))}
@@ -732,14 +827,29 @@ export const TransactionPage = () => {
                 </button>
               </div>
             </form>
+            </div>
           </div>
         </div>
       )}
 
       {/* Edit Transaction Modal (UC13) */}
       {showEditModal && editingTxn && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-200">
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={() => {
+            if (!isSubmitting) {
+              setShowEditModal(false)
+              setEditingTxn(null)
+            }
+          }}
+        >
+          <div
+            className="w-full max-w-md rounded-[2rem] bg-white/80 p-1.5 shadow-2xl ring-1 ring-slate-900/5 animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="rounded-[calc(2rem-0.375rem)] bg-white p-6 border border-slate-100">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
               <h3 className="font-display font-bold text-base text-slate-900">Sửa Giao Dịch</h3>
               <button
@@ -925,6 +1035,7 @@ export const TransactionPage = () => {
                 </button>
               </div>
             </form>
+            </div>
           </div>
         </div>
       )}

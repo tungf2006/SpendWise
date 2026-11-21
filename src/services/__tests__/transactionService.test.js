@@ -42,6 +42,7 @@ describe('transactionService - UC12, UC13 (R3, R4 Balance Integrity & CSV)', () 
         range: vi.fn().mockReturnThis(),
         gte: vi.fn().mockReturnThis(),
         lte: vi.fn().mockReturnThis(),
+        or: vi.fn().mockReturnThis(),
         eq: vi.fn().mockReturnThis(),
         ilike: vi.fn().mockResolvedValue({
           data: [{ id: 'txn1', amount: 50000 }],
@@ -66,7 +67,7 @@ describe('transactionService - UC12, UC13 (R3, R4 Balance Integrity & CSV)', () 
       expect(mockQuery.range).toHaveBeenCalledWith(20, 39)
       expect(mockQuery.gte).toHaveBeenCalledWith('transaction_date', '2026-11-01')
       expect(mockQuery.lte).toHaveBeenCalledWith('transaction_date', '2026-11-15')
-      expect(mockQuery.eq).toHaveBeenCalledWith('wallet_id', 'w1')
+      expect(mockQuery.or).toHaveBeenCalledWith('wallet_id.eq.w1,to_wallet_id.eq.w1')
       expect(mockQuery.eq).toHaveBeenCalledWith('category_id', 'c1')
       expect(mockQuery.eq).toHaveBeenCalledWith('type', 'expense')
       expect(mockQuery.ilike).toHaveBeenCalledWith('note_unaccent', '%ca phe%')
@@ -423,6 +424,88 @@ describe('transactionService - UC12, UC13 (R3, R4 Balance Integrity & CSV)', () 
       // Ví nguồn được cộng lại 150k -> 500k; Ví đích bị trừ thu hồi 150k -> 100k
       expect(updatedWallets['w1']).toBe(500000)
       expect(updatedWallets['w2']).toBe(100000)
+    })
+
+    it('Hoàn tác lại số dư ví nếu lệnh xóa giao dịch trong bảng transactions thất bại', async () => {
+      const oldTxn = { id: 't-del-fail', wallet_id: 'w1', to_wallet_id: null, type: 'expense', amount: 80000 }
+      const wallet = { id: 'w1', balance: 400000 }
+      const walletUpdates = []
+
+      mockFrom.mockImplementation((table) => {
+        if (table === 'transactions') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                single: vi.fn().mockResolvedValue({ data: oldTxn, error: null })
+              })
+            }),
+            delete: vi.fn().mockReturnValue({
+              eq: vi.fn().mockResolvedValue({ error: new Error('Lỗi RLS khi xóa') })
+            })
+          }
+        }
+        if (table === 'wallets') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                single: vi.fn().mockResolvedValue({ data: wallet, error: null })
+              })
+            }),
+            update: vi.fn().mockImplementation((data) => ({
+              eq: vi.fn().mockImplementation((_, id) => {
+                walletUpdates.push({ id, balance: data.balance })
+                return Promise.resolve({ error: null })
+              })
+            }))
+          }
+        }
+      })
+
+      const res = await deleteTransaction('t-del-fail')
+      expect(res.error.message).toContain('Lỗi RLS khi xóa')
+      expect(walletUpdates).toEqual([
+        { id: 'w1', balance: 480000 },
+        { id: 'w1', balance: 400000 }
+      ])
+    })
+
+    it('Hoàn tác xóa bản ghi giao dịch vừa tạo nếu bước cập nhật số dư ví thất bại', async () => {
+      const createdTxn = { id: 't-rollback-create', type: 'expense', amount: 50000, wallet_id: 'w1' }
+      const deleteTxnMock = vi.fn().mockReturnValue({ eq: vi.fn().mockResolvedValue({ error: null }) })
+
+      mockFrom.mockImplementation((table) => {
+        if (table === 'transactions') {
+          return {
+            insert: vi.fn().mockReturnThis(),
+            select: vi.fn().mockReturnThis(),
+            single: vi.fn().mockResolvedValue({ data: createdTxn, error: null }),
+            delete: deleteTxnMock
+          }
+        }
+        if (table === 'wallets') {
+          return {
+            select: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                single: vi.fn().mockResolvedValue({ data: { id: 'w1', balance: 500000 }, error: null })
+              })
+            }),
+            update: vi.fn().mockReturnValue({
+              eq: vi.fn().mockResolvedValue({ error: new Error('Lỗi cập nhật ví') })
+            })
+          }
+        }
+      })
+
+      const res = await createTransaction({
+        wallet_id: 'w1',
+        type: 'expense',
+        amount: 50000,
+        note: 'Test rollback'
+      })
+
+      expect(res.data).toBeNull()
+      expect(res.error.message).toContain('Lỗi cập nhật ví')
+      expect(deleteTxnMock).toHaveBeenCalled()
     })
   })
 

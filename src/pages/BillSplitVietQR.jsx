@@ -3,7 +3,7 @@ import { PageHeader } from '@/components/common/PageHeader'
 import { formatCurrency } from '@/utils/formatCurrency'
 import { useAuth } from '@/context/AuthContext'
 import { POPULAR_BANKS, generateVietQrUrl, splitBill } from '@/services/vietqrService'
-import { QrCode, Users, Download, Copy, Check, CreditCard } from 'lucide-react'
+import { QrCode, Users, DollarSign, Download, Copy, Check, CreditCard, Sparkles } from 'lucide-react'
 
 /**
  * Trang Chia hóa đơn & Tạo mã VietQR (BillSplitVietQR)

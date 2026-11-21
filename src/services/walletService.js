@@ -1,4 +1,7 @@
 import { supabase } from '@/lib/supabaseClient'
+import { getLocalDateString } from '@/utils/date'
+
+const VALID_WALLET_TYPES = ['cash', 'bank', 'ewallet']
 
 /**
  * Service quản lý Ví và Chuyển tiền nội bộ
@@ -43,9 +46,13 @@ export async function createWallet(walletData) {
       throw new Error('Tên ví không được để trống')
     }
 
-    const validTypes = ['cash', 'bank', 'ewallet']
-    const walletType = validTypes.includes(walletData?.type) ? walletData.type : 'cash'
-    const initialBalance = Number(walletData?.balance) || 0
+    const walletType = VALID_WALLET_TYPES.includes(walletData?.type) ? walletData.type : 'cash'
+    const parsedBalance = walletData?.balance === '' || walletData?.balance === undefined || walletData?.balance === null
+      ? 0
+      : Number(walletData.balance)
+    if (!Number.isFinite(parsedBalance)) {
+      throw new Error('Số dư ban đầu không hợp lệ')
+    }
 
     const { data, error } = await supabase
       .from('wallets')
@@ -53,7 +60,7 @@ export async function createWallet(walletData) {
         user_id: user.id,
         name: trimmedName,
         type: walletType,
-        balance: initialBalance,
+        balance: parsedBalance,
         icon: walletData?.icon || 'wallet',
         color: walletData?.color || '#3B82F6',
         is_archived: false
@@ -69,6 +76,7 @@ export async function createWallet(walletData) {
 
 /**
  * Cập nhật thông tin ví (UC07)
+ * Whitelist các trường được phép cập nhật để tránh ghi đè ngoài ý muốn (user_id, id,...)
  * @param {string} walletId 
  * @param {{ name?: string, type?: 'cash' | 'bank' | 'ewallet', balance?: number, icon?: string, color?: string, is_archived?: boolean }} updates 
  * @returns {Promise<{ data: any, error: any }>}
@@ -79,18 +87,42 @@ export async function updateWallet(walletId, updates) {
       throw new Error('Thiếu ID ví cần cập nhật')
     }
 
-    const formattedUpdates = { ...updates }
+    const safeUpdates = updates && typeof updates === 'object' ? updates : {}
+    const formattedUpdates = {}
 
-    if ('name' in updates) {
-      const trimmedName = (updates.name || '').trim()
+    if ('name' in safeUpdates) {
+      const trimmedName = (safeUpdates.name || '').trim()
       if (!trimmedName) {
         throw new Error('Tên ví không được để trống')
       }
       formattedUpdates.name = trimmedName
     }
 
-    if ('balance' in updates && updates.balance !== undefined && updates.balance !== null) {
-      formattedUpdates.balance = Number(updates.balance) || 0
+    if ('type' in safeUpdates && safeUpdates.type !== undefined) {
+      if (!VALID_WALLET_TYPES.includes(safeUpdates.type)) {
+        throw new Error('Loại ví không hợp lệ')
+      }
+      formattedUpdates.type = safeUpdates.type
+    }
+
+    if ('balance' in safeUpdates && safeUpdates.balance !== undefined && safeUpdates.balance !== null && safeUpdates.balance !== '') {
+      const parsedBalance = Number(safeUpdates.balance)
+      if (!Number.isFinite(parsedBalance)) {
+        throw new Error('Số dư ví không hợp lệ')
+      }
+      formattedUpdates.balance = parsedBalance
+    }
+
+    if ('icon' in safeUpdates && safeUpdates.icon !== undefined) {
+      formattedUpdates.icon = safeUpdates.icon || 'wallet'
+    }
+
+    if ('color' in safeUpdates && safeUpdates.color !== undefined) {
+      formattedUpdates.color = safeUpdates.color || '#3B82F6'
+    }
+
+    if ('is_archived' in safeUpdates && safeUpdates.is_archived !== undefined) {
+      formattedUpdates.is_archived = Boolean(safeUpdates.is_archived)
     }
 
     const { data, error } = await supabase
@@ -148,7 +180,7 @@ export async function transferFunds({ fromWalletId, toWalletId, amount, note = '
     if (fromWalletId === toWalletId) {
       throw new Error('Ví nguồn và ví đích không được trùng nhau')
     }
-    if (isNaN(numAmount) || numAmount <= 0) {
+    if (!Number.isFinite(numAmount) || numAmount <= 0) {
       throw new Error('Số tiền chuyển phải lớn hơn 0')
     }
 
@@ -203,21 +235,30 @@ export async function transferFunds({ fromWalletId, toWalletId, amount, note = '
       throw new Error('Số dư ví nguồn không đủ để thực hiện chuyển tiền')
     }
 
-    const newFromBalance = Number(fromWallet.balance) - numAmount
+    const prevFromBalance = Number(fromWallet.balance)
+    const prevToBalance = Number(toWallet.balance)
+    const newFromBalance = prevFromBalance - numAmount
     const { error: updateFromErr } = await supabase
       .from('wallets')
       .update({ balance: newFromBalance })
       .eq('id', fromWalletId)
     if (updateFromErr) throw updateFromErr
 
-    const newToBalance = Number(toWallet.balance) + numAmount
+    const newToBalance = prevToBalance + numAmount
     const { error: updateToErr } = await supabase
       .from('wallets')
       .update({ balance: newToBalance })
       .eq('id', toWalletId)
-    if (updateToErr) throw updateToErr
+    if (updateToErr) {
+      try {
+        await supabase.from('wallets').update({ balance: prevFromBalance }).eq('id', fromWalletId)
+      } catch {
+        // Giữ nguyên lỗi gốc
+      }
+      throw updateToErr
+    }
 
-    const txnDate = date || new Date().toISOString().split('T')[0]
+    const txnDate = date || getLocalDateString()
     const transferNote = note || `Chuyển từ ${fromWallet.name} sang ${toWallet.name}`
 
     const { data: transaction, error: txnErr } = await supabase
@@ -235,7 +276,15 @@ export async function transferFunds({ fromWalletId, toWalletId, amount, note = '
       .select()
       .single()
 
-    if (txnErr) throw txnErr
+    if (txnErr) {
+      try {
+        await supabase.from('wallets').update({ balance: prevToBalance }).eq('id', toWalletId)
+        await supabase.from('wallets').update({ balance: prevFromBalance }).eq('id', fromWalletId)
+      } catch {
+        // Giữ nguyên lỗi gốc
+      }
+      throw txnErr
+    }
 
     return {
       data: {

@@ -154,6 +154,29 @@ describe('walletService - UC06 to UC09', () => {
       expect(resEmptyName.error.message).toContain('Tên ví không được để trống')
     })
 
+    it('chỉ whitelist các trường hợp lệ khi updateWallet và cho phép giữ số dư âm', async () => {
+      const mockQuery = {
+        update: vi.fn().mockReturnThis(),
+        eq: vi.fn().mockReturnThis(),
+        select: vi.fn().mockReturnThis(),
+        single: vi.fn().mockResolvedValue({ data: { id: 'w1', name: 'Ví âm', balance: -50000 }, error: null })
+      }
+      mockFrom.mockReturnValue(mockQuery)
+
+      const result = await updateWallet('w1', {
+        name: 'Ví âm',
+        balance: -50000,
+        user_id: 'hacker-id',
+        id: 'fake-id'
+      })
+
+      expect(mockQuery.update).toHaveBeenCalledWith({
+        name: 'Ví âm',
+        balance: -50000
+      })
+      expect(result.error).toBeNull()
+    })
+
     it('archiveWallet đánh dấu is_archived = true', async () => {
       const mockQuery = {
         update: vi.fn().mockReturnThis(),
@@ -275,6 +298,54 @@ describe('walletService - UC06 to UC09', () => {
       expect(result.data.fromWalletBalance).toBe(350000)
       expect(result.data.toWalletBalance).toBe(350000)
       expect(result.data.transactionId).toBe('txn-fallback-1')
+    })
+
+    it('tự động hoàn tác số dư ví nguồn khi fallback gặp lỗi lúc cộng ví đích', async () => {
+      mockRpc.mockResolvedValueOnce({
+        data: null,
+        error: { code: 'PGRST202', message: 'Function missing' }
+      })
+
+      const fromWallet = { id: 'w1', name: 'Ví A', balance: 500000 }
+      const toWallet = { id: 'w2', name: 'Ví B', balance: 200000 }
+      const walletUpdateCalls = []
+
+      mockFrom.mockImplementation((table) => {
+        if (table === 'wallets') {
+          return {
+            select: vi.fn().mockReturnThis(),
+            eq: vi.fn().mockImplementation((col, val) => ({
+              single: vi.fn().mockResolvedValue({
+                data: val === 'w1' ? fromWallet : toWallet,
+                error: null
+              })
+            })),
+            update: vi.fn().mockImplementation((payload) => ({
+              eq: vi.fn().mockImplementation((col, id) => {
+                walletUpdateCalls.push({ id, balance: payload.balance })
+                if (id === 'w2') {
+                  return Promise.resolve({ error: new Error('Lỗi ghi ví đích') })
+                }
+                return Promise.resolve({ error: null })
+              })
+            }))
+          }
+        }
+      })
+
+      const result = await transferFunds({
+        fromWalletId: 'w1',
+        toWalletId: 'w2',
+        amount: 150000
+      })
+
+      expect(result.data).toBeNull()
+      expect(result.error.message).toContain('Lỗi ghi ví đích')
+      expect(walletUpdateCalls).toEqual([
+        { id: 'w1', balance: 350000 },
+        { id: 'w2', balance: 350000 },
+        { id: 'w1', balance: 500000 }
+      ])
     })
   })
 })

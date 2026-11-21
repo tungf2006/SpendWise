@@ -61,8 +61,40 @@ export const CategoryPage = () => {
   }, [])
 
   useEffect(() => {
-    fetchCategoriesList()
-  }, [fetchCategoriesList])
+    let cancelled = false
+    async function loadInitial() {
+      try {
+        const { data, error: fetchErr } = await getCategories()
+        if (cancelled) return
+        if (fetchErr) throw fetchErr
+        setCategories(data || [])
+      } catch (err) {
+        if (cancelled) return
+        console.error('Lỗi khi tải danh mục:', err)
+        setError(err?.message || 'Không thể tải danh sách danh mục')
+        setToast({ show: true, message: 'Lỗi khi tải danh mục: ' + (err?.message || 'Lỗi không xác định'), type: 'error' })
+      } finally {
+        if (!cancelled) setLoading(false)
+      }
+    }
+    loadInitial()
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!showAddModal && !showEditModal) return
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape' && !isSubmitting) {
+        setShowAddModal(false)
+        setShowEditModal(false)
+        setEditingCategory(null)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [showAddModal, showEditModal, isSubmitting])
 
   const handleCreate = async (e) => {
     e.preventDefault()
@@ -247,7 +279,7 @@ export const CategoryPage = () => {
                     {c.keywords && c.keywords.length > 0 && (
                       <div className="mt-2 pt-2 border-t border-slate-200/50 flex flex-wrap gap-1">
                         {c.keywords.slice(0, 4).map((kw, i) => (
-                          <span key={i} className="text-[9px] bg-white text-slate-600 px-1.5 py-0.5 rounded border border-slate-200/70">
+                          <span key={`${c.id}-${kw}-${i}`} className="text-[9px] bg-white text-slate-600 px-1.5 py-0.5 rounded border border-slate-200/70">
                             {kw}
                           </span>
                         ))}
@@ -316,7 +348,7 @@ export const CategoryPage = () => {
                       {c.keywords && c.keywords.length > 0 && (
                         <div className="mt-2 pt-2 border-t border-slate-200/50 flex flex-wrap gap-1">
                           {c.keywords.slice(0, 4).map((kw, i) => (
-                            <span key={i} className="text-[9px] bg-white text-slate-600 px-1.5 py-0.5 rounded border border-slate-200/70">
+                            <span key={`${c.id}-${kw}-${i}`} className="text-[9px] bg-white text-slate-600 px-1.5 py-0.5 rounded border border-slate-200/70">
                               {kw}
                             </span>
                           ))}
@@ -336,8 +368,19 @@ export const CategoryPage = () => {
 
       {/* Add Custom Category Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-200">
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={() => {
+            if (!isSubmitting) setShowAddModal(false)
+          }}
+        >
+          <div
+            className="w-full max-w-md rounded-[2rem] bg-white/80 p-1.5 shadow-2xl ring-1 ring-slate-900/5 animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="rounded-[calc(2rem-0.375rem)] bg-white p-6 border border-slate-100">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
               <h3 className="font-display font-bold text-base text-slate-900">Thêm Danh Mục Tùy Chỉnh</h3>
               <button
@@ -428,14 +471,29 @@ export const CategoryPage = () => {
                 </button>
               </div>
             </form>
+            </div>
           </div>
         </div>
       )}
 
       {/* Edit Custom Category Modal (UC11) */}
       {showEditModal && editingCategory && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-slate-100 animate-in zoom-in-95 duration-200">
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200"
+          onClick={() => {
+            if (!isSubmitting) {
+              setShowEditModal(false)
+              setEditingCategory(null)
+            }
+          }}
+        >
+          <div
+            className="w-full max-w-md rounded-[2rem] bg-white/80 p-1.5 shadow-2xl ring-1 ring-slate-900/5 animate-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="rounded-[calc(2rem-0.375rem)] bg-white p-6 border border-slate-100">
             <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
               <h3 className="font-display font-bold text-base text-slate-900">Sửa Danh Mục Tùy Chỉnh</h3>
               <button
@@ -532,6 +590,7 @@ export const CategoryPage = () => {
                 </button>
               </div>
             </form>
+            </div>
           </div>
         </div>
       )}

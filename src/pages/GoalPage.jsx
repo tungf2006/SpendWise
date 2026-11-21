@@ -7,12 +7,14 @@ import confetti from 'canvas-confetti'
 import { 
   Target, 
   Plus, 
-    CheckCircle2, 
+  ArrowUpRight, 
+  CheckCircle2, 
   Trash2, 
   X, 
   Loader2, 
   Calendar,
-  } from 'lucide-react'
+  Sparkles
+} from 'lucide-react'
 
 /**
  * Trang Quản lý Mục tiêu Tiết kiệm (GoalPage)

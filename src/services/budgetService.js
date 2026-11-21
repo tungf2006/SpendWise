@@ -393,7 +393,7 @@ export async function getBudgetProgress(month = new Date().getMonth() + 1, year 
     let budgetProgress
     try {
       budgetProgress = await readBudgetProgressView(budgetUser, budgetPeriod)
-    } catch {
+    } catch (viewError) {
       // View thiếu / quyền chưa cấu hình? Tiếp tục tính bằng bảng gốc.
       // Lỗi của cả hai nhánh được trả về cho màn hình để tránh số liệu giả.
       budgetProgress = await readBudgetProgressTransactions(budgetUser, budgetPeriod)
