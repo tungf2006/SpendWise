@@ -49,9 +49,9 @@ export const LoginPage = () => {
         navigate(redirectPath, { replace: true })
       }
     } catch (err) {
-      if (err.message?.includes('Email not confirmed')) {
+      if (err.code === 'email_not_confirmed') {
         setErrorMsg('Email này chưa được xác thực. Vui lòng kiểm tra hộp thư hoặc tắt "Confirm email" trong Supabase.')
-      } else if (err.message?.includes('Invalid login credentials')) {
+      } else if (err.code === 'invalid_credentials') {
         setErrorMsg('Email hoặc mật khẩu không chính xác.')
       } else {
         setErrorMsg(err.message || 'Email hoặc mật khẩu không chính xác.')
