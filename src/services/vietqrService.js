@@ -33,9 +33,14 @@ export function generateVietQrUrl({
   accountName = '',
   template = 'compact'
 }) {
-  if (!bankBin || !bankAccount) return ''
+  const cleanBin = String(bankBin || '').replace(/\s/g, '')
+  const cleanAccount = String(bankAccount || '').replace(/\s/g, '')
+  const allowedTemplates = ['compact', 'compact2', 'qr_only', 'print']
 
-  const baseUrl = `https://img.vietqr.io/image/${bankBin}-${bankAccount}-${template}.png`
+  if (!/^\d{6}$/.test(cleanBin) || !/^\d+$/.test(cleanAccount)) return ''
+  if (!allowedTemplates.includes(template)) return ''
+
+  const baseUrl = `https://img.vietqr.io/image/${encodeURIComponent(cleanBin)}-${encodeURIComponent(cleanAccount)}-${template}.png`
   const queryParams = new URLSearchParams()
 
   if (amount && Number(amount) > 0) {
