@@ -17,6 +17,8 @@ import BillSplitVietQR from '@/pages/BillSplitVietQR'
 import ProfilePage from '@/pages/ProfilePage'
 import LoginPage from '@/pages/LoginPage'
 import RegisterPage from '@/pages/RegisterPage'
+import ForgotPasswordPage from '@/pages/ForgotPasswordPage'
+import ResetPasswordPage from '@/pages/ResetPasswordPage'
 import NotFoundPage from '@/pages/NotFoundPage'
 
 export function App() {
@@ -27,6 +29,8 @@ export function App() {
           {/* Public Routes (Không yêu cầu đăng nhập) */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
 
           {/* Protected Routes (Bắt buộc đăng nhập, nằm trong AppLayout) */}
           <Route

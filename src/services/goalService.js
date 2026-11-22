@@ -112,65 +112,24 @@ export async function deleteGoal(id) {
 export async function depositToGoal({ goalId, amount, walletId }) {
   try {
     const depositAmount = Number(amount)
-    if (depositAmount <= 0) throw new Error('Số tiền nạp phải lớn hơn 0')
 
-    // 1. Kiểm tra số dư ví nguồn
-    const { data: wallet, error: walletErr } = await supabase
-      .from('wallets')
-      .select('*')
-      .eq('id', walletId)
-      .single()
-
-    if (walletErr) throw walletErr
-    if (Number(wallet.balance) < depositAmount) {
-      throw new Error('Số dư ví không đủ để nạp vào mục tiêu tiết kiệm')
+    if (!goalId || !walletId) {
+      throw new Error('Vui lòng chọn mục tiêu và ví nguồn')
     }
 
-    // 2. Lấy thông tin mục tiêu hiện tại
-    const { data: goal, error: goalErr } = await supabase
-      .from('saving_goals')
-      .select('*')
-      .eq('id', goalId)
-      .single()
-
-    if (goalErr) throw goalErr
-
-    // 3. Trừ tiền ví nguồn
-    const newWalletBalance = Number(wallet.balance) - depositAmount
-    const { error: deductErr } = await supabase
-      .from('wallets')
-      .update({ balance: newWalletBalance })
-      .eq('id', walletId)
-
-    if (deductErr) throw deductErr
-
-    // 4. Cộng tiền vào mục tiêu & kiểm tra đã đạt đích hay chưa
-    const newGoalCurrentAmount = Number(goal.current_amount) + depositAmount
-    const isCompleted = newGoalCurrentAmount >= Number(goal.target_amount)
-
-    const { data: updatedGoal, error: updateGoalErr } = await supabase
-      .from('saving_goals')
-      .update({
-        current_amount: newGoalCurrentAmount,
-        status: isCompleted ? 'completed' : goal.status
-      })
-      .eq('id', goalId)
-      .select(`
-        *,
-        wallet:wallets(id, name, color, icon)
-      `)
-      .single()
-
-    if (updateGoalErr) throw updateGoalErr
-
-    return {
-      data: {
-        goal: updatedGoal,
-        walletBalance: newWalletBalance,
-        isCompleted
-      },
-      error: null
+    if (!Number.isFinite(depositAmount) || depositAmount <= 0) {
+      throw new Error('Số tiền nạp phải là số hợp lệ và lớn hơn 0')
     }
+
+    const { data, error } = await supabase.rpc('deposit_to_goal', {
+      p_goal_id: goalId,
+      p_wallet_id: walletId,
+      p_amount: depositAmount,
+    })
+
+    if (error) throw error
+
+    return { data, error: null }
   } catch (err) {
     return { data: null, error: err }
   }

@@ -87,7 +87,8 @@ export async function getProfile(userId) {
       .from('profiles')
       .select('*')
       .eq('id', userId)
-      .single()
+      .maybeSingle()
+
     return { data, error }
   } catch (err) {
     return { data: null, error: err }
@@ -102,15 +103,46 @@ export async function getProfile(userId) {
  */
 export async function updateProfile(userId, profileData) {
   try {
+    const allowedFields = [
+      'full_name',
+      'avatar_url',
+      'default_bank_bin',
+      'default_bank_account',
+    ]
+
+    const safeData = {}
+
+    for (const field of allowedFields) {
+      if (Object.prototype.hasOwnProperty.call(profileData, field)) {
+        safeData[field] = profileData[field]
+      }
+    }
+
     const { data, error } = await supabase
       .from('profiles')
-      .update({
-        ...profileData,
-        updated_at: new Date().toISOString()
+      .upsert({
+        id: userId,
+        ...safeData,
+        updated_at: new Date().toISOString(),
       })
-      .eq('id', userId)
       .select()
       .single()
+
+    return { data, error }
+  } catch (err) {
+    return { data: null, error: err }
+  }
+}
+
+/**
+ * Cập nhật mật khẩu mới cho người dùng đang có phiên hợp lệ.
+ */
+export async function updatePassword(newPassword) {
+  try {
+    const { data, error } = await supabase.auth.updateUser({
+      password: newPassword,
+    })
+
     return { data, error }
   } catch (err) {
     return { data: null, error: err }
