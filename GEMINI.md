@@ -238,6 +238,12 @@ Mỗi phiên làm việc, Agent PHẢI tuân thủ 5 nguyên tắc hành động
       * Giao dịch (UC12–UC13): `transactionService.js` tính Net Delta chuẩn xác + compensating rollback cho cả Thêm/Sửa/Xóa 3 loại `income`/`expense`/`transfer`, lọc theo Ví bao gồm cả ví nhận (`to_wallet_id`); `TransactionPage.jsx` có Modal Sửa giao dịch Double-Bezel (`Escape`/backdrop), Error Banner + Retry, bộ lọc khoảng ngày kèm cảnh báo `startDate > endDate`, phân trang `pageSize=20` tự lùi trang khi xóa phần tử cuối, tự reset danh mục khi đổi loại Thu/Chi.
       * Xuất CSV & Test (R4): Hợp nhất CSV chống Formula Injection (`=`, `+`, `-`, `@`), xuất đủ ví nhận và thu hồi URL an toàn; hoàn thiện 4 bộ Unit Test Vitest cho Core Data + CSV (68/68 tests toàn repo).
     - Toàn bộ tên hàm `export` ở `src/services/` bám đúng hợp đồng 13 modules trong `class_diagram_03_services.png` (`authService`, `walletService`, `categoryService`, `transactionService`, `budgetService`, `reportService`, `goalService`, `recurringService`, `notificationService`, `quickEntryParser`, `safeToSpendService`, `aiAssistantService`, `vietqrService`), trong đó `SafeToSpendService` phụ thuộc `BudgetService` và `AiAssistantService` phụ thuộc `BudgetService` + `SafeToSpendService`.
+    - **Cập nhật nhánh `feature/smart-features-tv3` (TV3 Lê Hoài Quốc - 23/11/2026):**
+      * Đã tích hợp trọn bộ Smart Features: Quick Entry Parser (`quickEntryParser.js` & `server/routes/quickEntryRoutes.js`), Safe-to-spend (`safeToSpendService.js`), Recurring Rules (`recurringService.js`, `recurringFallback.js`, `RecurringPage.jsx`), và Hệ thống Thông báo + Chuông (`notificationService.js`, `NotificationBell.jsx`).
+      * Khắc phục xung đột `safeToSpendService.js` (kết hợp xác thực Supabase JWT với cơ chế timeout `AbortController` chống treo Dashboard).
+      * Bổ sung đầy đủ chu kỳ `'daily'` vào `VALID_FREQUENCIES` và hàm tính ngày `calculateNextDueDate` trong `recurringService.js` để đồng bộ hoàn toàn với migration DB và UI.
+      * Toàn bộ 68/68 Unit Tests Vitest đạt màu xanh (pass 100%), Lint đạt 0 lỗi, Build Vite production thành công sạch sẽ.
+      * Đã đẩy nhánh lên GitHub (`origin/feature/smart-features-tv3`, commit `9ead70d`).
 
 ---
 
