@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { signUp } from '@/services/authService'
 import { Mail, Lock, User, ArrowRight, Loader2, AlertCircle, CheckCircle2 } from 'lucide-react'
@@ -16,10 +16,19 @@ export const RegisterPage = () => {
   const [successMsg, setSuccessMsg] = useState('')
 
   const navigate = useNavigate()
+  const redirectTimer = useRef(null)
+
+  useEffect(() => {
+    return () => {
+      if (redirectTimer.current) {
+        clearTimeout(redirectTimer.current)
+      }
+    }
+  }, [])
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!email || !password || !fullName) {
+    if (!email.trim() || !password || !fullName.trim()) {
       setErrorMsg('Vui lòng điền đầy đủ họ tên, email và mật khẩu')
       return
     }
@@ -34,17 +43,21 @@ export const RegisterPage = () => {
     setSuccessMsg('')
 
     try {
-      const { data, error } = await signUp(email, password, fullName)
+      const { data, error } = await signUp(
+        email.trim(),
+        password,
+        fullName.trim()
+      )
       if (error) throw error
 
       if (data?.session) {
         setSuccessMsg('Đăng ký tài khoản thành công! Đang chuyển hướng vào hệ thống...')
-        setTimeout(() => {
+        redirectTimer.current = setTimeout(() => {
           navigate('/', { replace: true })
         }, 1200)
       } else {
         setSuccessMsg('Đăng ký tài khoản thành công! Supabase đã gửi email xác nhận. Vui lòng kiểm tra hộp thư kích hoạt (hoặc tắt "Confirm email" trong Supabase để đăng nhập ngay).')
-        setTimeout(() => {
+        redirectTimer.current = setTimeout(() => {
           navigate('/login', { replace: true })
         }, 3000)
       }
