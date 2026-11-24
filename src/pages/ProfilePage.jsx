@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/context/AuthContext'
-import { updateProfile } from '@/services/authService'
+import { updateProfile, updatePassword } from '@/services/authService'
 import { POPULAR_BANKS } from '@/services/vietqrService'
 import { PageHeader } from '@/components/common/PageHeader'
 import { User, Mail, CreditCard, LogOut, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react'
@@ -19,6 +19,13 @@ export const ProfilePage = () => {
   const [bankAccount, setBankAccount] = useState('')
   const [loading, setLoading] = useState(false)
   const [statusMsg, setStatusMsg] = useState({ type: '', text: '' })
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [passwordLoading, setPasswordLoading] = useState(false)
+  const [passwordMessage, setPasswordMessage] = useState({
+    type: '',
+    text: '',
+  })
 
   useEffect(() => {
     if (profile) {
@@ -33,15 +40,30 @@ export const ProfilePage = () => {
   const handleSave = async (e) => {
     e.preventDefault()
     if (!user) return
+        if (!fullName.trim()) {
+      setStatusMsg({
+        type: 'error',
+        text: 'Vui lòng nhập họ tên hiển thị.',
+      })
+      return
+    }
+
+    if (bankAccount.trim() && !/^\d+$/.test(bankAccount.trim())) {
+      setStatusMsg({
+        type: 'error',
+        text: 'Số tài khoản ngân hàng chỉ được chứa chữ số.',
+      })
+      return
+    }
 
     setLoading(true)
     setStatusMsg({ type: '', text: '' })
 
     try {
       const { error } = await updateProfile(user.id, {
-        full_name: fullName,
+        full_name: fullName.trim(),
         default_bank_bin: bankBin,
-        default_bank_account: bankAccount
+        default_bank_account: bankAccount.trim()
       })
 
       if (error) throw error
@@ -54,10 +76,63 @@ export const ProfilePage = () => {
       setLoading(false)
     }
   }
+    const handleChangePassword = async (event) => {
+    event.preventDefault()
+    setPasswordMessage({ type: '', text: '' })
 
-  const handleSignOut = async () => {
-    await signOut()
-    navigate('/login', { replace: true })
+    if (newPassword.length < 6) {
+      setPasswordMessage({
+        type: 'error',
+        text: 'Mật khẩu mới phải có ít nhất 6 ký tự.',
+      })
+      return
+    }
+
+    if (newPassword !== confirmPassword) {
+      setPasswordMessage({
+        type: 'error',
+        text: 'Mật khẩu xác nhận không khớp.',
+      })
+      return
+    }
+
+    setPasswordLoading(true)
+
+    try {
+      const { error } = await updatePassword(newPassword)
+
+      if (error) throw error
+
+      setNewPassword('')
+      setConfirmPassword('')
+      setPasswordMessage({
+        type: 'success',
+        text: 'Đổi mật khẩu thành công.',
+      })
+    } catch (error) {
+      setPasswordMessage({
+        type: 'error',
+        text: error.message || 'Không thể đổi mật khẩu. Vui lòng thử lại.',
+      })
+    } finally {
+      setPasswordLoading(false)
+    }
+  }
+    const handleSignOut = async () => {
+    setLoading(true)
+    setStatusMsg({ type: '', text: '' })
+
+    try {
+      await signOut()
+      navigate('/login', { replace: true })
+    } catch (error) {
+      setStatusMsg({
+        type: 'error',
+        text: error.message || 'Không thể đăng xuất. Vui lòng thử lại.',
+      })
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -213,6 +288,76 @@ export const ProfilePage = () => {
                 </button>
               </div>
             </form>
+            <div className="mt-8 border-t border-slate-100 pt-6">
+              <h3 className="font-display font-bold text-base text-slate-900">
+                Đổi mật khẩu
+              </h3>
+
+              {passwordMessage.text && (
+                <p
+                  role={passwordMessage.type === 'error' ? 'alert' : 'status'}
+                  className={`mt-4 rounded-2xl p-3 text-sm ${
+                    passwordMessage.type === 'success'
+                      ? 'bg-emerald-50 text-emerald-700'
+                      : 'bg-rose-50 text-rose-700'
+                  }`}
+                >
+                  {passwordMessage.text}
+                </p>
+              )}
+
+              <form onSubmit={handleChangePassword} className="mt-4 space-y-4">
+                <div>
+                  <label
+                    htmlFor="profile-new-password"
+                    className="block text-xs font-bold text-slate-700"
+                  >
+                    Mật khẩu mới
+                  </label>
+
+                  <input
+                    id="profile-new-password"
+                    type="password"
+                    autoComplete="new-password"
+                    required
+                    minLength={6}
+                    value={newPassword}
+                    onChange={(event) => setNewPassword(event.target.value)}
+                    className="mt-2 w-full rounded-full border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="profile-confirm-password"
+                    className="block text-xs font-bold text-slate-700"
+                  >
+                    Xác nhận mật khẩu mới
+                  </label>
+
+                  <input
+                    id="profile-confirm-password"
+                    type="password"
+                    autoComplete="new-password"
+                    required
+                    minLength={6}
+                    value={confirmPassword}
+                    onChange={(event) =>
+                      setConfirmPassword(event.target.value)
+                    }
+                    className="mt-2 w-full rounded-full border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={passwordLoading}
+                  className="rounded-full bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+                >
+                  {passwordLoading ? 'Đang cập nhật...' : 'Đổi mật khẩu'}
+                </button>
+              </form>
+            </div>
           </div>
         </div>
 

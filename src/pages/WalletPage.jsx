@@ -468,11 +468,10 @@ export const WalletPage = () => {
                   Số dư ban đầu (VNĐ)
                 </label>
                 <input
-                  type="number"
-                  min="0"
-                  step="1000"
-                  value={balance}
-                  onChange={(e) => setBalance(e.target.value)}
+                  type="text"
+                  inputMode="numeric"
+                  value={String(balance).replace(/\B(?=(\d{3})+(?!\d))/g, '.')}
+                  onChange={(e) => setBalance(e.target.value.replace(/\D/g, ''))}
                   placeholder="0"
                   className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-full text-xs text-slate-900 font-display font-bold"
                 />
@@ -587,10 +586,14 @@ export const WalletPage = () => {
                   Số dư hiện tại (VNĐ)
                 </label>
                 <input
-                  type="number"
-                  step="1000"
-                  value={editBalance}
-                  onChange={(e) => setEditBalance(e.target.value)}
+                  type="text"
+                  inputMode="numeric"
+                  value={String(editBalance).replace(/\B(?=(\d{3})+(?!\d))/g, '.')}
+                  onChange={(e) => {
+                    const raw = e.target.value
+                    const digits = raw.replace(/\D/g, '')
+                    setEditBalance(raw.startsWith('-') ? `-${digits}` : digits)
+                  }}
                   className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-full text-xs text-slate-900 font-display font-bold"
                 />
               </div>

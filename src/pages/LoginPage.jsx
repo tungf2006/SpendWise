@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { signIn, signUp } from '@/services/authService'
+import { signIn } from '@/services/authService'
 import { Mail, Lock, ArrowRight, Loader2, AlertCircle, Sparkles, Zap } from 'lucide-react'
 
 /**
@@ -25,7 +25,11 @@ export const LoginPage = () => {
 
   const navigate = useNavigate()
   const location = useLocation()
-  const redirectPath = location.state?.from?.pathname || '/'
+  const from = location.state?.from
+
+  const redirectPath = from
+    ? `${from.pathname || '/'}${from.search || ''}${from.hash || ''}`
+    : '/'
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -45,9 +49,9 @@ export const LoginPage = () => {
         navigate(redirectPath, { replace: true })
       }
     } catch (err) {
-      if (err.message?.includes('Email not confirmed')) {
+      if (err.code === 'email_not_confirmed') {
         setErrorMsg('Email này chưa được xác thực. Vui lòng kiểm tra hộp thư hoặc tắt "Confirm email" trong Supabase.')
-      } else if (err.message?.includes('Invalid login credentials')) {
+      } else if (err.code === 'invalid_credentials') {
         setErrorMsg('Email hoặc mật khẩu không chính xác.')
       } else {
         setErrorMsg(err.message || 'Email hoặc mật khẩu không chính xác.')
@@ -61,40 +65,32 @@ export const LoginPage = () => {
    * Đăng nhập 1-Click với tài khoản Demo hoặc thành viên nhóm
    * Tự động tạo tài khoản nếu tài khoản demo chưa có trong Supabase
    */
-  const handleDemoLogin = async (demoEmail = 'demo@spendwise.vn', demoPass = '123456', demoName = 'Người dùng Demo (SpendWise)') => {
+  const handleDemoLogin = async (
+    demoEmail = 'demo@spendwise.vn',
+    demoPass = '123456'
+  ) => {
     setEmail(demoEmail)
     setPassword(demoPass)
     setLoading(true)
     setErrorMsg('')
 
     try {
-      // 1. Thử đăng nhập tài khoản trước
-      let { data, error } = await signIn(demoEmail, demoPass)
+      const { data, error } = await signIn(demoEmail, demoPass)
 
-      // 2. Nếu tài khoản chưa từng tồn tại trong Auth, tự động đăng ký luôn
-      if (error && (error.message?.includes('Invalid login credentials') || error.status === 400)) {
-        const { error: signUpError } = await signUp(demoEmail, demoPass, demoName)
-        if (signUpError) {
-          throw signUpError
-        }
-        // Thử đăng nhập lại sau khi vừa tạo
-        const retry = await signIn(demoEmail, demoPass)
-        if (retry.error) throw retry.error
-        data = retry.data
-      } else if (error) {
-        throw error
-      }
+      if (error) throw error
 
       if (data?.user) {
         navigate(redirectPath, { replace: true })
-      }
-    } catch (err) {
-      if (err.message?.includes('Email not confirmed')) {
-        setErrorMsg(`Tài khoản "${demoEmail}" chưa xác thực email. Vui lòng vào Supabase Dashboard > Authentication > Providers > Email để TẮT "Confirm email", hoặc vào Authentication > Users bấm Confirm email.`)
-      } else if (err.message?.includes('Invalid login credentials')) {
-        setErrorMsg('Mật khẩu không chính xác hoặc tài khoản chưa được kích hoạt.')
       } else {
-        setErrorMsg(err.message || 'Không thể đăng nhập tài khoản demo.')
+        setErrorMsg('Không thể đăng nhập tài khoản demo.')
+      }
+    } catch (error) {
+      if (error.code === 'email_not_confirmed') {
+        setErrorMsg('Tài khoản demo chưa được xác thực email.')
+      } else if (error.code === 'invalid_credentials') {
+        setErrorMsg('Email hoặc mật khẩu của tài khoản demo không chính xác.')
+      } else {
+        setErrorMsg(error.message || 'Không thể đăng nhập tài khoản demo.')
       }
     } finally {
       setLoading(false)
@@ -168,6 +164,15 @@ export const LoginPage = () => {
                 </div>
               </div>
 
+              <div className="text-right">
+                <Link
+                  to="/forgot-password"
+                  className="text-xs font-semibold text-emerald-700 hover:underline"
+                >
+                  Quên mật khẩu?
+                </Link>
+              </div>
+              
               <div className="pt-2">
                 <button
                   type="submit"
@@ -187,7 +192,8 @@ export const LoginPage = () => {
                 </button>
               </div>
             </form>
-
+            {import.meta.env.DEV && (
+              <>
             {/* Phân cách Hoặc Đăng nhập nhanh */}
             <div className="relative my-5">
               <div className="absolute inset-0 flex items-center">
@@ -236,7 +242,8 @@ export const LoginPage = () => {
                 </div>
               </div>
             </div>
-
+              </>
+            )}
             <div className="mt-6 text-center text-xs text-slate-500">
               Chưa có tài khoản SpendWise?{' '}
               <Link to="/register" className="font-semibold text-brand-600 hover:text-brand-700 hover:underline">
