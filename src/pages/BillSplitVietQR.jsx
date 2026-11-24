@@ -3,7 +3,7 @@ import { PageHeader } from '@/components/common/PageHeader'
 import { formatCurrency } from '@/utils/formatCurrency'
 import { useAuth } from '@/context/AuthContext'
 import { POPULAR_BANKS, generateVietQrUrl, splitBill } from '@/services/vietqrService'
-import { QrCode, Users, DollarSign, Download, Copy, Check, CreditCard, Sparkles } from 'lucide-react'
+import { QrCode, Users, Download, Copy, Check, CreditCard } from 'lucide-react'
 
 /**
  * Trang Chia hóa đơn & Tạo mã VietQR (BillSplitVietQR)
@@ -22,6 +22,8 @@ export const BillSplitVietQR = () => {
   const [bankAccount, setBankAccount] = useState('')
   const [memo, setMemo] = useState('Tien an toi nhom')
   const [copied, setCopied] = useState(false)
+  const [actionMessage, setActionMessage] = useState('')
+  const [failedQrUrl, setFailedQrUrl] = useState('')
 
   useEffect(() => {
     if (profile?.default_bank_bin) {
@@ -32,24 +34,70 @@ export const BillSplitVietQR = () => {
     }
   }, [profile])
 
-  const splitResult = splitBill({
-    totalAmount: Number(totalAmount) || 0,
-    numberOfPeople: Number(numberOfPeople) || 1,
-    tipPercent: Number(tipPercent) || 0
-  })
+  const peopleValue = Number(numberOfPeople)
+  const peopleValid =
+    numberOfPeople !== '' &&
+    Number.isInteger(peopleValue) &&
+    peopleValue >= 1 &&
+    peopleValue <= 50
 
-  const qrUrl = generateVietQrUrl({
+  const splitResult = peopleValid
+    ? splitBill({
+        totalAmount: Number(totalAmount) || 0,
+        numberOfPeople: peopleValue,
+        tipPercent: Number(tipPercent) || 0
+      })
+    : null
+
+  const qrUrl = splitResult ? generateVietQrUrl({
     bankBin,
     bankAccount,
     amount: splitResult.amountPerPerson,
     memo: memo || 'SpendWise Chia tien',
     template: 'compact'
-  })
+  }) : ''
 
-  const handleCopyMemo = () => {
-    navigator.clipboard.writeText(memo)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+  const handleCopyMemo = async () => {
+    setActionMessage('')
+
+    try {
+      await navigator.clipboard.writeText(memo)
+      setCopied(true)
+      setActionMessage('Đã sao chép nội dung chuyển khoản.')
+    } catch {
+      setCopied(false)
+      setActionMessage('Không thể sao chép. Bạn hãy chọn và sao chép nội dung thủ công.')
+    }
+  }
+
+  const handleDownloadQr = async () => {
+    if (!qrUrl) return
+
+    setActionMessage('')
+
+    try {
+      const response = await fetch(qrUrl)
+
+      if (!response.ok) {
+        throw new Error('Không tải được ảnh QR')
+      }
+
+      const blob = await response.blob()
+      const objectUrl = URL.createObjectURL(blob)
+      const link = document.createElement('a')
+
+      link.href = objectUrl
+      link.download = 'vietqr_spendwise.png'
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+
+      setTimeout(() => URL.revokeObjectURL(objectUrl), 1000)
+    } catch {
+      setActionMessage(
+        'Không thể tải trực tiếp. Hãy dùng liên kết mở ảnh QR trong tab mới bên dưới.'
+      )
+    }
   }
 
   return (
@@ -99,9 +147,14 @@ export const BillSplitVietQR = () => {
                     min="1"
                     max="50"
                     value={numberOfPeople}
-                    onChange={(e) => setNumberOfPeople(Math.max(1, Number(e.target.value)))}
+                    onChange={(e) => setNumberOfPeople(e.target.value)}
                     className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-full text-sm font-semibold text-slate-900 text-center"
                   />
+                  {!peopleValid && (
+                    <p role="alert" className="mt-1 text-xs text-rose-600">
+                      Số người phải là số nguyên từ 1 đến 50.
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -124,15 +177,21 @@ export const BillSplitVietQR = () => {
                 <div>
                   <span className="text-[11px] font-semibold text-slate-500 block">Mỗi người cần chuyển</span>
                   <span className="font-display font-black text-2xl text-brand-700 tracking-tight">
-                    {formatCurrency(splitResult.amountPerPerson)}
+                    {splitResult ? formatCurrency(splitResult.amountPerPerson) : '—'}
                   </span>
                 </div>
                 <div className="text-right text-xs text-slate-500">
-                  <span>Tổng chia: {formatCurrency(splitResult.totalAmountWithTip)}</span>
+                  <span>Tổng chia: {splitResult ? formatCurrency(splitResult.totalAmountWithTip) : '—'}</span>
                 </div>
               </div>
             </div>
           </div>
+
+          {actionMessage && (
+            <p role="status" className="rounded-2xl bg-slate-100 p-3 text-xs text-slate-700">
+              {actionMessage}
+            </p>
+          )}
 
           {/* Receiving Bank Section */}
           <div className="rounded-[2rem] bg-white/70 p-2 shadow-soft-md ring-1 ring-slate-900/5">
@@ -208,19 +267,26 @@ export const BillSplitVietQR = () => {
                 <span>Mã VietQR Thanh Toán Napas247</span>
               </div>
 
-              {bankAccount ? (
+              {qrUrl && failedQrUrl !== qrUrl ? (
                 <div className="p-3 bg-white rounded-2xl border border-slate-200 shadow-sm mb-4">
                   <img
                     src={qrUrl}
                     alt="VietQR Code"
                     className="w-64 h-auto max-w-full rounded-lg mx-auto"
                     loading="lazy"
+                    onError={() => setFailedQrUrl(qrUrl)}
                   />
                 </div>
               ) : (
                 <div className="w-64 h-64 rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center p-6 text-slate-400 text-xs mb-4">
                   <QrCode className="w-10 h-10 mb-2 opacity-40" />
-                  <span>Vui lòng nhập Số tài khoản ngân hàng bên cạnh để hiển thị mã QR</span>
+                  <span>
+                    {!peopleValid
+                      ? 'Vui lòng nhập số người hợp lệ để tạo mã QR.'
+                      : failedQrUrl === qrUrl && qrUrl
+                        ? 'Không tải được ảnh QR. Vui lòng kiểm tra thông tin và thử lại.'
+                        : 'Vui lòng nhập số tài khoản ngân hàng hợp lệ để hiển thị mã QR.'}
+                  </span>
                 </div>
               )}
 
@@ -228,7 +294,7 @@ export const BillSplitVietQR = () => {
                 <div className="flex justify-between">
                   <span className="text-slate-400">Số tiền mỗi người:</span>
                   <span className="font-display font-bold text-brand-600 text-sm">
-                    {formatCurrency(splitResult.amountPerPerson)}
+                    {splitResult ? formatCurrency(splitResult.amountPerPerson) : '—'}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -237,17 +303,25 @@ export const BillSplitVietQR = () => {
                 </div>
               </div>
 
-              {bankAccount && (
-                <a
-                  href={qrUrl}
-                  download="vietqr_spendwise.png"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="w-full mt-2 py-2.5 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold flex items-center justify-center gap-2 transition-transform active:scale-95"
-                >
-                  <Download className="w-4 h-4" />
-                  <span>Tải ảnh mã QR</span>
-                </a>
+              {qrUrl && (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleDownloadQr}
+                    className="w-full mt-2 py-2.5 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold flex items-center justify-center gap-2 transition-transform active:scale-95"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>Tải ảnh mã QR</span>
+                  </button>
+                  <a
+                    href={qrUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-2 text-xs font-semibold text-brand-700 underline"
+                  >
+                    Mở ảnh QR trong tab mới
+                  </a>
+                </>
               )}
 
             </div>
