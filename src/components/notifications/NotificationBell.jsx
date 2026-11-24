@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Bell, Check, CheckCheck, Trash2, AlertTriangle, CalendarClock, Loader2, X } from 'lucide-react'
-import { useAuth } from '@/context/AuthContext'
+import { useAuth } from '@/context/useAuth'
 import {
   getNotifications, getUnreadCount, markAsRead, markAllAsRead, clearReadNotifications
 } from '@/services/notificationService'
@@ -36,12 +36,13 @@ export function NotificationBell() {
 
   useEffect(() => {
     mountedRef.current = true
-    void refresh()
+    const initTimer = window.setTimeout(() => { void refresh() }, 0)
     const onUpdated = () => { void refresh() }
     window.addEventListener('spendwise:notifications-updated', onUpdated)
     const intervalId = window.setInterval(onUpdated, 60000)
     return () => {
       mountedRef.current = false
+      window.clearTimeout(initTimer)
       window.removeEventListener('spendwise:notifications-updated', onUpdated)
       window.clearInterval(intervalId)
     }

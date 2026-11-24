@@ -244,6 +244,10 @@ Mỗi phiên làm việc, Agent PHẢI tuân thủ 5 nguyên tắc hành động
       * Bổ sung đầy đủ chu kỳ `'daily'` vào `VALID_FREQUENCIES` và hàm tính ngày `calculateNextDueDate` trong `recurringService.js` để đồng bộ hoàn toàn với migration DB và UI.
       * Toàn bộ 68/68 Unit Tests Vitest đạt màu xanh (pass 100%), Lint đạt 0 lỗi, Build Vite production thành công sạch sẽ.
       * Đã đẩy nhánh lên GitHub (`origin/feature/smart-features-tv3`, commit `9ead70d`).
+    - **Tích hợp toàn đội & Dọn Lint/PWA/E2E trên nhánh `feature/integration-final` (24/11/2026):**
+      * Đã merge sạch `origin/feature/smart-features-tv3` (TV3), `origin/feature/auth-goal-tv1` & `origin/feature/vietqr-tv1` (TV1) vào `feature/integration-final` từ `develop`.
+      * Hoàn thiện phần P0/P1 của TV2: `Navbar.jsx` (thêm `/categories`, active route, bỏ hardcode tên, nút Dark/Light theme + CSS `html.dark`), `BottomNav.jsx` (drawer "Thêm" đủ 6 route phụ trên Mobile), `AppLayout.jsx` (điều hướng SPA `navigate('/#quick-entry')`), `DashboardPage.jsx` (Error/Retry, Skeleton, Enter lưu nhanh, `Toast`, modal Double-Bezel), `BudgetPage.jsx` (dùng `overall_percentage`/`overall_status` từ service, `Toast`/`ConfirmDialog`, race-condition guard), `ReportPage.jsx` & `reportService.js` (gom nhóm theo `category.id`, validate tham số, Empty/Error state, format VNĐ trên biểu đồ), PWA (`public/sw.js` Network-First HTML + bỏ qua `/api/`, `icon-192.png`/`icon-512.png`, `manifest.json`, `index.html`), và tách chunk (`React.lazy()` + `ScrollToTop` trong `App.jsx` + `manualChunks` trong `vite.config.js`).
+      * Tách `src/context/useAuth.js` khỏi `AuthContext.jsx` và dọn sạch **0 errors / 0 warnings** (`oxlint` 70 files); đạt **10/10 test files (80/80 tests)** Vitest + Vite build sạch không còn cảnh báo chunk > 500 kB.
 
 ---
 
@@ -259,3 +263,12 @@ Mỗi phiên làm việc, Agent PHẢI tuân thủ 5 nguyên tắc hành động
   4. `pptx` (`skills/pptx/SKILL.md`): Xử lý bài trình chiếu slide PowerPoint.
 - **NGUYÊN TẮC BẮT BUỘC (MANDATORY ENFORCEMENT):**
   - Bất cứ khi nào Agent nhận yêu cầu liên quan đến tài liệu Word (`.docx`), PDF (`.pdf`), Excel (`.xlsx`) hoặc PowerPoint (`.pptx`), Agent **BẮT BUỘC PHẢI** đọc nội dung `SKILL.md` và các tài liệu tham khảo/scripts liên quan của skill đó trước khi thực thi để đảm bảo định dạng văn bản chuẩn chỉ, không lỗi render, không hỏng XML/metadata.
+
+---
+
+## 16. PHÂN CÔNG LÀM TIỂU LUẬN CUỐI KỲ (`Phan_cong_tieu_luan_SpendWise.xlsx`)
+- **File theo dõi chính:** `Phan_cong_tieu_luan_SpendWise.xlsx` (4 sheets: `Tong_quan_Tien_do`, `Phan_cong_chi_tiet`, `Quy_trinh_Tong_hop`, `Quy_chuan_Trinh_bay`).
+- **Nguyên tắc phân công:** Leader (Phan Thanh Tùng) **không viết nội dung**, chỉ tổng hợp, kiểm duyệt 2 mốc (`27/11/2026` và `30/11/2026`) và ghép thành bài tiểu luận hoàn chỉnh. Toàn bộ 19 đầu việc viết tiểu luận (58.0 giờ, ~73 trang dự kiến) được chia đều theo thế mạnh cho 3 thành viên:
+  - `TV1` (Trương Bích Vân): Phần mở đầu, Chương 1, Chương 3 (Use Case), Chương 4 (Auth/Goal/VietQR), Chương 5 (Test Plan, 40–50 Test Cases, kết quả 80 Unit/API tests), TLTK & Phụ lục 26 UC.
+  - `TV2` (Hồ Nguyên Văn): Chương 2 (Frontend & PWA/VietQR), Chương 3 (UI/UX Design), Chương 4 (Cấu trúc FE, Dashboard, Budget, Report, ảnh Desktop/Mobile), Chương 5 (Kiểm thử UI/PWA).
+  - `TV3` (Lê Hoài Quốc): Chương 2 (Backend Express, Supabase RLS, Gemini AI), Chương 3 (Kiến trúc 3 tầng, Deployment, ERD 8 bảng, Class Diagram), Chương 4 (CSDL, API Gateway, Core Data & 3 tính năng thông minh), Kết luận & Hướng phát triển.

@@ -1,17 +1,43 @@
-import React from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { Sparkles, User as UserIcon } from 'lucide-react'
-import { NotificationBell } from '@/components/notifications/NotificationBell' // SPENDWISE_UC24_UC25_P0_FIX:navbar
-import { useAuth } from '@/context/AuthContext'
+import React, { useEffect, useState } from 'react'
+import { Link, useLocation } from 'react-router-dom'
+import { Moon, Sparkles, Sun } from 'lucide-react'
+import { NotificationBell } from '@/components/notifications/NotificationBell'
+import { useAuth } from '@/context/useAuth'
+
+const NAV_LINKS = [
+  { path: '/', label: 'Tổng quan' },
+  { path: '/transactions', label: 'Giao dịch' },
+  { path: '/wallets', label: 'Ví tiền' },
+  { path: '/categories', label: 'Danh mục' },
+  { path: '/budgets', label: 'Ngân sách' },
+  { path: '/reports', label: 'Báo cáo' },
+  { path: '/goals', label: 'Tiết kiệm' },
+  { path: '/recurring', label: 'Định kỳ' },
+  { path: '/bill-split', label: 'VietQR' },
+]
+
+function getInitialTheme() {
+  if (typeof window === 'undefined') return 'light'
+  const saved = window.localStorage.getItem('spendwise_theme')
+  if (saved === 'dark' || saved === 'light') return saved
+  return window.matchMedia?.('(prefers-color-scheme: dark)')?.matches ? 'dark' : 'light'
+}
 
 export const Navbar = ({
   dbStatus = { checking: false, connected: true },
   onOpenAiChat = () => {}
 }) => {
   const { user, profile } = useAuth()
-  const navigate = useNavigate()
+  const location = useLocation()
+  const [theme, setTheme] = useState(getInitialTheme)
 
-  const displayName = profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Phan Thanh Tùng'
+  useEffect(() => {
+    const root = document.documentElement
+    root.classList.toggle('dark', theme === 'dark')
+    window.localStorage.setItem('spendwise_theme', theme)
+  }, [theme])
+
+  const displayName = profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Người dùng'
   const initials = displayName
     .split(' ')
     .filter(Boolean)
@@ -25,7 +51,7 @@ export const Navbar = ({
       <div className="max-w-6xl mx-auto rounded-full bg-white/80 backdrop-blur-xl border border-white/80 shadow-soft-md ring-1 ring-slate-900/5 px-4 sm:px-6 py-2.5 flex items-center justify-between transition-all duration-300">
         
         {/* Brand Logo & Name */}
-        <Link to="/" className="flex items-center gap-3 group">
+        <Link to="/" className="flex items-center gap-3 group shrink-0">
           <div className="w-9 h-9 rounded-full bg-slate-900 flex items-center justify-center text-white shadow-sm ring-1 ring-white/20 transition-transform group-hover:scale-105">
             <span className="font-display font-black text-sm tracking-tighter text-transparent bg-clip-text bg-gradient-to-tr from-brand-200 to-emerald-300">
               SW
@@ -44,61 +70,33 @@ export const Navbar = ({
         </Link>
 
         {/* Desktop Navigation Links */}
-        <nav className="hidden md:flex items-center gap-1 bg-slate-100/70 p-1 rounded-full border border-slate-200/50">
-          <Link
-            to="/"
-            className="px-3.5 py-1 rounded-full text-xs font-semibold text-slate-700 hover:text-slate-900 hover:bg-white transition-all"
-          >
-            Tổng quan
-          </Link>
-          <Link
-            to="/transactions"
-            className="px-3.5 py-1 rounded-full text-xs font-semibold text-slate-700 hover:text-slate-900 hover:bg-white transition-all"
-          >
-            Giao dịch
-          </Link>
-          <Link
-            to="/wallets"
-            className="px-3.5 py-1 rounded-full text-xs font-semibold text-slate-700 hover:text-slate-900 hover:bg-white transition-all"
-          >
-            Ví tiền
-          </Link>
-          <Link
-            to="/budgets"
-            className="px-3.5 py-1 rounded-full text-xs font-semibold text-slate-700 hover:text-slate-900 hover:bg-white transition-all"
-          >
-            Ngân sách
-          </Link>
-          <Link
-            to="/reports"
-            className="px-3.5 py-1 rounded-full text-xs font-semibold text-slate-700 hover:text-slate-900 hover:bg-white transition-all"
-          >
-            Báo cáo
-          </Link>
-          <Link
-            to="/goals"
-            className="px-3.5 py-1 rounded-full text-xs font-semibold text-slate-700 hover:text-slate-900 hover:bg-white transition-all"
-          >
-            Tiết kiệm
-          </Link>
-          <Link
-            to="/recurring"
-            className="px-3.5 py-1 rounded-full text-xs font-semibold text-slate-700 hover:text-slate-900 hover:bg-white transition-all"
-          >
-            Định kỳ
-          </Link>
-          <Link
-            to="/bill-split"
-            className="px-3.5 py-1 rounded-full text-xs font-semibold text-slate-700 hover:text-slate-900 hover:bg-white transition-all"
-          >
-            VietQR
-          </Link>
+        <nav aria-label="Điều hướng chính" className="hidden lg:flex items-center gap-0.5 bg-slate-100/70 p-1 rounded-full border border-slate-200/50">
+          {NAV_LINKS.map((item) => {
+            const isActive = item.path === '/'
+              ? location.pathname === '/'
+              : location.pathname.startsWith(item.path)
+
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                aria-current={isActive ? 'page' : undefined}
+                className={`px-3 py-1 rounded-full text-xs font-semibold transition-all whitespace-nowrap ${
+                  isActive
+                    ? 'bg-slate-900 text-white shadow-xs'
+                    : 'text-slate-700 hover:text-slate-900 hover:bg-white'
+                }`}
+              >
+                {item.label}
+              </Link>
+            )
+          })}
         </nav>
 
         {/* Database Status Indicator & Action Pills */}
-        <div className="flex items-center gap-2 sm:gap-3">
+        <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
           {/* Supabase status badge */}
-          <div className={`hidden xl:flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-medium border ${
+          <div className={`hidden xl:flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border ${
             dbStatus.checking
               ? 'bg-slate-100 border-slate-200 text-slate-600'
               : dbStatus.connected
@@ -108,8 +106,19 @@ export const Navbar = ({
             <span className={`w-1.5 h-1.5 rounded-full ${
               dbStatus.checking ? 'bg-slate-400 animate-pulse' : dbStatus.connected ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'
             }`}></span>
-            <span>{dbStatus.connected ? 'Supabase Connected' : 'DB Disconnected'}</span>
+            <span>{dbStatus.connected ? 'Connected' : 'Disconnected'}</span>
           </div>
+
+          {/* Theme Toggle */}
+          <button
+            type="button"
+            onClick={() => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))}
+            aria-label={theme === 'dark' ? 'Chuyển sang giao diện sáng' : 'Chuyển sang giao diện tối'}
+            title={theme === 'dark' ? 'Giao diện sáng' : 'Giao diện tối'}
+            className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 border border-slate-200/60 text-slate-700 flex items-center justify-center transition-colors cursor-pointer"
+          >
+            {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4" />}
+          </button>
 
           {/* Quick AI Assistant Pill */}
           <button 
@@ -124,6 +133,7 @@ export const Navbar = ({
           </button>
 
           <NotificationBell />
+
           {/* User Profile Pill */}
           <Link
             to="/profile"
@@ -132,7 +142,7 @@ export const Navbar = ({
             <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-brand-600 to-indigo-600 text-white flex items-center justify-center text-xs font-bold shadow-xs">
               {initials}
             </div>
-            <span className="hidden lg:inline text-xs font-semibold text-slate-800 max-w-[120px] truncate">
+            <span className="hidden 2xl:inline text-xs font-semibold text-slate-800 max-w-[110px] truncate">
               {displayName}
             </span>
           </Link>

@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { PageHeader } from '@/components/common/PageHeader'
 import { formatCurrency } from '@/utils/formatCurrency'
-import { useAuth } from '@/context/AuthContext'
+import { useAuth } from '@/context/useAuth'
 import { POPULAR_BANKS, generateVietQrUrl, splitBill } from '@/services/vietqrService'
 import { QrCode, Users, Download, Copy, Check, CreditCard } from 'lucide-react'
 
@@ -18,21 +18,14 @@ export const BillSplitVietQR = () => {
   const [tipPercent, setTipPercent] = useState(0)
 
   // Bank & VietQR state
-  const [bankBin, setBankBin] = useState('970436') // Default VCB
-  const [bankAccount, setBankAccount] = useState('')
+  const [bankBinDraft, setBankBin] = useState(null)
+  const [bankAccountDraft, setBankAccount] = useState(null)
+  const bankBin = bankBinDraft ?? profile?.default_bank_bin ?? '970436'
+  const bankAccount = bankAccountDraft ?? profile?.default_bank_account ?? ''
   const [memo, setMemo] = useState('Tien an toi nhom')
   const [copied, setCopied] = useState(false)
   const [actionMessage, setActionMessage] = useState('')
   const [failedQrUrl, setFailedQrUrl] = useState('')
-
-  useEffect(() => {
-    if (profile?.default_bank_bin) {
-      setBankBin(profile.default_bank_bin)
-    }
-    if (profile?.default_bank_account) {
-      setBankAccount(profile.default_bank_account)
-    }
-  }, [profile])
 
   const peopleValue = Number(numberOfPeople)
   const peopleValid =

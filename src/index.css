@@ -47,3 +47,56 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #CBD5E1;
 }
+
+/* Dark mode theme overrides (toggled via html.dark in Navbar) */
+html.dark body {
+  background-color: #0B0F19;
+  color: #E2E8F0;
+}
+
+html.dark .bg-\[\#F8FAFC\],
+html.dark .bg-slate-50 {
+  background-color: #0B0F19 !important;
+}
+
+html.dark .bg-white {
+  background-color: #111827 !important;
+}
+
+html.dark .bg-white\/80,
+html.dark .bg-white\/70 {
+  background-color: rgba(17, 24, 39, 0.88) !important;
+}
+
+html.dark .bg-slate-100,
+html.dark .bg-slate-100\/70,
+html.dark .bg-slate-100\/80 {
+  background-color: rgba(30, 41, 59, 0.85) !important;
+}
+
+html.dark .text-slate-900,
+html.dark .text-slate-800 {
+  color: #F1F5F9 !important;
+}
+
+html.dark .text-slate-700,
+html.dark .text-slate-600 {
+  color: #CBD5E1 !important;
+}
+
+html.dark .text-slate-500,
+html.dark .text-slate-400 {
+  color: #94A3B8 !important;
+}
+
+html.dark .border-slate-100,
+html.dark .border-slate-200,
+html.dark .border-slate-200\/60,
+html.dark .border-slate-200\/80,
+html.dark .border-white\/80 {
+  border-color: rgba(51, 65, 85, 0.7) !important;
+}
+
+html.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgba(51, 65, 85, 0.6) !important;
+}

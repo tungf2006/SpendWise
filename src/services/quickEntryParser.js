@@ -82,7 +82,7 @@ function addCalendarDays({ year, month, day }, offset) {
 function parseDate(raw, normalized, now) {
   const today = localParts(now)
   // Explicit dates take precedence over relative dates.
-  const match = raw.match(/(?<![\d/\-])([0-9]{1,2})[/-]([0-9]{1,2})(?:[/-]([0-9]{2}|[0-9]{4}))?(?![\d/\-])/u)
+  const match = raw.match(/(?<![\d/-])([0-9]{1,2})[/-]([0-9]{1,2})(?:[/-]([0-9]{2}|[0-9]{4}))?(?![\d/-])/u)
   if (match) {
     const day = Number(match[1]); const month = Number(match[2])
     const year = match[3] ? (match[3].length === 2 ? 2000 + Number(match[3]) : Number(match[3])) : today.year

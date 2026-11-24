@@ -96,7 +96,10 @@ export const RecurringPage = () => {
   }, [])
 
   useEffect(() => {
-    loadRecurringData()
+    const timer = window.setTimeout(() => {
+      void loadRecurringData()
+    }, 0)
+    return () => window.clearTimeout(timer)
   }, [loadRecurringData])
 
   const availableCategories = useMemo(
