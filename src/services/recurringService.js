@@ -1,4 +1,7 @@
 import { supabase } from '@/lib/supabaseClient'
+import { inspectDueRecurringRules, isMissingRpc } from './recurringFallback'
+// SPENDWISE_UC24_UC25_P0_FIX:recurring
+let recurringRpcUnavailable = typeof import.meta.env === 'object' && import.meta.env.VITE_SPENDWISE_RPC_MODE === 'fallback'
 
 /**
  * Service Giao dịch định kỳ (RecurringRule) - UC24.
@@ -11,8 +14,7 @@ const RECURRING_RULE_SELECT = `
   category:categories(id, name, color, icon)
 `
 
-// 'yearly' được giữ để đọc/sửa dữ liệu cũ từ schema SpendWise hiện tại.
-// 'daily' theo tài liệu Word cần migration CHECK(frequency) trước khi lưu vào DB.
+// Hỗ trợ đầy đủ 4 chu kỳ đồng bộ với DB migration và UI: daily, weekly, monthly, yearly
 const VALID_FREQUENCIES = ['daily', 'weekly', 'monthly', 'yearly']
 const VALID_TYPES = ['income', 'expense']
 const EDITABLE_FIELDS = [
@@ -221,8 +223,13 @@ export function calculateNextDueDate(currentDueDate, frequency, dayOfMonth = nul
     throw new Error('Chu kỳ Giao dịch định kỳ không hợp lệ.')
   }
 
-  if (frequency === 'daily' || frequency === 'weekly') {
-    date.setUTCDate(date.getUTCDate() + (frequency === 'daily' ? 1 : 7))
+  if (frequency === 'daily') {
+    date.setUTCDate(date.getUTCDate() + 1)
+    return dateOnlyToString(date)
+  }
+
+  if (frequency === 'weekly') {
+    date.setUTCDate(date.getUTCDate() + 7)
     return dateOnlyToString(date)
   }
 
@@ -281,44 +288,28 @@ export async function advanceRecurringRule(recurringRule) {
  */
 export async function checkAndGenerateRecurringTransactions() {
   try {
-    // 1. Kiểm tra đăng nhập
-    const {
-      data: { user },
-      error: authError
-    } = await supabase.auth.getUser()
-
+    const { data: auth, error: authError } = await supabase.auth.getUser()
     if (authError) throw authError
+    if (!auth?.user?.id) throw new Error('Người dùng chưa đăng nhập')
 
-    if (!user) {
-      throw new Error('Người dùng chưa đăng nhập')
+    if (!recurringRpcUnavailable) {
+      try {
+        const { data, error } = await supabase.rpc('generate_due_recurring_transactions')
+        if (error) throw error
+        const generatedCount = Number(data ?? 0)
+        return { data: { generatedCount, pendingCount: 0, degraded: false }, error: null }
+      } catch (error) {
+        if (!isMissingRpc(error, 'generate_due_recurring_transactions')) throw error
+        recurringRpcUnavailable = true
+      }
     }
 
-    // 2. Gọi PostgreSQL RPC để xử lý atomically
-    const { data, error } = await supabase.rpc(
-      'generate_due_recurring_transactions'
-    )
-
-    if (error) throw error
-
-    const generatedCount = Number(data ?? 0)
-
-    console.log(
-      `[SpendWise] Đã sinh ${generatedCount} giao dịch định kỳ.`
-    )
-
-    return {
-      data: { generatedCount },
-      error: null
-    }
-  } catch (err) {
-    console.error(
-      '[SpendWise] Lỗi sinh giao dịch định kỳ:',
-      err
-    )
-
-    return {
-      data: null,
-      error: err
-    }
+    // Không tự tạo transactions / cập nhật balance tại frontend: 3 lệnh riêng
+    // không thể đảm bảo atomic, rất dễ hạch toán trùng khi mở nhiều tab.
+    // Fallback an toàn: đọc trực tiếp các rule đến hạn và giữ nguyên dữ liệu.
+    const status = await inspectDueRecurringRules(auth.user.id)
+    return { data: status, error: null }
+  } catch (error) {
+    return { data: null, error }
   }
 }

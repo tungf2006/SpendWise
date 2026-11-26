@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '@/context/AuthContext'
+import { useAuth } from '@/context/useAuth'
 import { updateProfile, updatePassword } from '@/services/authService'
 import { POPULAR_BANKS } from '@/services/vietqrService'
 import { PageHeader } from '@/components/common/PageHeader'
@@ -14,9 +14,12 @@ export const ProfilePage = () => {
   const { user, profile, refreshProfile, signOut } = useAuth()
   const navigate = useNavigate()
 
-  const [fullName, setFullName] = useState('')
-  const [bankBin, setBankBin] = useState('')
-  const [bankAccount, setBankAccount] = useState('')
+  const [fullNameDraft, setFullName] = useState(null)
+  const [bankBinDraft, setBankBin] = useState(null)
+  const [bankAccountDraft, setBankAccount] = useState(null)
+  const fullName = fullNameDraft ?? profile?.full_name ?? user?.user_metadata?.full_name ?? ''
+  const bankBin = bankBinDraft ?? profile?.default_bank_bin ?? ''
+  const bankAccount = bankAccountDraft ?? profile?.default_bank_account ?? ''
   const [loading, setLoading] = useState(false)
   const [statusMsg, setStatusMsg] = useState({ type: '', text: '' })
   const [newPassword, setNewPassword] = useState('')
@@ -26,16 +29,6 @@ export const ProfilePage = () => {
     type: '',
     text: '',
   })
-
-  useEffect(() => {
-    if (profile) {
-      setFullName(profile.full_name || '')
-      setBankBin(profile.default_bank_bin || '')
-      setBankAccount(profile.default_bank_account || '')
-    } else if (user?.user_metadata?.full_name) {
-      setFullName(user.user_metadata.full_name)
-    }
-  }, [profile, user])
 
   const handleSave = async (e) => {
     e.preventDefault()

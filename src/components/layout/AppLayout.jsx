@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet, useNavigate } from 'react-router-dom'
 import { Navbar } from './Navbar'
 import { BottomNav } from './BottomNav'
 import { AiChatWidget } from '@/components/ai/AiChatWidget'
@@ -11,6 +11,7 @@ import { startNotificationAutoSync } from '@/services/notificationService'
  * Phụ trách: TV2 (Hồ Nguyên Văn)
  */
 export const AppLayout = () => {
+  const navigate = useNavigate()
   const [dbStatus, setDbStatus] = useState({ checking: true, connected: false, message: '' })
   const [showAiChat, setShowAiChat] = useState(false)
 
@@ -45,7 +46,8 @@ export const AppLayout = () => {
                 return
             }
 
-            if (data.generatedCount > 0) {
+            if (data?.generatedCount > 0) {
+                window.dispatchEvent(new Event('spendwise:finance-updated')) // SPENDWISE_UC24_UC25_P0_FIX:layout
                 console.log(
                     `Đã tạo ${data.generatedCount} giao dịch định kỳ`
                 )
@@ -97,8 +99,12 @@ export const AppLayout = () => {
       {/* Mobile Floating Dock Navigation */}
       <BottomNav
         onOpenQuickEntry={() => {
-          // Điều hướng về dashboard và focus vào Quick Entry bar
-          window.location.href = '/#quick-entry'
+          navigate('/#quick-entry')
+          window.requestAnimationFrame(() => {
+            const el = document.getElementById('quick-entry-input') || document.getElementById('quick-entry')
+            el?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            if (el instanceof HTMLInputElement) el.focus()
+          })
         }}
       />
 

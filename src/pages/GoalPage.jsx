@@ -120,7 +120,10 @@ export const GoalPage = () => {
   }, [])
 
   useEffect(() => {
-    fetchGoalsList()
+    const timer = window.setTimeout(() => {
+      void fetchGoalsList()
+    }, 0)
+    return () => window.clearTimeout(timer)
   }, [fetchGoalsList])
 
   const openCreate = () => {

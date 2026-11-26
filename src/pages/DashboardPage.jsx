@@ -1,37 +1,32 @@
-import React, { useState, useEffect } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js'
 import { Doughnut } from 'react-chartjs-2'
 import { Link } from 'react-router-dom'
+import { Toast } from '@/components/common/Toast'
 import { formatCurrency } from '@/utils/formatCurrency'
-import { parseQuickEntry } from '@/services/quickEntryParser'
+import { parseQuickEntry, resolveQuickWallet } from '@/services/quickEntryParser'
 import { calculateSafeToSpend } from '@/services/safeToSpendService'
-import { getWallets } from '@/services/walletService'
+import { getWallets, transferFunds } from '@/services/walletService'
 import { getTransactions, createTransaction } from '@/services/transactionService'
 import { getCategories } from '@/services/categoryService'
 import { getFinancialSummary, getCategoryExpenseBreakdown } from '@/services/reportService'
+import {
+  AlertCircle,
+  ArrowDownLeft,
+  ArrowUpRight,
+  CheckCircle,
+  ChevronRight,
+  CreditCard,
+  HelpCircle,
+  Loader2,
+  RefreshCw,
+  Send,
+  Sparkles,
+  Wallet,
+  X
+} from 'lucide-react'
 
 ChartJS.register(ArcElement, Tooltip, Legend)
-import { 
-  Sparkles, 
-  TrendingUp, 
-  TrendingDown, 
-  Wallet, 
-  ArrowUpRight, 
-  ArrowDownLeft, 
-  ChevronRight,
-  Plus,
-  Send,
-  AlertTriangle,
-  CheckCircle,
-  HelpCircle,
-  Calendar,
-  Layers,
-  Fuel,
-  Coffee,
-  ShoppingBag,
-  CreditCard,
-  Loader2
-} from 'lucide-react'
 
 /**
  * Trang Dashboard Tổng quan (DashboardPage)
@@ -50,24 +45,32 @@ export const DashboardPage = () => {
     totalSpent: 0
   })
   const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState('')
   const [monthlySummary, setMonthlySummary] = useState({ totalIncome: 0, totalExpense: 0, netSavings: 0 })
   const [categoryExpense, setCategoryExpense] = useState({ labels: [], datasets: [], rawData: [] })
 
   // Quick Entry state
   const [quickInput, setQuickInput] = useState('cafe 35k hôm qua momo')
-  const [parsedData, setParsedData] = useState(() => parseQuickEntry('cafe 35k hôm qua momo'))
   const [showFormulaModal, setShowFormulaModal] = useState(false)
   const [isSavingQuick, setIsSavingQuick] = useState(false)
   const [quickSaveSuccess, setQuickSaveSuccess] = useState(false)
+  const [toast, setToast] = useState({ show: false, message: '', type: 'success' })
+  const requestIdRef = useRef(0)
 
-  const loadDashboardData = async () => {
+  const parsedData = useMemo(
+    () => parseQuickEntry(quickInput, { categories, wallets }),
+    [quickInput, categories, wallets]
+  )
+
+  const fetchAllDashboardData = useCallback(async () => {
+    const reqId = ++requestIdRef.current
     try {
-      setLoading(true)
       const now = new Date()
       const month = now.getMonth() + 1
       const year = now.getFullYear()
       const startDate = `${year}-${String(month).padStart(2, '0')}-01`
       const endDate = `${year}-${String(month).padStart(2, '0')}-${String(new Date(year, month, 0).getDate()).padStart(2, '0')}`
+
       const [walletsRes, txnsRes, catsRes, stsRes, summaryRes, categoryRes] = await Promise.all([
         getWallets(),
         getTransactions({ limit: 5 }),
@@ -77,71 +80,130 @@ export const DashboardPage = () => {
         getCategoryExpenseBreakdown(month, year)
       ])
 
-      setWallets(walletsRes.data || [])
-      setRecentTransactions(txnsRes.data || [])
-      setCategories(catsRes.data || [])
-      setStsData(stsRes)
-      if (summaryRes.error) throw summaryRes.error
-      if (categoryRes.error) throw categoryRes.error
-      setMonthlySummary(summaryRes)
-      setCategoryExpense(categoryRes)
+      if (reqId !== requestIdRef.current) return
+
+      const firstError =
+        walletsRes?.error ||
+        txnsRes?.error ||
+        catsRes?.error ||
+        stsRes?.error ||
+        summaryRes?.error ||
+        categoryRes?.error
+
+      if (firstError) {
+        setLoadError(firstError.message || 'Một số dữ liệu Dashboard chưa tải được đầy đủ.')
+      } else {
+        setLoadError('')
+      }
+
+      setWallets(walletsRes?.data || [])
+      setRecentTransactions(txnsRes?.data || [])
+      setCategories(catsRes?.data || [])
+      if (stsRes) setStsData(stsRes)
+      if (summaryRes && !summaryRes.error) setMonthlySummary(summaryRes)
+      if (categoryRes && !categoryRes.error) setCategoryExpense(categoryRes)
     } catch (err) {
+      if (reqId !== requestIdRef.current) return
       console.error('Lỗi khi tải dữ liệu Dashboard:', err)
+      setLoadError(err?.message || 'Không thể tải dữ liệu Dashboard. Vui lòng thử lại.')
     } finally {
-      setLoading(false)
+      if (reqId === requestIdRef.current) {
+        setLoading(false)
+      }
     }
+  }, [])
+
+  const handleRetryDashboard = () => {
+    setLoading(true)
+    void fetchAllDashboardData()
   }
 
   useEffect(() => {
-    loadDashboardData()
-  }, [])
+    const initTimer = window.setTimeout(() => {
+      void fetchAllDashboardData()
+    }, 0)
+    // SPENDWISE_UC24_UC25_P0_FIX:dashboard – cập nhật Safe-to-spend khi finance thay đổi.
+    const onFinanceUpdated = () => { void fetchAllDashboardData() }
+    window.addEventListener('spendwise:finance-updated', onFinanceUpdated)
+    return () => {
+      window.clearTimeout(initTimer)
+      window.removeEventListener('spendwise:finance-updated', onFinanceUpdated)
+    }
+  }, [fetchAllDashboardData])
+
+  useEffect(() => {
+    if (!quickSaveSuccess) return undefined
+    const timer = setTimeout(() => setQuickSaveSuccess(false), 3000)
+    return () => clearTimeout(timer)
+  }, [quickSaveSuccess])
+
+  useEffect(() => {
+    if (!showFormulaModal) return undefined
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') setShowFormulaModal(false)
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [showFormulaModal])
 
   const handleQuickInputChange = (e) => {
-    const val = e.target.value
-    setQuickInput(val)
-    setParsedData(parseQuickEntry(val))
+    setQuickInput(e.target.value)
   }
 
   const handleQuickSave = async () => {
-    if (!parsedData || !parsedData.amount) return
-
+    if (!parsedData?.amount || isSavingQuick) return
     setIsSavingQuick(true)
     try {
-      // Tìm wallet_id phù hợp từ tên ví đã parse hoặc lấy ví đầu tiên
-      const matchedWallet = wallets.find(w => 
-        w.name.toLowerCase().includes(parsedData.walletKeyword || '')
-      ) || wallets[0]
-
-      // Tìm category_id phù hợp từ tên category đã parse
-      const matchedCategory = categories.find(c => 
-        c.name.toLowerCase().includes(parsedData.categoryName?.toLowerCase() || '')
-      )
-
-      if (!matchedWallet) {
-        alert('Vui lòng tạo ít nhất 1 ví tiền trước khi lưu giao dịch.')
-        setIsSavingQuick(false)
-        return
+      let response
+      if (parsedData.type === 'transfer') {
+        if (!parsedData.walletKeyword || !parsedData.toWalletKeyword) {
+          throw new Error('Vui lòng nhập cả ví nguồn và ví đích (ví dụ: từ vcb sang momo).')
+        }
+        const fromWallet = resolveQuickWallet(wallets, parsedData.walletKeyword)
+        const toWallet = resolveQuickWallet(wallets, parsedData.toWalletKeyword)
+        if (!fromWallet || !toWallet) {
+          throw new Error('Không tìm thấy ví nguồn hoặc ví đích trong danh sách ví hiện có.')
+        }
+        if (fromWallet.id === toWallet.id) {
+          throw new Error('Ví nguồn và ví đích không được trùng nhau.')
+        }
+        response = await transferFunds({
+          fromWalletId: fromWallet.id,
+          toWalletId: toWallet.id,
+          amount: parsedData.amount,
+          date: parsedData.date,
+          note: parsedData.rawText
+        })
+      } else {
+        const matchedWallet = parsedData.walletKeyword
+          ? resolveQuickWallet(wallets, parsedData.walletKeyword)
+          : wallets[0]
+        if (!matchedWallet) {
+          throw new Error('Không tìm thấy ví đã nhập hoặc chưa có ví tiền để lưu giao dịch.')
+        }
+        const matchedCategory = parsedData.categoryName
+          ? categories.find(c => c.type === parsedData.type && c.name === parsedData.categoryName)
+          : null
+        if (parsedData.categoryName && !matchedCategory) {
+          throw new Error(`Không tìm thấy danh mục "${parsedData.categoryName}" trong cơ sở dữ liệu.`)
+        }
+        response = await createTransaction({
+          wallet_id: matchedWallet.id,
+          category_id: matchedCategory?.id || null,
+          type: parsedData.type,
+          amount: parsedData.amount,
+          transaction_date: parsedData.date,
+          note: parsedData.rawText
+        })
       }
-
-      const { error } = await createTransaction({
-        wallet_id: matchedWallet.id,
-        category_id: matchedCategory?.id || null,
-        type: parsedData.type || 'expense',
-        amount: parsedData.amount,
-        transaction_date: parsedData.date,
-        note: parsedData.rawText || quickInput
-      })
-
-      if (error) throw error
-
+      if (response.error) throw response.error
       setQuickSaveSuccess(true)
       setQuickInput('')
-      setParsedData(null)
-      await loadDashboardData()
-
-      setTimeout(() => setQuickSaveSuccess(false), 3000)
+      setToast({ show: true, message: 'Đã lưu nhanh giao dịch thành công!', type: 'success' })
+      window.dispatchEvent(new Event('spendwise:finance-updated'))
+      await fetchAllDashboardData()
     } catch (err) {
-      alert('Không thể lưu giao dịch: ' + err.message)
+      setToast({ show: true, message: 'Không thể lưu giao dịch: ' + (err?.message || 'Lỗi không xác định'), type: 'error' })
     } finally {
       setIsSavingQuick(false)
     }
@@ -151,7 +213,33 @@ export const DashboardPage = () => {
 
   return (
     <div className="space-y-6">
-      
+      <Toast
+        show={toast.show}
+        message={toast.message}
+        type={toast.type}
+        onClose={() => setToast((prev) => ({ ...prev, show: false }))}
+      />
+
+      {loadError && (
+        <div
+          role="alert"
+          className="rounded-2xl bg-rose-50 border border-rose-200 px-4 py-3 text-xs text-rose-700 flex items-center justify-between gap-3"
+        >
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0 text-rose-600" />
+            <span>{loadError}</span>
+          </div>
+          <button
+            type="button"
+            onClick={handleRetryDashboard}
+            className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white border border-rose-200 text-rose-700 font-semibold hover:bg-rose-100 transition-colors shrink-0 cursor-pointer"
+          >
+            <RefreshCw className="w-3.5 h-3.5" />
+            <span>Thử lại</span>
+          </button>
+        </div>
+      )}
+
       {/* 1. Safe-to-spend Hero Card (Double-Bezel Design) */}
       <section className="relative group">
         <div className="rounded-[2.25rem] bg-gradient-to-b from-slate-900 to-slate-950 p-2 shadow-soft-2xl ring-1 ring-slate-900/10">
@@ -222,19 +310,19 @@ export const DashboardPage = () => {
         <div className="rounded-3xl bg-white p-5 border border-slate-100 shadow-soft-sm">
           <span className="text-xs text-slate-500 font-medium">Tổng thu tháng này</span>
           <div className="mt-2 font-display font-extrabold text-xl text-emerald-600">
-            {formatCurrency(monthlySummary.totalIncome)}
+            {loading ? '...' : formatCurrency(monthlySummary.totalIncome)}
           </div>
         </div>
         <div className="rounded-3xl bg-white p-5 border border-slate-100 shadow-soft-sm">
           <span className="text-xs text-slate-500 font-medium">Tổng chi tháng này</span>
           <div className="mt-2 font-display font-extrabold text-xl text-rose-600">
-            {formatCurrency(monthlySummary.totalExpense)}
+            {loading ? '...' : formatCurrency(monthlySummary.totalExpense)}
           </div>
         </div>
         <div className="rounded-3xl bg-white p-5 border border-slate-100 shadow-soft-sm">
           <span className="text-xs text-slate-500 font-medium">Chênh lệch thu - chi</span>
           <div className={`mt-2 font-display font-extrabold text-xl ${monthlySummary.netSavings >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-            {formatCurrency(monthlySummary.netSavings)}
+            {loading ? '...' : formatCurrency(monthlySummary.netSavings)}
           </div>
         </div>
         <div className="rounded-3xl bg-white p-5 border border-slate-100 shadow-soft-sm">
@@ -269,14 +357,21 @@ export const DashboardPage = () => {
                 Nhập nhanh bằng câu tự nhiên (Quick Entry)
               </h3>
             </div>
-            <span className="text-[11px] text-slate-400 hidden sm:inline">Ví dụ: "cafe 35k hôm qua momo"</span>
+            <span className="text-[11px] text-slate-400 hidden sm:inline">Nhấn Enter để lưu • VD: &quot;cafe 35k hôm qua momo&quot;</span>
           </div>
 
           <div className="relative flex items-center">
             <input
+              id="quick-entry-input"
               type="text"
               value={quickInput}
               onChange={handleQuickInputChange}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  void handleQuickSave()
+                }
+              }}
               placeholder="Gõ nhanh: bún bò 45k hôm nay tiền mặt..."
               className="w-full bg-slate-50 border border-slate-200 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 rounded-full py-3.5 pl-5 pr-28 text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 transition-all outline-none font-medium"
             />
@@ -318,7 +413,7 @@ export const DashboardPage = () => {
 
               {/* Loại giao dịch */}
               <span className="px-3 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200 font-medium">
-                Loại: {parsedData.type === 'income' ? 'Thu nhập' : 'Chi tiêu'}
+                Loại: {parsedData.type === 'transfer' ? 'Chuyển tiền' : parsedData.type === 'income' ? 'Thu nhập' : 'Chi tiêu'}
               </span>
 
               {/* Ngày */}
@@ -332,7 +427,7 @@ export const DashboardPage = () => {
                   ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' 
                   : 'bg-amber-50 text-amber-700 border border-amber-300'
               }`}>
-                Danh mục: {parsedData.categoryName || 'Mặc định (Chung)'}
+                Danh mục: {parsedData.type === 'transfer' ? 'Không áp dụng' : (parsedData.categoryName || 'Mặc định (Chung)')}
               </span>
 
               {/* Ví */}
@@ -341,7 +436,7 @@ export const DashboardPage = () => {
                   ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
                   : 'bg-slate-100 text-slate-600 border border-slate-200'
               }`}>
-                Ví: {parsedData.walletKeyword || 'Ví mặc định'}
+                Ví: {parsedData.type === 'transfer' ? `${parsedData.wallet || '?'} → ${parsedData.toWallet || '?'}` : (parsedData.wallet || 'Ví mặc định')}
               </span>
             </div>
           )}
@@ -365,7 +460,20 @@ export const DashboardPage = () => {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {wallets.length === 0 ? (
+          {loading ? (
+            [1, 2, 3].map((i) => (
+              <div key={i} className="rounded-[1.75rem] bg-white p-4 border border-slate-200/60 animate-pulse flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-slate-200" />
+                  <div className="space-y-2">
+                    <div className="h-3 w-20 bg-slate-200 rounded" />
+                    <div className="h-2.5 w-12 bg-slate-100 rounded" />
+                  </div>
+                </div>
+                <div className="h-4 w-20 bg-slate-200 rounded" />
+              </div>
+            ))
+          ) : wallets.length === 0 ? (
             <div className="sm:col-span-3 p-6 text-center bg-white rounded-3xl border border-slate-200/60 text-xs text-slate-500">
               Chưa có ví nào. Hãy chuyển sang trang Ví để tạo ví đầu tiên!
             </div>
@@ -414,9 +522,14 @@ export const DashboardPage = () => {
           </div>
 
           <div className="divide-y divide-slate-100">
-            {recentTransactions.length === 0 ? (
+            {loading ? (
+              <div className="py-8 flex items-center justify-center gap-2 text-xs text-slate-400">
+                <Loader2 className="w-4 h-4 animate-spin text-brand-600" />
+                <span>Đang tải giao dịch gần nhất...</span>
+              </div>
+            ) : recentTransactions.length === 0 ? (
               <div className="py-8 text-center text-xs text-slate-400">
-                Chưa có giao dịch nào được ghi lại trong tháng này.
+                Chưa có giao dịch nào được ghi lại.
               </div>
             ) : (
               recentTransactions.map((txn) => {
@@ -473,26 +586,47 @@ export const DashboardPage = () => {
         </div>
       </section>
 
-      {/* Formula Explanation Modal */}
+      {/* Formula Explanation Modal (Double-Bezel) */}
       {showFormulaModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm">
-          <div className="w-full max-w-md bg-white rounded-3xl p-6 shadow-2xl border border-slate-100">
-            <h4 className="font-display font-bold text-slate-900 text-base mb-2">
-              Công thức Safe-to-spend (Chức năng 9)
-            </h4>
-            <p className="text-xs text-slate-600 leading-relaxed mb-4">
-              Chỉ số cho biết số tiền an toàn bạn có thể tiêu hôm nay mà không lo bị thâm hụt ngân sách tháng hay thiếu tiền thanh toán các khoản định kỳ sắp tới.
-            </p>
-            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 font-mono text-xs text-slate-800 mb-4 leading-relaxed">
-              SafeToSpend = max(0, (Ngân sách còn lại - Khoản định kỳ sắp tới) / Số ngày còn lại)
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm"
+          onClick={() => setShowFormulaModal(false)}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="sts-formula-title"
+            className="w-full max-w-md rounded-[2rem] bg-white/80 p-1.5 shadow-2xl ring-1 ring-slate-900/10"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="rounded-[calc(2rem-0.375rem)] bg-white p-6 border border-slate-100">
+              <div className="flex items-center justify-between mb-2">
+                <h4 id="sts-formula-title" className="font-display font-bold text-slate-900 text-base">
+                  Công thức Safe-to-spend (Chức năng 9)
+                </h4>
+                <button
+                  type="button"
+                  onClick={() => setShowFormulaModal(false)}
+                  aria-label="Đóng hộp thoại"
+                  className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed mb-4">
+                Chỉ số cho biết số tiền an toàn bạn có thể tiêu hôm nay mà không lo bị thâm hụt ngân sách tháng hay thiếu tiền thanh toán các khoản định kỳ sắp tới.
+              </p>
+              <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 font-mono text-xs text-slate-800 mb-4 leading-relaxed">
+                SafeToSpend = max(0, (Ngân sách còn lại - Khoản định kỳ sắp tới) / Số ngày còn lại)
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowFormulaModal(false)}
+                className="w-full py-2.5 rounded-full bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                Đã hiểu
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => setShowFormulaModal(false)}
-              className="w-full py-2.5 rounded-full bg-slate-900 text-white text-xs font-semibold hover:bg-slate-800 transition-colors"
-            >
-              Đã hiểu
-            </button>
           </div>
         </div>
       )}

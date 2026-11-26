@@ -10,6 +10,18 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url)),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules/@supabase')) return 'vendor-supabase'
+          if (id.includes('node_modules/react')) return 'vendor-react'
+          if (id.includes('node_modules/chart.js')) return 'vendor-charts'
+          return undefined
+        },
+      },
+    },
+  },
   test: {
     environment: 'node',
     globals: true,
