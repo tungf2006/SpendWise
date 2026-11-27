@@ -222,14 +222,23 @@ export async function askGeminiAssistant(userPrompt) {
       headers.Authorization = `Bearer ${accessToken}`
     }
 
-    const response = await fetch(`${baseUrl}/api/ai/chat`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        prompt: trimmedPrompt,
-        context
+    const controller = typeof AbortController !== 'undefined' ? new AbortController() : null
+    const fetchTimeout = controller ? setTimeout(() => controller.abort(), 15000) : null
+
+    let response
+    try {
+      response = await fetch(`${baseUrl}/api/ai/chat`, {
+        method: 'POST',
+        headers,
+        signal: controller?.signal,
+        body: JSON.stringify({
+          prompt: trimmedPrompt,
+          context
+        })
       })
-    })
+    } finally {
+      if (fetchTimeout) clearTimeout(fetchTimeout)
+    }
 
     const json = await response.json().catch(() => null)
 

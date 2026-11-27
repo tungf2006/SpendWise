@@ -67,10 +67,11 @@
   3. `Data Layer`: Supabase (PostgreSQL 15 + Row Level Security trên 100% các bảng).
 - **Biến môi trường:**
   - `.env` (Frontend): `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_API_BASE_URL` (mặc định `http://localhost:5000`). **Tuyệt đối không** khai báo `VITE_GEMINI_API_KEY` ở `.env` Client.
-  - `server/.env` (Backend Express): `PORT`, `CORS_ORIGIN`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `GEMINI_API_KEY`, `GEMINI_MODEL`.
-- **Kiểm thử tự động & CI/CD:**
-  - Bộ test Vitest + Supertest + jsdom (`npm test`, `vite.config.js` -> `test`) gồm **19 test files / 323 tests**: 13 file unit/component/API (`145` tests) kiểm thử các Service thuần, Components, Context và Backend API (`server/__tests__/api.test.js`), cùng 6 file E2E/Tier 5 (`178` tests trong `tests/e2e/`, cấu hình riêng `tests/e2e/vitest.config.js`, gồm `tier1`–`tier4`, `tier5-adversarial.e2e.test.jsx` và `tier5-dom-behavioral.e2e.test.jsx` chạy `jsdom`).
-  - Lint & Build: `npm run lint` (`oxlint` trên **86 files**, `0` warnings / `0` errors); `npm run build` (`vite build`, `0` chunk warnings `>500 kB`, chunk JS lớn nhất `vendor-react` `260.11 kB`).
+  - `server/.env` (Backend Express): `PORT`, `CORS_ORIGIN`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `GEMINI_API_KEY`, `GEMINI_MODEL` (mặc định `gemini-2.5-flash`), `GEMINI_FALLBACK_MODEL` (`gemini-3.8-flash`), `GEMINI_TIMEOUT_MS` (`6000`), sử dụng SDK chính chủ `@google/genai` (`apiVersion: 'v1beta'`, hỗ trợ cả key `AIza...` và `AQ....`).
+- **Kiểm thử tự động, QA & CI/CD:**
+  - Bộ test Vitest + Supertest + jsdom (`npm test`, `vite.config.js` -> `test`) phủ đủ toàn bộ 13 Service Modules, Components, Context, Backend API (`server/__tests__/api.test.js`) và bộ E2E/Tier 5 (`tests/e2e/`, cấu hình riêng `tests/e2e/vitest.config.js`).
+  - Bộ hồ sơ QA nộp đồ án tại `docs/qa/`: [TEST_PLAN_AND_TEST_CASES.md](docs/qa/TEST_PLAN_AND_TEST_CASES.md), [SpendWise_Test_Plan_va_50_TestCases.xlsx](docs/qa/SpendWise_Test_Plan_va_50_TestCases.xlsx) (Test Plan + 50 Test Cases phủ 26 Use Cases + RLS `QA-02` + PWA/UI + cột Evidence + Ma trận truy vết tự động) và bộ 14 ảnh chụp minh chứng thực tế tại `docs/qa/evidence/` (`EVID_01`–`EVID_14`).
+  - Lint & Build: `npm run lint` (`oxlint`, `0` warnings / `0` errors); `npm run build` (`vite build`, `0` chunk warnings `>500 kB`, code-split sạch).
   - GitHub Actions CI (`.github/workflows/ci.yml`): tự động kiểm tra chặn rò rỉ `VITE_GEMINI_API_KEY`, chạy `npm run lint`, `npm test`, `npm run build` và xác minh bundle `dist/` sạch cho mọi PR/push vào `main` và `develop`.
 
 ---

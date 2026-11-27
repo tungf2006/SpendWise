@@ -18,21 +18,20 @@ vi.mock('@/lib/supabaseClient', () => ({
   },
 }))
 
-vi.mock('@google/generative-ai', () => ({
-  GoogleGenerativeAI: class MockGoogleGenerativeAI {
-    constructor(apiKey) {
+vi.mock('@google/genai', () => ({
+  GoogleGenAI: class MockGoogleGenAI {
+    constructor({ apiKey } = {}) {
       this.apiKey = apiKey
-    }
-    getGenerativeModel(options) {
-      const hook = globalThis.__SPENDWISE_E2E_GEMINI__
-      if (!hook) {
-        return {
-          generateContent: async () => ({
-            response: { text: () => 'Mock Gemini Reply' },
-          }),
-        }
+      this.models = {
+        generateContent: async ({ model, contents, config } = {}) => {
+          const hook = globalThis.__SPENDWISE_E2E_GEMINI__
+          if (!hook) return { text: 'Mock Gemini Reply' }
+          const adapter = hook(this.apiKey, { model, systemInstruction: config?.systemInstruction })
+          const res = await adapter.generateContent(contents, { signal: config?.abortSignal })
+          if (res && typeof res.text === 'string') return res
+          return { text: res?.response?.text ? res.response.text() : '' }
+        },
       }
-      return hook(this.apiKey, options)
     }
   },
 }))
@@ -507,7 +506,11 @@ describe('Tier 4 — Real-World End-to-End Application Scenarios (8 Scenarios)',
       expect(sqlText).toMatch(/IF v_noti_type = 'budget_exceeded'[\s\S]*ELSIF v_noti_type = 'budget_warning'/)
     }
 
-    // 5. Phan_cong_tieu_luan_SpendWise.xlsx remains present & untouched (R1)
-    expect(fs.existsSync(getRepoPath('Phan_cong_tieu_luan_SpendWise.xlsx'))).toBe(true)
+    // 5. Local untracked assignment sheet remains untouched locally; tracked QA & Sprint sheets exist in CI
+    if (!process.env.CI) {
+      expect(fs.existsSync(getRepoPath('Phan_cong_tieu_luan_SpendWise.xlsx'))).toBe(true)
+    }
+    expect(fs.existsSync(getRepoPath('docs/sprints/Bang_phan_cong_cong_viec.xlsx'))).toBe(true)
+    expect(fs.existsSync(getRepoPath('docs/qa/SpendWise_Test_Plan_va_50_TestCases.xlsx'))).toBe(true)
   })
 })

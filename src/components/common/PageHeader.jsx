@@ -11,7 +11,7 @@ export const PageHeader = ({
 }) => {
   return (
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-      <div>
+      <div className="min-w-0 flex-1">
         {eyebrow && (
           <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-slate-900/5 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 text-[10px] font-semibold tracking-wider uppercase mb-1.5 border border-slate-200/60 dark:border-slate-700">
             {eyebrow}
@@ -28,7 +28,7 @@ export const PageHeader = ({
       </div>
 
       {actions && (
-        <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 self-start sm:self-auto shrink-0">
           {actions}
         </div>
       )}

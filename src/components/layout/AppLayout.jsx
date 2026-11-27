@@ -136,7 +136,7 @@ export const AppLayout = () => {
     useEffect(() => startNotificationAutoSync({ intervalMs: 300000, daysAhead: 3 }), [])
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#0B0F19] text-slate-900 dark:text-slate-100 flex flex-col font-sans selection:bg-brand-500 selection:text-white transition-colors">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#0B0F19] text-slate-900 dark:text-slate-100 flex flex-col font-sans selection:bg-brand-500 selection:text-white transition-colors overflow-x-clip">
       {/* Floating Island Navbar */}
       <Navbar
         dbStatus={dbStatus}
@@ -144,7 +144,7 @@ export const AppLayout = () => {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-4 pb-28 lg:pb-12 transition-all">
+      <main className="flex-1 max-w-6xl w-full mx-auto px-3 sm:px-4 py-4 pb-28 lg:pb-12 transition-all">
         <ErrorBoundary resetKey={location.pathname}>
           <Outlet />
         </ErrorBoundary>

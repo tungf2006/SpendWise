@@ -7,11 +7,21 @@ const geminiMock = vi.hoisted(() => ({
   generateContent: vi.fn()
 }))
 
-vi.mock('@google/generative-ai', () => ({
-  GoogleGenerativeAI: vi.fn(function (apiKey) {
+vi.mock('@google/genai', () => ({
+  GoogleGenAI: vi.fn(function ({ apiKey } = {}) {
     geminiMock.constructorCalls.push(apiKey)
     return {
-      getGenerativeModel: geminiMock.getGenerativeModel
+      models: {
+        generateContent: async ({ model, contents, config } = {}) => {
+          geminiMock.getGenerativeModel({ model, systemInstruction: config?.systemInstruction })
+          const res = await geminiMock.generateContent(contents, {
+            timeout: 15000,
+            signal: config?.abortSignal
+          })
+          if (res && typeof res.text === 'string') return res
+          return { text: res?.response?.text ? res.response.text() : '' }
+        }
+      }
     }
   })
 }))

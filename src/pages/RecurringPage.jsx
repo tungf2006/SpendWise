@@ -310,9 +310,10 @@ export const RecurringPage = () => {
           <button
             type="button"
             onClick={openCreateModal}
-            className="px-4 py-2 rounded-full bg-slate-900 hover:bg-slate-800 dark:bg-brand-600 dark:hover:bg-brand-500 text-white text-xs font-semibold flex items-center gap-1.5 shadow-soft-sm transition-colors cursor-pointer"
+            className="px-4 py-2 rounded-full bg-slate-900 hover:bg-slate-800 dark:bg-brand-600 dark:hover:bg-brand-500 text-white text-xs font-semibold flex items-center gap-1.5 shadow-soft-sm transition-colors cursor-pointer whitespace-nowrap shrink-0"
           >
-            <Plus className="w-4 h-4" /> Thêm Giao dịch định kỳ
+            <Plus className="w-4 h-4 shrink-0" />
+            <span>Thêm Giao dịch định kỳ</span>
           </button>
         }
       />
