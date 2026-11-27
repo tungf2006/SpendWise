@@ -177,6 +177,17 @@ describe('walletService - UC06 to UC09', () => {
       expect(result.error).toBeNull()
     })
 
+    it('từ chối cập nhật khi chưa đăng nhập hoặc chỉ truyền field không hợp lệ', async () => {
+      const resDisallowed = await updateWallet('w1', { user_id: 'hacker-id', id: 'fake-id' })
+      expect(resDisallowed.data).toBeNull()
+      expect(resDisallowed.error.message).toContain('Không có thông tin hợp lệ')
+
+      mockAuthGetUser.mockResolvedValueOnce({ data: { user: null }, error: null })
+      const resUnauth = await updateWallet('w1', { name: 'Ví hợp lệ' })
+      expect(resUnauth.data).toBeNull()
+      expect(resUnauth.error.message).toContain('chưa đăng nhập')
+    })
+
     it('archiveWallet đánh dấu is_archived = true', async () => {
       const mockQuery = {
         update: vi.fn().mockReturnThis(),
@@ -188,20 +199,32 @@ describe('walletService - UC06 to UC09', () => {
 
       const result = await archiveWallet('w1')
       expect(mockQuery.update).toHaveBeenCalledWith({ is_archived: true })
+      expect(mockQuery.eq).toHaveBeenCalledWith('user_id', 'user-001')
       expect(result.data.is_archived).toBe(true)
     })
 
-    it('deleteWallet xóa ví theo id', async () => {
+    it('deleteWallet xóa ví theo id và ràng buộc user_id', async () => {
+      const eqUserSpy = vi.fn().mockResolvedValue({ error: null })
       const mockQuery = {
         delete: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockResolvedValue({ error: null })
+        eq: vi.fn().mockReturnValue({ eq: eqUserSpy })
       }
       mockFrom.mockReturnValue(mockQuery)
 
       const result = await deleteWallet('w1')
       expect(mockQuery.delete).toHaveBeenCalled()
       expect(mockQuery.eq).toHaveBeenCalledWith('id', 'w1')
+      expect(eqUserSpy).toHaveBeenCalledWith('user_id', 'user-001')
       expect(result.error).toBeNull()
+    })
+
+    it('deleteWallet từ chối khi thiếu ID hoặc chưa đăng nhập', async () => {
+      const resNoId = await deleteWallet('')
+      expect(resNoId.error.message).toContain('Thiếu ID ví')
+
+      mockAuthGetUser.mockResolvedValueOnce({ data: { user: null }, error: null })
+      const resUnauth = await deleteWallet('w1')
+      expect(resUnauth.error.message).toContain('chưa đăng nhập')
     })
   })
 

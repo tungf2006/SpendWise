@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react'
-import { Outlet, useNavigate } from 'react-router-dom'
+import React, { useState, useEffect, useRef, useCallback } from 'react'
+import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { Navbar } from './Navbar'
 import { BottomNav } from './BottomNav'
 import { AiChatWidget } from '@/components/ai/AiChatWidget'
+import { ErrorBoundary } from '@/components/common/ErrorBoundary'
 import { supabase } from '@/lib/supabaseClient'
 import { checkAndGenerateRecurringTransactions } from '@/services/recurringService'
 import { startNotificationAutoSync } from '@/services/notificationService'
@@ -12,8 +13,59 @@ import { startNotificationAutoSync } from '@/services/notificationService'
  */
 export const AppLayout = () => {
   const navigate = useNavigate()
+  const location = useLocation()
   const [dbStatus, setDbStatus] = useState({ checking: true, connected: false, message: '' })
   const [showAiChat, setShowAiChat] = useState(false)
+  const quickEntryTimerRef = useRef(null)
+  const quickEntryRafRef = useRef(null)
+
+  useEffect(() => {
+    return () => {
+      if (quickEntryRafRef.current !== null) {
+        window.cancelAnimationFrame(quickEntryRafRef.current)
+      }
+      if (quickEntryTimerRef.current) {
+        window.clearTimeout(quickEntryTimerRef.current)
+      }
+    }
+  }, [])
+
+  const handleOpenQuickEntry = useCallback(() => {
+    navigate('/#quick-entry')
+    window.dispatchEvent(new Event('spendwise:focus-quick-entry'))
+
+    if (quickEntryRafRef.current !== null) {
+      window.cancelAnimationFrame(quickEntryRafRef.current)
+      quickEntryRafRef.current = null
+    }
+    if (quickEntryTimerRef.current) {
+      window.clearTimeout(quickEntryTimerRef.current)
+      quickEntryTimerRef.current = null
+    }
+
+    let attempts = 0
+    const tryFocusQuickEntry = () => {
+      quickEntryRafRef.current = null
+      const inputEl = document.getElementById('quick-entry-input')
+      const sectionEl = inputEl || document.getElementById('quick-entry')
+      if (sectionEl) {
+        sectionEl.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        if (inputEl instanceof HTMLInputElement || inputEl instanceof HTMLTextAreaElement) {
+          inputEl.focus()
+        }
+        quickEntryTimerRef.current = null
+        return
+      }
+      if (attempts < 15) {
+        attempts += 1
+        quickEntryTimerRef.current = window.setTimeout(tryFocusQuickEntry, 50)
+      } else {
+        quickEntryTimerRef.current = null
+      }
+    }
+
+    quickEntryRafRef.current = window.requestAnimationFrame(tryFocusQuickEntry)
+  }, [navigate])
 
   useEffect(() => {
     async function testConnection() {
@@ -46,7 +98,8 @@ export const AppLayout = () => {
                 return
             }
 
-            if (data.generatedCount > 0) {
+            if (data?.generatedCount > 0) {
+                window.dispatchEvent(new Event('spendwise:finance-updated')) // SPENDWISE_UC24_UC25_P0_FIX:layout
                 console.log(
                     `Đã tạo ${data.generatedCount} giao dịch định kỳ`
                 )
@@ -83,7 +136,7 @@ export const AppLayout = () => {
     useEffect(() => startNotificationAutoSync({ intervalMs: 300000, daysAhead: 3 }), [])
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-brand-500 selection:text-white overflow-x-clip">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#0B0F19] text-slate-900 dark:text-slate-100 flex flex-col font-sans selection:bg-brand-500 selection:text-white transition-colors overflow-x-clip">
       {/* Floating Island Navbar */}
       <Navbar
         dbStatus={dbStatus}
@@ -91,21 +144,14 @@ export const AppLayout = () => {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-6xl w-full mx-auto px-3 sm:px-4 py-4 pb-28 md:pb-12 transition-all">
-        <Outlet />
+      <main className="flex-1 max-w-6xl w-full mx-auto px-3 sm:px-4 py-4 pb-28 lg:pb-12 transition-all">
+        <ErrorBoundary resetKey={location.pathname}>
+          <Outlet />
+        </ErrorBoundary>
       </main>
 
       {/* Mobile Floating Dock Navigation */}
-      <BottomNav
-        onOpenQuickEntry={() => {
-          navigate('/')
-          setTimeout(() => {
-            const input = document.querySelector('#quick-entry input, input[placeholder*="cafe"]')
-            input?.scrollIntoView({ behavior: 'smooth', block: 'center' })
-            input?.focus()
-          }, 120)
-        }}
-      />
+      <BottomNav onOpenQuickEntry={handleOpenQuickEntry} />
 
       {/* Trợ lý AI Gemini Widget */}
       <AiChatWidget

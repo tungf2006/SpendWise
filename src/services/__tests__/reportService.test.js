@@ -1,9 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 
+const mockAuthGetUser = vi.fn()
 const mockFrom = vi.fn()
 
 vi.mock('@/lib/supabaseClient', () => ({
   supabase: {
+    auth: {
+      getUser: (...args) => mockAuthGetUser(...args)
+    },
     from: (...args) => mockFrom(...args)
   }
 }))
@@ -21,6 +25,7 @@ function createTxnQueryMock(rows, error = null) {
     in: vi.fn().mockReturnThis(),
     order: vi.fn().mockReturnThis(),
     range: vi.fn().mockReturnThis(),
+    eq: vi.fn().mockReturnThis(),
     gte: vi.fn().mockReturnThis(),
     lte: vi.fn().mockResolvedValue({ data: rows, error })
   }
@@ -30,6 +35,10 @@ function createTxnQueryMock(rows, error = null) {
 describe('reportService - UC17', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockAuthGetUser.mockResolvedValue({
+      data: { user: { id: 'user-report-1' } },
+      error: null
+    })
   })
 
   it('getFinancialSummary: tính đúng tổng thu, tổng chi và chênh lệch ròng (loại trừ transfer)', async () => {
@@ -51,11 +60,11 @@ describe('reportService - UC17', () => {
   it('getCategoryExpenseBreakdown: gom nhóm theo danh mục và sắp xếp giảm dần', async () => {
     mockFrom.mockReturnValue(
       createTxnQueryMock([
-        { type: 'expense', amount: 300000, transaction_date: '2026-11-02', id: '1', category: { name: 'Di chuyển', color: '#3B82F6' } },
-        { type: 'expense', amount: 500000, transaction_date: '2026-11-03', id: '2', category: { name: 'Ăn uống', color: '#10B981' } },
-        { type: 'expense', amount: 700000, transaction_date: '2026-11-04', id: '3', category: { name: 'Ăn uống', color: '#10B981' } },
+        { type: 'expense', amount: 300000, transaction_date: '2026-11-02', id: '1', category: { id: 'cat-move', name: 'Di chuyển', color: '#3B82F6' } },
+        { type: 'expense', amount: 500000, transaction_date: '2026-11-03', id: '2', category: { id: 'cat-food', name: 'Ăn uống', color: '#10B981' } },
+        { type: 'expense', amount: 700000, transaction_date: '2026-11-04', id: '3', category: { id: 'cat-food', name: 'Ăn uống', color: '#10B981' } },
         { type: 'expense', amount: 100000, transaction_date: '2026-11-05', id: '4', category: null },
-        { type: 'income', amount: 5000000, transaction_date: '2026-11-01', id: '5', category: { name: 'Lương', color: '#22C55E' } }
+        { type: 'income', amount: 5000000, transaction_date: '2026-11-01', id: '5', category: { id: 'cat-sal', name: 'Lương', color: '#22C55E' } }
       ])
     )
 

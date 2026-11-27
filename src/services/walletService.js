@@ -86,8 +86,14 @@ export async function updateWallet(walletId, updates) {
     if (!walletId) {
       throw new Error('Thiếu ID ví cần cập nhật')
     }
+    if (!updates || typeof updates !== 'object' || Array.isArray(updates)) {
+      throw new Error('Dữ liệu cập nhật ví không hợp lệ')
+    }
 
-    const safeUpdates = updates && typeof updates === 'object' ? updates : {}
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Người dùng chưa đăng nhập')
+
+    const safeUpdates = updates
     const formattedUpdates = {}
 
     if ('name' in safeUpdates) {
@@ -125,10 +131,15 @@ export async function updateWallet(walletId, updates) {
       formattedUpdates.is_archived = Boolean(safeUpdates.is_archived)
     }
 
+    if (Object.keys(formattedUpdates).length === 0) {
+      throw new Error('Không có thông tin hợp lệ để cập nhật')
+    }
+
     const { data, error } = await supabase
       .from('wallets')
       .update(formattedUpdates)
       .eq('id', walletId)
+      .eq('user_id', user.id)
       .select()
       .single()
 
@@ -154,10 +165,18 @@ export async function archiveWallet(walletId) {
  */
 export async function deleteWallet(walletId) {
   try {
+    if (!walletId) {
+      throw new Error('Thiếu ID ví cần xóa')
+    }
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Người dùng chưa đăng nhập')
+
     const { error } = await supabase
       .from('wallets')
       .delete()
       .eq('id', walletId)
+      .eq('user_id', user.id)
 
     return { error }
   } catch (err) {

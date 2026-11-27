@@ -14,6 +14,7 @@ import { supabase } from '@/lib/supabaseClient'
 const REPORT_PAGE_SIZE = 500
 
 async function fetchReportTransactions({ startDate, endDate, select = 'type, amount, transaction_date' }) {
+  const { data: { user } = {} } = await supabase.auth.getUser()
   const rows = []
   for (let offset = 0; ; offset += REPORT_PAGE_SIZE) {
     let query = supabase
@@ -24,6 +25,7 @@ async function fetchReportTransactions({ startDate, endDate, select = 'type, amo
       .order('id', { ascending: true })
       .range(offset, offset + REPORT_PAGE_SIZE - 1)
 
+    if (user?.id) query = query.eq('user_id', user.id)
     if (startDate) query = query.gte('transaction_date', startDate)
     if (endDate) query = query.lte('transaction_date', endDate)
 
@@ -78,12 +80,13 @@ export async function getCategoryExpenseBreakdown(month = new Date().getMonth() 
     const categoryMap = new Map()
 
     expenses.forEach((transaction) => {
+      const categoryKey = transaction.category?.id || 'uncategorized'
       const name = transaction.category?.name || 'Khác'
       const color = transaction.category?.color || '#94A3B8'
       const amount = Number(transaction.amount || 0)
-      const current = categoryMap.get(name) || { name, color, total: 0 }
+      const current = categoryMap.get(categoryKey) || { id: categoryKey, name, color, total: 0 }
       current.total += amount
-      categoryMap.set(name, current)
+      categoryMap.set(categoryKey, current)
     })
 
     const rawData = Array.from(categoryMap.values()).sort((a, b) => b.total - a.total)
@@ -201,13 +204,22 @@ export async function getPeriodComparison(
   currentYear = new Date().getFullYear()
 ) {
   try {
+    const selectedMonth = Number(currentMonth)
+    const selectedYear = Number(currentYear)
+    if (!Number.isInteger(selectedMonth) || selectedMonth < 1 || selectedMonth > 12) {
+      throw new Error('Tháng báo cáo phải nằm trong khoảng 1–12')
+    }
+    if (!Number.isInteger(selectedYear) || selectedYear < 2020 || selectedYear > 9999) {
+      throw new Error('Năm báo cáo không hợp lệ')
+    }
+
     // Tháng hiện tại
-    const curStart = `${currentYear}-${String(currentMonth).padStart(2, '0')}-01`
-    const curLastDay = new Date(currentYear, currentMonth, 0).getDate()
-    const curEnd = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${String(curLastDay).padStart(2, '0')}`
+    const curStart = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-01`
+    const curLastDay = new Date(selectedYear, selectedMonth, 0).getDate()
+    const curEnd = `${selectedYear}-${String(selectedMonth).padStart(2, '0')}-${String(curLastDay).padStart(2, '0')}`
 
     // Tháng trước
-    const prevDate = new Date(currentYear, currentMonth - 2, 1)
+    const prevDate = new Date(selectedYear, selectedMonth - 2, 1)
     const prevMonth = prevDate.getMonth() + 1
     const prevYear = prevDate.getFullYear()
     const prevStart = `${prevYear}-${String(prevMonth).padStart(2, '0')}-01`

@@ -4,8 +4,25 @@ import { GoogleGenAI } from '@google/genai'
 const router = Router()
 
 function formatVnd(amount) {
-  const num = Number(amount) || 0
-  return `${num.toLocaleString('vi-VN')} VNĐ`
+  const num = typeof amount === 'symbol' ? 0 : Number(amount)
+  const safeNum = Number.isFinite(num) ? num : 0
+  return `${safeNum.toLocaleString('vi-VN')} VNĐ`
+}
+
+function isPlainObject(value) {
+  return Boolean(value) && typeof value === 'object' && !Array.isArray(value)
+}
+
+function toFiniteNumber(value, fallback = 0) {
+  if (typeof value === 'symbol') return fallback
+  const num = Number(value)
+  return Number.isFinite(num) ? num : fallback
+}
+
+function toSafeString(value, fallback = '') {
+  if (typeof value === 'string') return value
+  if (typeof value === 'number' || typeof value === 'boolean') return String(value)
+  return fallback
 }
 
 /**
@@ -13,18 +30,21 @@ function formatVnd(amount) {
  * Trả về trong trường fallbackReply khi GEMINI_API_KEY chưa cấu hình hoặc dịch vụ Google gián đoạn.
  */
 export function generateSmartFinancialReply(prompt = '', context = {}) {
-  const q = String(prompt || '').toLowerCase()
-  const sts = Number(context?.safe_to_spend_hom_nay || 0)
-  const daysLeft = Number(context?.so_ngay_con_lai_trong_thang || 1)
-  const totalBalance = Number(context?.tong_so_du_vi || 0)
-  const recurring = Number(context?.khoan_dinh_ky_sap_toi || 0)
-  const wallets = Array.isArray(context?.danh_sach_vi) ? context.danh_sach_vi : []
-  const budgets = Array.isArray(context?.ngan_sach_thang) ? context.ngan_sach_thang : []
-  const txns = Array.isArray(context?.giao_dich_gan_day) ? context.giao_dich_gan_day : []
+  const safeContext = isPlainObject(context) ? context : {}
+  const q = toSafeString(prompt, '').toLowerCase()
+  const sts = toFiniteNumber(safeContext.safe_to_spend_hom_nay, 0)
+  const daysLeft = toFiniteNumber(safeContext.so_ngay_con_lai_trong_thang, 1)
+  const totalBalance = toFiniteNumber(safeContext.tong_so_du_vi, 0)
+  const recurring = toFiniteNumber(safeContext.khoan_dinh_ky_sap_toi, 0)
+  const currentDay = toSafeString(safeContext.ngay_hien_tai, '').trim() || 'Hôm nay'
+  const monthLabel = toSafeString(safeContext.thang_nam, '').trim()
+  const wallets = Array.isArray(safeContext.danh_sach_vi) ? safeContext.danh_sach_vi.filter(isPlainObject) : []
+  const budgets = Array.isArray(safeContext.ngan_sach_thang) ? safeContext.ngan_sach_thang.filter(isPlainObject) : []
+  const txns = Array.isArray(safeContext.giao_dich_gan_day) ? safeContext.giao_dich_gan_day.filter(isPlainObject) : []
 
   if (q.includes('hôm nay') || q.includes('safe') || q.includes('an toàn') || q.includes('tiêu bao nhiêu')) {
     return [
-      `📊 **Phân tích Safe-to-spend hôm nay (${context?.ngay_hien_tai || 'Hôm nay'}):**`,
+      `📊 **Phân tích Safe-to-spend hôm nay (${currentDay}):**`,
       `- Số tiền an toàn bạn có thể chi tiêu hôm nay là **${formatVnd(sts)}**.`,
       `- Tháng này còn **${daysLeft} ngày** (đã trừ trước **${formatVnd(recurring)}** cho các khoản định kỳ sắp tới).`,
       `- Tổng số dư khả dụng trên các ví hiện tại của bạn là **${formatVnd(totalBalance)}**.`,
@@ -35,19 +55,21 @@ export function generateSmartFinancialReply(prompt = '', context = {}) {
   }
 
   if (q.includes('ăn uống') || q.includes('danh mục') || q.includes('đã chi bao nhiêu')) {
-    const foodBudget = budgets.find((b) => (b.danh_muc || '').toLowerCase().includes('ăn uống'))
-    const foodTxns = txns.filter((t) => (t.danh_muc || '').toLowerCase().includes('ăn uống') && t.loai === 'Chi tiêu')
+    const foodBudget = budgets.find((b) => toSafeString(b.danh_muc, '').toLowerCase().includes('ăn uống'))
+    const foodTxns = txns.filter(
+      (t) => toSafeString(t.danh_muc, '').toLowerCase().includes('ăn uống') && t.loai === 'Chi tiêu'
+    )
     const foodSpent = foodBudget
-      ? Number(foodBudget.da_chi || 0)
-      : foodTxns.reduce((s, t) => s + Number(t.so_tien || 0), 0)
+      ? toFiniteNumber(foodBudget.da_chi, 0)
+      : foodTxns.reduce((s, t) => s + toFiniteNumber(t.so_tien, 0), 0)
 
     const lines = [
-      `🍽️ **Thống kê chi tiêu danh mục Ăn uống (${context?.thang_nam || 'Tháng này'}):**`,
+      `🍽️ **Thống kê chi tiêu danh mục Ăn uống (${monthLabel || 'Tháng này'}):**`,
       `- Tổng đã chi cho Ăn uống: **${formatVnd(foodSpent)}** (${foodTxns.length} giao dịch gần đây).`
     ]
     if (foodBudget) {
       lines.push(
-        `- Hạn mức ngân sách đặt ra: **${formatVnd(foodBudget.han_muc)}** (Đã dùng **${foodBudget.phan_tram}**, còn lại **${formatVnd(foodBudget.con_lai)}**).`
+        `- Hạn mức ngân sách đặt ra: **${formatVnd(foodBudget.han_muc)}** (Đã dùng **${toSafeString(foodBudget.phan_tram, '0%') || '0%'}**, còn lại **${formatVnd(foodBudget.con_lai)}**).`
       )
     }
     lines.push(
@@ -58,21 +80,24 @@ export function generateSmartFinancialReply(prompt = '', context = {}) {
 
   if (q.includes('ngân sách') || q.includes('vượt') || q.includes('hạn mức')) {
     if (budgets.length === 0) {
-      return `📌 Hiện tại trong tháng **${context?.thang_nam || 'này'}** bạn chưa thiết lập hạn mức ngân sách cho danh mục nào.\n\n💡 Bạn hãy vào trang **Ngân sách** để đặt hạn mức cho các nhóm thiết yếu (Ăn uống, Di chuyển, Hóa đơn) nhằm kích hoạt thanh cảnh báo 3 mức (<80%, 80–99%, >=100%) nhé!`
+      return `📌 Hiện tại trong tháng **${monthLabel || 'này'}** bạn chưa thiết lập hạn mức ngân sách cho danh mục nào.\n\n💡 Bạn hãy vào trang **Ngân sách** để đặt hạn mức cho các nhóm thiết yếu (Ăn uống, Di chuyển, Hóa đơn) nhằm kích hoạt thanh cảnh báo 3 mức (<80%, 80–99%, >=100%) nhé!`
     }
     const alerts = budgets.filter((b) => b.trang_thai === 'warning' || b.trang_thai === 'exceeded')
     if (alerts.length === 0) {
       return [
-        `✅ **Tin tuyệt vời!** Toàn bộ **${budgets.length} danh mục ngân sách** của bạn trong tháng ${context?.thang_nam || ''} đều đang ở ngưỡng **An toàn (<80%)**:`,
-        ...budgets.map((b) => `- **${b.danh_muc}:** Đã chi ${formatVnd(b.da_chi)} / ${formatVnd(b.han_muc)} (${b.phan_tram})`),
+        `✅ **Tin tuyệt vời!** Toàn bộ **${budgets.length} danh mục ngân sách** của bạn trong tháng ${monthLabel} đều đang ở ngưỡng **An toàn (<80%)**:`,
+        ...budgets.map(
+          (b) =>
+            `- **${toSafeString(b.danh_muc, 'Khác') || 'Khác'}:** Đã chi ${formatVnd(b.da_chi)} / ${formatVnd(b.han_muc)} (${toSafeString(b.phan_tram, '0%') || '0%'})`
+        ),
         `💡 Hãy tiếp tục duy trì thói quen chi tiêu kỷ luật này nhé!`
       ].join('\n')
     }
     return [
-      `⚠️ **Cảnh báo các danh mục cần chú ý trong tháng ${context?.thang_nam || ''}:**`,
+      `⚠️ **Cảnh báo các danh mục cần chú ý trong tháng ${monthLabel}:**`,
       ...alerts.map(
         (b) =>
-          `- **${b.danh_muc}:** Đã dùng **${b.phan_tram}** (${formatVnd(b.da_chi)} / ${formatVnd(b.han_muc)}) — Trạng thái: **${
+          `- **${toSafeString(b.danh_muc, 'Khác') || 'Khác'}:** Đã dùng **${toSafeString(b.phan_tram, '0%') || '0%'}** (${formatVnd(b.da_chi)} / ${formatVnd(b.han_muc)}) — Trạng thái: **${
             b.trang_thai === 'exceeded' ? 'Đã vượt hạn mức' : 'Sắp vượt (80-99%)'
           }**`
       ),
@@ -81,7 +106,9 @@ export function generateSmartFinancialReply(prompt = '', context = {}) {
   }
 
   const walletLines =
-    wallets.length > 0 ? wallets.map((w) => `${w.name}: ${formatVnd(w.balance)}`).join(' | ') : 'Chưa có ví hoạt động'
+    wallets.length > 0
+      ? wallets.map((w) => `${toSafeString(w.name, 'Ví') || 'Ví'}: ${formatVnd(w.balance)}`).join(' | ')
+      : 'Chưa có ví hoạt động'
   return [
     `✨ **Tổng quan & Tư vấn phân bổ tài chính từ nay đến cuối tháng (${daysLeft} ngày còn lại):**`,
     `- **Tổng số dư các ví:** **${formatVnd(totalBalance)}** (${walletLines}).`,
@@ -108,20 +135,15 @@ router.post('/chat', async (req, res) => {
     })
   }
 
-  if (!process.env.GEMINI_API_KEY && process.env.VITE_GEMINI_API_KEY) {
-    console.warn('[Security Warning] Đang dùng biến VITE_GEMINI_API_KEY cũ trên Server. Hãy đổi sang GEMINI_API_KEY trong server/.env.')
-  }
-
-  const apiKey = (process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || '').trim()
+  const apiKey = (process.env.GEMINI_API_KEY || '').trim()
   const primaryModel = (process.env.GEMINI_MODEL || 'gemini-2.5-flash').trim()
   const fallbackModel = (process.env.GEMINI_FALLBACK_MODEL || 'gemini-3.8-flash').trim()
   const timeoutMs = Math.max(2000, Number(process.env.GEMINI_TIMEOUT_MS) || 6000)
 
   const isValidKeyFormat = Boolean(
     apiKey &&
-    apiKey.length >= 20 &&
-    !/^your_/i.test(apiKey) &&
-    (apiKey.startsWith('AIza') || apiKey.startsWith('AQ.'))
+    apiKey.length >= 10 &&
+    !/^(your_|<|changeme|placeholder)/i.test(apiKey)
   )
 
   if (!isValidKeyFormat) {
@@ -154,22 +176,27 @@ NGUYÊN TẮC PHẢN HỒI:
 
   for (const modelName of candidateModels) {
     let timerId = null
+    const abortController = new AbortController()
     try {
-      const config = { systemInstruction }
+      const config = { systemInstruction, abortSignal: abortController.signal }
       if (modelName.startsWith('gemini-2.5-flash')) {
         config.thinkingConfig = { thinkingBudget: 0 }
       }
 
       const timeoutPromise = new Promise((_, reject) => {
         timerId = setTimeout(() => {
-          reject(new Error(`Model ${modelName} phản hồi quá ${timeoutMs}ms (timeout).`))
+          abortController.abort()
+          const timeoutError = new Error(`Model ${modelName} phản hồi quá ${timeoutMs}ms (timeout).`)
+          timeoutError.name = 'TimeoutError'
+          timeoutError.code = 'ETIMEDOUT'
+          reject(timeoutError)
         }, timeoutMs)
       })
 
       const response = await Promise.race([
         ai.models.generateContent({
           model: modelName,
-          contents: `Người dùng hỏi: "${prompt.trim()}"`,
+          contents: prompt.trim(),
           config
         }),
         timeoutPromise
@@ -197,6 +224,21 @@ NGUYÊN TẮC PHẢN HỒI:
 
   console.warn('[API /api/ai/chat All Models Failed]:', lastError?.message || lastError)
   const fallbackReply = generateSmartFinancialReply(prompt, context)
+  const isTimeout =
+    lastError?.name === 'TimeoutError' ||
+    lastError?.name === 'AbortError' ||
+    lastError?.code === 'ETIMEDOUT'
+
+  if (isTimeout) {
+    return res.status(504).json({
+      success: false,
+      error: 'Dịch vụ Gemini AI phản hồi quá thời gian chờ.',
+      fallbackReply,
+      mode: 'smart_context_advisor',
+      timestamp: new Date().toISOString()
+    })
+  }
+
   return res.status(502).json({
     success: false,
     error: 'Dịch vụ Gemini AI tạm thời gián đoạn.',

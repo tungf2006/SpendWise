@@ -97,7 +97,7 @@ describe('notificationService - UC25', () => {
 
     const ok = await checkAndGenerateNotifications({ daysAhead: 3 })
     expect(mockRpc).toHaveBeenCalledWith('sync_finance_notifications', { p_days_ahead: 3 })
-    expect(ok.data).toEqual({ budget_warning: 2, recurring_due: 1 })
+    expect(ok.data).toEqual({ budget_warning: 2, budget_exceeded: 0, recurring_due: 1 })
     expect(ok.error).toBeNull()
 
     const bad = await checkAndGenerateNotifications({ daysAhead: 99 })
@@ -107,6 +107,6 @@ describe('notificationService - UC25', () => {
   it('createNotification: chặn client tự tạo notification giả mạo (tuân thủ RLS)', async () => {
     const res = await createNotification({ title: 'Fake' })
     expect(res.data).toBeNull()
-    expect(res.error.message).toContain('Chỉ hệ thống/server')
+    expect(res.error.message).toContain('Chỉ backend/RPC có quyền tạo thông báo')
   })
 })
