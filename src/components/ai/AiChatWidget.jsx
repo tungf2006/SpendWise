@@ -7,8 +7,9 @@ import { askGeminiAssistant, QUICK_REPLY_CHIPS } from '@/services/aiAssistantSer
  */
 function renderFormattedMessage(text = '') {
   const lines = String(text).split('\n')
-  return lines.map((line, lineIdx) => {
-    const tokens = line.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/g)
+  return lines.map((rawLine, lineIdx) => {
+    const line = rawLine.replace(/^\s*[-*]\s+/, '• ')
+    const tokens = line.split(/(\*\*[^*]+\*\*|\*[^*\s][^*]*\*)/g)
     return (
       <React.Fragment key={`line-${lineIdx}`}>
         {tokens.map((token, tokenIdx) => {

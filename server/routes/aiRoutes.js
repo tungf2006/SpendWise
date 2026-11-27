@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { GoogleGenerativeAI } from '@google/generative-ai'
+import { GoogleGenAI } from '@google/genai'
 
 const router = Router()
 
@@ -113,9 +113,18 @@ router.post('/chat', async (req, res) => {
   }
 
   const apiKey = (process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY || '').trim()
-  const modelName = (process.env.GEMINI_MODEL || 'gemini-1.5-flash').trim()
+  const primaryModel = (process.env.GEMINI_MODEL || 'gemini-2.5-flash').trim()
+  const fallbackModel = (process.env.GEMINI_FALLBACK_MODEL || 'gemini-3.8-flash').trim()
+  const timeoutMs = Math.max(2000, Number(process.env.GEMINI_TIMEOUT_MS) || 6000)
 
-  if (!apiKey || !apiKey.startsWith('AIza')) {
+  const isValidKeyFormat = Boolean(
+    apiKey &&
+    apiKey.length >= 20 &&
+    !/^your_/i.test(apiKey) &&
+    (apiKey.startsWith('AIza') || apiKey.startsWith('AQ.'))
+  )
+
+  if (!isValidKeyFormat) {
     const fallbackReply = generateSmartFinancialReply(prompt, context)
     return res.status(503).json({
       success: false,
@@ -126,11 +135,7 @@ router.post('/chat', async (req, res) => {
     })
   }
 
-  try {
-    const genAI = new GoogleGenerativeAI(apiKey)
-    const model = genAI.getGenerativeModel({ model: modelName })
-
-    const systemInstruction = `
+  const systemInstruction = `
 Bạn là Trợ lý Tài chính Cá nhân Thông minh của ứng dụng SpendWise (chạy trên Node.js Backend).
 Dưới đây là dữ liệu tài chính tổng hợp trong tháng hiện tại của người dùng (dạng JSON):
 ${context ? JSON.stringify(context, null, 2) : 'Chưa có ngữ cảnh tài chính.'}
@@ -143,32 +148,62 @@ NGUYÊN TẮC PHẢN HỒI:
 5. Trả lời súc tích khoảng 2-4 đoạn văn ngắn hoặc gạch đầu dòng rõ ràng.
 `
 
-    const result = await model.generateContent([
-      { text: systemInstruction },
-      { text: `Người dùng hỏi: "${prompt.trim()}"` }
-    ])
+  const candidateModels = [...new Set([primaryModel, fallbackModel].filter(Boolean))]
+  const ai = new GoogleGenAI({ apiKey, httpOptions: { apiVersion: 'v1beta' } })
+  let lastError = null
 
-    const response = await result.response
-    const reply = response.text()
+  for (const modelName of candidateModels) {
+    let timerId = null
+    try {
+      const config = { systemInstruction }
+      if (modelName.startsWith('gemini-2.5-flash')) {
+        config.thinkingConfig = { thinkingBudget: 0 }
+      }
 
-    return res.status(200).json({
-      success: true,
-      reply,
-      mode: 'gemini_backend',
-      model: modelName,
-      timestamp: new Date().toISOString()
-    })
-  } catch (error) {
-    console.warn('[API /api/ai/chat Gemini Error]:', error?.message || error)
-    const fallbackReply = generateSmartFinancialReply(prompt, context)
-    return res.status(502).json({
-      success: false,
-      error: 'Dịch vụ Gemini AI tạm thời gián đoạn.',
-      fallbackReply,
-      mode: 'smart_context_advisor',
-      timestamp: new Date().toISOString()
-    })
+      const timeoutPromise = new Promise((_, reject) => {
+        timerId = setTimeout(() => {
+          reject(new Error(`Model ${modelName} phản hồi quá ${timeoutMs}ms (timeout).`))
+        }, timeoutMs)
+      })
+
+      const response = await Promise.race([
+        ai.models.generateContent({
+          model: modelName,
+          contents: `Người dùng hỏi: "${prompt.trim()}"`,
+          config
+        }),
+        timeoutPromise
+      ])
+
+      const reply = typeof response?.text === 'string' ? response.text.trim() : ''
+      if (!reply) {
+        throw new Error(`Model ${modelName} trả về phản hồi rỗng.`)
+      }
+
+      return res.status(200).json({
+        success: true,
+        reply,
+        mode: modelName === primaryModel ? 'gemini_backend' : 'gemini_fallback_model',
+        model: modelName,
+        timestamp: new Date().toISOString()
+      })
+    } catch (error) {
+      lastError = error
+      console.warn(`[API /api/ai/chat Gemini Error - ${modelName}]:`, error?.message || error)
+    } finally {
+      if (timerId) clearTimeout(timerId)
+    }
   }
+
+  console.warn('[API /api/ai/chat All Models Failed]:', lastError?.message || lastError)
+  const fallbackReply = generateSmartFinancialReply(prompt, context)
+  return res.status(502).json({
+    success: false,
+    error: 'Dịch vụ Gemini AI tạm thời gián đoạn.',
+    fallbackReply,
+    mode: 'smart_context_advisor',
+    timestamp: new Date().toISOString()
+  })
 })
 
 export default router
