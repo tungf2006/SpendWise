@@ -4,6 +4,11 @@
  */
 import { removeVietnameseTones } from '@/utils/unaccent'
 
+function matchesKeyword(text, kw) {
+  const escaped = kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return new RegExp(`(?:^|[^a-z0-9])${escaped}(?:$|[^a-z0-9])`, 'i').test(text)
+}
+
 export function parseQuickEntry(input) {
   if (!input || typeof input !== 'string') return null
 
@@ -100,7 +105,7 @@ export function parseQuickEntry(input) {
     { name: 'Lương & Thưởng', keywords: ['luong', 'thuong', 'bonus', 'part time'] },
   ]
   for (const cat of categoryRules) {
-    const match = cat.keywords.some(kw => cleanText.includes(kw))
+    const match = cat.keywords.some(kw => matchesKeyword(cleanText, kw))
     if (match) {
       result.category = cat.name
       result.confidence.category = true
