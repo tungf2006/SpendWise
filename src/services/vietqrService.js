@@ -43,14 +43,17 @@ export function generateVietQrUrl({
   const baseUrl = `https://img.vietqr.io/image/${encodeURIComponent(cleanBin)}-${encodeURIComponent(cleanAccount)}-${template}.png`
   const queryParams = new URLSearchParams()
 
-  if (amount && Number(amount) > 0) {
-    queryParams.append('amount', Math.round(Number(amount)).toString())
+  const numericAmount = Number(amount)
+  if (Number.isFinite(numericAmount) && numericAmount > 0) {
+    queryParams.append('amount', Math.round(numericAmount).toString())
   }
-  if (memo && memo.trim()) {
-    queryParams.append('addInfo', memo.trim())
+  const cleanMemo = String(memo ?? '').trim()
+  if (cleanMemo) {
+    queryParams.append('addInfo', cleanMemo)
   }
-  if (accountName && accountName.trim()) {
-    queryParams.append('accountName', accountName.trim().toUpperCase())
+  const cleanAccountName = String(accountName ?? '').trim()
+  if (cleanAccountName) {
+    queryParams.append('accountName', cleanAccountName.toUpperCase())
   }
 
   const queryString = queryParams.toString()
@@ -71,9 +74,13 @@ export function generateVietQrUrl({
  * }}
  */
 export function splitBill({ totalAmount, numberOfPeople = 1, tipPercent = 0 }) {
-  const baseAmount = Math.max(0, Number(totalAmount) || 0)
-  const people = Math.max(1, Number(numberOfPeople) || 1)
-  const tip = Math.max(0, Number(tipPercent) || 0)
+  const rawAmount = Number(totalAmount)
+  const rawPeople = Number(numberOfPeople)
+  const rawTip = Number(tipPercent)
+
+  const baseAmount = Number.isFinite(rawAmount) ? Math.max(0, rawAmount) : 0
+  const people = Number.isFinite(rawPeople) ? Math.max(1, rawPeople) : 1
+  const tip = Number.isFinite(rawTip) ? Math.min(50, Math.max(0, rawTip)) : 0
 
   const tipAmount = Math.round((baseAmount * tip) / 100)
   const totalAmountWithTip = baseAmount + tipAmount

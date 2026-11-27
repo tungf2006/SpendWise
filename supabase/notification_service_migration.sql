@@ -121,9 +121,10 @@ INSERT INTO public.notifications (user_id, title, message, type, event_key)
 VALUES (v_user_id, v_title, v_message, v_noti_type, v_event_key)
     ON CONFLICT (user_id, event_key) DO NOTHING;
 GET DIAGNOSTICS v_rows = ROW_COUNT;
-v_budgets_created := v_budgets_created + v_rows;
 IF v_noti_type = 'budget_exceeded' THEN
     v_exceeded_created := v_exceeded_created + v_rows;
+ELSIF v_noti_type = 'budget_warning' THEN
+    v_budgets_created := v_budgets_created + v_rows;
 END IF;
 END LOOP;
 

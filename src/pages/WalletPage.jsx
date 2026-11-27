@@ -279,7 +279,7 @@ export const WalletPage = () => {
               type="button"
               onClick={handleOpenTransferModal}
               disabled={wallets.length < 2}
-              className="px-3.5 py-2 rounded-full bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold flex items-center gap-1.5 border border-slate-200/80 shadow-2xs transition-colors cursor-pointer disabled:opacity-50"
+              className="px-3.5 py-2 rounded-full bg-white hover:bg-slate-100 text-slate-700 text-xs font-semibold flex items-center gap-1.5 border border-slate-200/80 shadow-sm transition-colors cursor-pointer disabled:opacity-50"
             >
               <ArrowRightLeft className="w-3.5 h-3.5" />
               <span>Chuyển tiền nội bộ</span>
@@ -287,7 +287,7 @@ export const WalletPage = () => {
             <button
               type="button"
               onClick={() => setShowAddModal(true)}
-              className="px-4 py-2 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold flex items-center gap-1.5 shadow-soft-sm transition-transform active:scale-95 cursor-pointer"
+              className="px-4 py-2 rounded-full bg-slate-900 dark:bg-brand-600 hover:bg-slate-800 dark:hover:bg-brand-500 text-white text-xs font-semibold flex items-center gap-1.5 shadow-soft-sm transition-transform active:scale-95 cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span>Thêm ví mới</span>
@@ -298,15 +298,15 @@ export const WalletPage = () => {
 
       {/* Error Banner */}
       {error && (
-        <div className="rounded-2xl bg-rose-50 border border-rose-200/80 p-4 flex items-center justify-between gap-3 text-rose-800">
+        <div className="rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200/80 dark:border-rose-800/60 p-4 flex items-center justify-between gap-3 text-rose-800 dark:text-rose-300">
           <div className="flex items-center gap-2 text-xs sm:text-sm font-medium">
-            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+            <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
             <span>{error}</span>
           </div>
           <button
             type="button"
             onClick={fetchWalletsList}
-            className="px-3 py-1 rounded-full bg-white text-xs font-semibold text-rose-700 border border-rose-200 hover:bg-rose-100 flex items-center gap-1 transition-colors cursor-pointer shrink-0"
+            className="px-3 py-1 rounded-full bg-white dark:bg-rose-900/50 text-xs font-semibold text-rose-700 dark:text-rose-200 border border-rose-200 dark:border-rose-700 hover:bg-rose-100 dark:hover:bg-rose-900/80 flex items-center gap-1 transition-colors cursor-pointer shrink-0"
           >
             <RefreshCw className="w-3 h-3" />
             <span>Thử lại</span>
@@ -315,7 +315,7 @@ export const WalletPage = () => {
       )}
 
       {/* Total Balance Card */}
-      <div className="rounded-[2rem] bg-white/70 p-2 shadow-soft-md ring-1 ring-slate-900/5">
+      <div className="rounded-[2rem] bg-white/70 p-2 shadow-soft-md ring-1 ring-slate-900/5 dark:ring-white/10">
         <div className="rounded-[calc(2rem-0.5rem)] bg-gradient-to-r from-slate-900 to-slate-800 p-6 text-white flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <span className="text-xs text-slate-400 uppercase tracking-widest font-semibold block mb-1">
@@ -348,14 +348,14 @@ export const WalletPage = () => {
           wallets.map((w) => (
             <div
               key={w.id}
-              className="rounded-[2rem] bg-white/70 p-2 shadow-soft-md ring-1 ring-slate-900/5 hover:shadow-soft-lg transition-all"
+              className="rounded-[2rem] bg-white/70 p-2 shadow-soft-md ring-1 ring-slate-900/5 dark:ring-white/10 hover:shadow-soft-xl transition-all"
             >
               <div className="rounded-[calc(2rem-0.5rem)] bg-white p-5 border border-slate-100 flex flex-col justify-between h-full">
                 
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-3">
                     <div
-                      className="w-11 h-11 rounded-2xl flex items-center justify-center text-white shadow-xs"
+                      className="w-11 h-11 rounded-2xl flex items-center justify-center text-white shadow-sm"
                       style={{ backgroundColor: w.color || '#3B82F6' }}
                     >
                       {w.type === 'bank' ? (
@@ -378,7 +378,7 @@ export const WalletPage = () => {
                     <button
                       type="button"
                       onClick={() => handleOpenEditModal(w)}
-                      className="w-7 h-7 rounded-full hover:bg-slate-100 text-slate-400 hover:text-brand-600 flex items-center justify-center transition-colors cursor-pointer"
+                      className="w-7 h-7 rounded-full hover:bg-slate-100 text-slate-400 hover:text-brand-600 dark:hover:text-brand-400 flex items-center justify-center transition-colors cursor-pointer"
                       title="Sửa ví"
                     >
                       <Pencil className="w-3.5 h-3.5" />
@@ -412,22 +412,22 @@ export const WalletPage = () => {
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-fade-in"
           onClick={() => {
             if (!isSubmitting) setShowAddModal(false)
           }}
         >
           <div
-            className="w-full max-w-md rounded-[2rem] bg-white/80 p-1.5 shadow-2xl ring-1 ring-slate-900/5 animate-in zoom-in-95 duration-200"
+            className="w-full max-w-md rounded-[2rem] bg-white/80 dark:bg-slate-900/95 p-1.5 shadow-2xl ring-1 ring-slate-900/5 dark:ring-white/10 animate-modal-pop"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="rounded-[calc(2rem-0.375rem)] bg-white p-6 border border-slate-100">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+            <div className="rounded-[calc(2rem-0.375rem)] bg-white dark:bg-[#111827] p-6 border border-slate-100 dark:border-slate-800">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 mb-4">
               <h3 className="font-display font-bold text-base text-slate-900">Thêm Ví Mới</h3>
               <button
                 type="button"
                 onClick={() => setShowAddModal(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center cursor-pointer"
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-300 flex items-center justify-center cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -444,7 +444,7 @@ export const WalletPage = () => {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="VD: Vietcombank, Ví ShopeePay, Tiền tiêu vặt..."
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-full text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-full text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
                 />
               </div>
 
@@ -455,7 +455,7 @@ export const WalletPage = () => {
                 <select
                   value={type}
                   onChange={(e) => setType(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-full text-xs text-slate-900 focus:outline-none"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-full text-xs text-slate-900 dark:text-slate-100 focus:outline-none"
                 >
                   <option value="cash">Tiền mặt (Cash)</option>
                   <option value="bank">Tài khoản Ngân hàng (Bank)</option>
@@ -473,7 +473,7 @@ export const WalletPage = () => {
                   value={String(balance).replace(/\B(?=(\d{3})+(?!\d))/g, '.')}
                   onChange={(e) => setBalance(e.target.value.replace(/\D/g, ''))}
                   placeholder="0"
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-full text-xs text-slate-900 font-display font-bold"
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-full text-xs text-slate-900 dark:text-slate-100 font-display font-bold"
                 />
               </div>
 
@@ -488,7 +488,7 @@ export const WalletPage = () => {
                       type="button"
                       onClick={() => setColor(c)}
                       className={`w-7 h-7 rounded-full border-2 transition-transform cursor-pointer ${
-                        color === c ? 'scale-110 border-slate-900' : 'border-transparent'
+                        color === c ? 'scale-110 border-slate-900 dark:border-white' : 'border-transparent'
                       }`}
                       style={{ backgroundColor: c }}
                     />
@@ -500,14 +500,14 @@ export const WalletPage = () => {
                 <button
                   type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold cursor-pointer"
+                  className="px-4 py-2 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold cursor-pointer"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-5 py-2 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-soft-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  className="px-5 py-2 rounded-full bg-slate-900 dark:bg-brand-600 hover:bg-slate-800 dark:hover:bg-brand-500 text-white text-xs font-semibold shadow-soft-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                 >
                   {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   <span>Tạo ví</span>
@@ -524,7 +524,7 @@ export const WalletPage = () => {
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-fade-in"
           onClick={() => {
             if (!isSubmitting) {
               setShowEditModal(false)
@@ -533,11 +533,11 @@ export const WalletPage = () => {
           }}
         >
           <div
-            className="w-full max-w-md rounded-[2rem] bg-white/80 p-1.5 shadow-2xl ring-1 ring-slate-900/5 animate-in zoom-in-95 duration-200"
+            className="w-full max-w-md rounded-[2rem] bg-white/80 dark:bg-slate-900/95 p-1.5 shadow-2xl ring-1 ring-slate-900/5 dark:ring-white/10 animate-modal-pop"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="rounded-[calc(2rem-0.375rem)] bg-white p-6 border border-slate-100">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+            <div className="rounded-[calc(2rem-0.375rem)] bg-white dark:bg-[#111827] p-6 border border-slate-100 dark:border-slate-800">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 mb-4">
               <h3 className="font-display font-bold text-base text-slate-900">Chỉnh Sửa Ví</h3>
               <button
                 type="button"
@@ -545,7 +545,7 @@ export const WalletPage = () => {
                   setShowEditModal(false)
                   setEditingWallet(null)
                 }}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center cursor-pointer"
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-300 flex items-center justify-center cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -562,7 +562,7 @@ export const WalletPage = () => {
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
                   placeholder="VD: Vietcombank, Ví MoMo..."
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-full text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-full text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
                 />
               </div>
 
@@ -573,7 +573,7 @@ export const WalletPage = () => {
                 <select
                   value={editType}
                   onChange={(e) => setEditType(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-full text-xs text-slate-900 focus:outline-none"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-full text-xs text-slate-900 dark:text-slate-100 focus:outline-none"
                 >
                   <option value="cash">Tiền mặt (Cash)</option>
                   <option value="bank">Tài khoản Ngân hàng (Bank)</option>
@@ -594,7 +594,7 @@ export const WalletPage = () => {
                     const digits = raw.replace(/\D/g, '')
                     setEditBalance(raw.startsWith('-') ? `-${digits}` : digits)
                   }}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-full text-xs text-slate-900 font-display font-bold"
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-full text-xs text-slate-900 dark:text-slate-100 font-display font-bold"
                 />
               </div>
 
@@ -609,7 +609,7 @@ export const WalletPage = () => {
                       type="button"
                       onClick={() => setEditColor(c)}
                       className={`w-7 h-7 rounded-full border-2 transition-transform cursor-pointer ${
-                        editColor === c ? 'scale-110 border-slate-900' : 'border-transparent'
+                        editColor === c ? 'scale-110 border-slate-900 dark:border-white' : 'border-transparent'
                       }`}
                       style={{ backgroundColor: c }}
                     />
@@ -624,14 +624,14 @@ export const WalletPage = () => {
                     setShowEditModal(false)
                     setEditingWallet(null)
                   }}
-                  className="px-4 py-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold cursor-pointer"
+                  className="px-4 py-2 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold cursor-pointer"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-5 py-2 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-soft-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  className="px-5 py-2 rounded-full bg-slate-900 dark:bg-brand-600 hover:bg-slate-800 dark:hover:bg-brand-500 text-white text-xs font-semibold shadow-soft-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                 >
                   {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   <span>Lưu thay đổi</span>
@@ -648,22 +648,22 @@ export const WalletPage = () => {
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-in fade-in duration-200"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-sm animate-fade-in"
           onClick={() => {
             if (!isSubmitting) setShowTransferModal(false)
           }}
         >
           <div
-            className="w-full max-w-md rounded-[2rem] bg-white/80 p-1.5 shadow-2xl ring-1 ring-slate-900/5 animate-in zoom-in-95 duration-200"
+            className="w-full max-w-md rounded-[2rem] bg-white/80 dark:bg-slate-900/95 p-1.5 shadow-2xl ring-1 ring-slate-900/5 dark:ring-white/10 animate-modal-pop"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="rounded-[calc(2rem-0.375rem)] bg-white p-6 border border-slate-100">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+            <div className="rounded-[calc(2rem-0.375rem)] bg-white dark:bg-[#111827] p-6 border border-slate-100 dark:border-slate-800">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800 mb-4">
               <h3 className="font-display font-bold text-base text-slate-900">Chuyển Tiền Nội Bộ</h3>
               <button
                 type="button"
                 onClick={() => setShowTransferModal(false)}
-                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center cursor-pointer"
+                className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-300 flex items-center justify-center cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -678,7 +678,7 @@ export const WalletPage = () => {
                   <select
                     value={fromWalletId}
                     onChange={(e) => setFromWalletId(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-full text-xs text-slate-900 focus:outline-none"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-full text-xs text-slate-900 dark:text-slate-100 focus:outline-none"
                   >
                     {wallets.map((w) => (
                       <option key={w.id} value={w.id}>{w.name} ({formatCurrency(w.balance)})</option>
@@ -693,7 +693,7 @@ export const WalletPage = () => {
                   <select
                     value={toWalletId}
                     onChange={(e) => setToWalletId(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-full text-xs text-slate-900 focus:outline-none"
+                    className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-full text-xs text-slate-900 dark:text-slate-100 focus:outline-none"
                   >
                     {wallets.map((w) => (
                       <option key={w.id} value={w.id}>{w.name}</option>
@@ -714,7 +714,7 @@ export const WalletPage = () => {
                   value={transferAmount}
                   onChange={(e) => setTransferAmount(e.target.value)}
                   placeholder="VD: 500000"
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-full text-sm font-display font-bold text-slate-900"
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-full text-sm font-display font-bold text-slate-900 dark:text-slate-100"
                 />
               </div>
 
@@ -727,7 +727,7 @@ export const WalletPage = () => {
                   value={transferNote}
                   onChange={(e) => setTransferNote(e.target.value)}
                   placeholder="VD: Rút tiền ATM, Nạp ví MoMo..."
-                  className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-full text-xs text-slate-900"
+                  className="w-full px-4 py-2 bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-full text-xs text-slate-900 dark:text-slate-100"
                 />
               </div>
 
@@ -735,14 +735,14 @@ export const WalletPage = () => {
                 <button
                   type="button"
                   onClick={() => setShowTransferModal(false)}
-                  className="px-4 py-2 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold cursor-pointer"
+                  className="px-4 py-2 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold cursor-pointer"
                 >
                   Hủy
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-5 py-2 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-soft-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  className="px-5 py-2 rounded-full bg-slate-900 dark:bg-brand-600 hover:bg-slate-800 dark:hover:bg-brand-500 text-white text-xs font-semibold shadow-soft-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
                 >
                   {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
                   <span>Xác nhận chuyển</span>

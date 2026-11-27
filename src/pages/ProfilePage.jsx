@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '@/context/AuthContext'
+import { useAuth } from '@/context/useAuth'
 import { updateProfile, updatePassword } from '@/services/authService'
 import { POPULAR_BANKS } from '@/services/vietqrService'
 import { PageHeader } from '@/components/common/PageHeader'
+import { getUserInitials } from '@/components/common/userInitials'
 import { User, Mail, CreditCard, LogOut, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react'
 
 /**
@@ -14,9 +15,12 @@ export const ProfilePage = () => {
   const { user, profile, refreshProfile, signOut } = useAuth()
   const navigate = useNavigate()
 
-  const [fullName, setFullName] = useState('')
-  const [bankBin, setBankBin] = useState('')
-  const [bankAccount, setBankAccount] = useState('')
+  const [fullNameDraft, setFullName] = useState(null)
+  const [bankBinDraft, setBankBin] = useState(null)
+  const [bankAccountDraft, setBankAccount] = useState(null)
+  const fullName = fullNameDraft ?? profile?.full_name ?? user?.user_metadata?.full_name ?? ''
+  const bankBin = bankBinDraft ?? profile?.default_bank_bin ?? ''
+  const bankAccount = bankAccountDraft ?? profile?.default_bank_account ?? ''
   const [loading, setLoading] = useState(false)
   const [statusMsg, setStatusMsg] = useState({ type: '', text: '' })
   const [newPassword, setNewPassword] = useState('')
@@ -26,16 +30,6 @@ export const ProfilePage = () => {
     type: '',
     text: '',
   })
-
-  useEffect(() => {
-    if (profile) {
-      setFullName(profile.full_name || '')
-      setBankBin(profile.default_bank_bin || '')
-      setBankAccount(profile.default_bank_account || '')
-    } else if (user?.user_metadata?.full_name) {
-      setFullName(user.user_metadata.full_name)
-    }
-  }, [profile, user])
 
   const handleSave = async (e) => {
     e.preventDefault()
@@ -145,7 +139,7 @@ export const ProfilePage = () => {
           <button
             type="button"
             onClick={handleSignOut}
-            className="px-4 py-2 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold flex items-center gap-2 border border-rose-200/60 transition-colors cursor-pointer"
+            className="px-4 py-2 rounded-full bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/60 text-rose-700 dark:text-rose-300 text-xs font-semibold flex items-center gap-2 border border-rose-200/60 dark:border-rose-800/60 transition-colors cursor-pointer"
           >
             <LogOut className="w-3.5 h-3.5" />
             <span>Đăng xuất</span>
@@ -156,10 +150,10 @@ export const ProfilePage = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         
         {/* User Card */}
-        <div className="rounded-[2rem] bg-white/70 p-2 shadow-soft-md ring-1 ring-slate-900/5">
+        <div className="rounded-[2rem] bg-white/70 p-2 shadow-soft-md ring-1 ring-slate-900/5 dark:ring-white/10">
           <div className="rounded-[calc(2rem-0.5rem)] bg-white p-6 border border-slate-100 text-center flex flex-col items-center">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-brand-600 to-indigo-600 text-white flex items-center justify-center text-2xl font-black shadow-soft-lg ring-4 ring-slate-100 mb-3">
-              {(fullName || user?.email || 'SW').slice(0, 2).toUpperCase()}
+            <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-brand-600 to-indigo-600 text-white flex items-center justify-center text-2xl font-black shadow-soft-xl ring-4 ring-slate-100 dark:ring-slate-800 mb-3">
+              {getUserInitials(fullName, user?.email, 'SW')}
             </div>
             <h3 className="font-display font-bold text-base text-slate-900">{fullName || 'Người dùng SpendWise'}</h3>
             <p className="text-xs text-slate-500 mt-0.5">{user?.email}</p>
@@ -167,7 +161,7 @@ export const ProfilePage = () => {
             <div className="w-full mt-6 pt-4 border-t border-slate-100 space-y-2 text-left text-xs">
               <div className="flex justify-between py-1 text-slate-500">
                 <span>Trạng thái:</span>
-                <span className="font-semibold text-emerald-600">Đang hoạt động</span>
+                <span className="font-semibold text-emerald-600 dark:text-emerald-400">Đang hoạt động</span>
               </div>
               <div className="flex justify-between py-1 text-slate-500">
                 <span>Tham gia:</span>
@@ -180,7 +174,7 @@ export const ProfilePage = () => {
         </div>
 
         {/* Edit Profile Form */}
-        <div className="md:col-span-2 rounded-[2rem] bg-white/70 p-2 shadow-soft-md ring-1 ring-slate-900/5">
+        <div className="md:col-span-2 rounded-[2rem] bg-white/70 p-2 shadow-soft-md ring-1 ring-slate-900/5 dark:ring-white/10">
           <div className="rounded-[calc(2rem-0.5rem)] bg-white p-6 sm:p-8 border border-slate-100">
             <h3 className="font-display font-bold text-base text-slate-900 mb-4">
               Thông tin nhận chuyển khoản mặc định
@@ -190,8 +184,8 @@ export const ProfilePage = () => {
               <div
                 className={`mb-5 p-3.5 rounded-2xl flex items-start gap-2.5 text-xs ${
                   statusMsg.type === 'success'
-                    ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                    : 'bg-rose-50 text-rose-800 border border-rose-200'
+                    ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-200 border border-emerald-200 dark:border-emerald-800/60'
+                    : 'bg-rose-50 dark:bg-rose-950/50 text-rose-800 dark:text-rose-200 border border-rose-200 dark:border-rose-800/60'
                 }`}
               >
                 {statusMsg.type === 'success' ? (
@@ -217,7 +211,7 @@ export const ProfilePage = () => {
                     required
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-full text-xs sm:text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-full text-xs sm:text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
                   />
                 </div>
               </div>
@@ -234,7 +228,7 @@ export const ProfilePage = () => {
                     type="email"
                     disabled
                     value={user?.email || ''}
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-100 border border-slate-200 rounded-full text-xs sm:text-sm text-slate-500 cursor-not-allowed"
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-100 dark:bg-slate-800/70 border border-slate-200 dark:border-slate-700 rounded-full text-xs sm:text-sm text-slate-500 dark:text-slate-400 cursor-not-allowed"
                   />
                 </div>
               </div>
@@ -247,7 +241,7 @@ export const ProfilePage = () => {
                   <select
                     value={bankBin}
                     onChange={(e) => setBankBin(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-full text-xs sm:text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+                    className="w-full px-4 py-2.5 bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-full text-xs sm:text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
                   >
                     <option value="">-- Chọn ngân hàng --</option>
                     {POPULAR_BANKS.map((bank) => (
@@ -271,7 +265,7 @@ export const ProfilePage = () => {
                       value={bankAccount}
                       onChange={(e) => setBankAccount(e.target.value)}
                       placeholder="VD: 0123456789"
-                      className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-full text-xs sm:text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+                      className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-full text-xs sm:text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
                     />
                   </div>
                 </div>
@@ -281,7 +275,7 @@ export const ProfilePage = () => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="px-6 py-2.5 rounded-full bg-slate-900 hover:bg-slate-800 text-white font-semibold text-xs sm:text-sm shadow-soft-sm transition-all duration-200 active:scale-95 disabled:opacity-60 flex items-center gap-2 cursor-pointer"
+                  className="px-6 py-2.5 rounded-full bg-slate-900 dark:bg-brand-600 hover:bg-slate-800 dark:hover:bg-brand-500 text-white font-semibold text-xs sm:text-sm shadow-soft-sm transition-all duration-200 active:scale-95 disabled:opacity-60 flex items-center gap-2 cursor-pointer"
                 >
                   {loading && <Loader2 className="w-4 h-4 animate-spin text-white" />}
                   <span>{loading ? 'Đang lưu...' : 'Lưu thay đổi'}</span>
@@ -298,8 +292,8 @@ export const ProfilePage = () => {
                   role={passwordMessage.type === 'error' ? 'alert' : 'status'}
                   className={`mt-4 rounded-2xl p-3 text-sm ${
                     passwordMessage.type === 'success'
-                      ? 'bg-emerald-50 text-emerald-700'
-                      : 'bg-rose-50 text-rose-700'
+                      ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200/70 dark:border-emerald-800/60'
+                      : 'bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200/70 dark:border-rose-800/60'
                   }`}
                 >
                   {passwordMessage.text}
@@ -323,7 +317,7 @@ export const ProfilePage = () => {
                     minLength={6}
                     value={newPassword}
                     onChange={(event) => setNewPassword(event.target.value)}
-                    className="mt-2 w-full rounded-full border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm"
+                    className="mt-2 w-full rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/80 px-4 py-2.5 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
                   />
                 </div>
 
@@ -345,14 +339,14 @@ export const ProfilePage = () => {
                     onChange={(event) =>
                       setConfirmPassword(event.target.value)
                     }
-                    className="mt-2 w-full rounded-full border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm"
+                    className="mt-2 w-full rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/80 px-4 py-2.5 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
                   />
                 </div>
 
                 <button
                   type="submit"
                   disabled={passwordLoading}
-                  className="rounded-full bg-slate-900 px-6 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+                  className="rounded-full bg-slate-900 dark:bg-brand-600 hover:bg-slate-800 dark:hover:bg-brand-500 px-6 py-2.5 text-sm font-semibold text-white transition-colors disabled:opacity-60 cursor-pointer"
                 >
                   {passwordLoading ? 'Đang cập nhật...' : 'Đổi mật khẩu'}
                 </button>

@@ -15,6 +15,16 @@
   }
 }
 
+@layer utilities {
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 /* Custom smooth easing cubic-bezier */
 .ease-apple {
   transition-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
@@ -46,4 +56,184 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background: #CBD5E1;
+}
+
+/* Dark mode theme overrides (toggled via html.dark in ThemeContext) */
+html.dark {
+  color-scheme: dark;
+}
+
+html.dark body {
+  background-color: #0B0F19;
+  color: #E2E8F0;
+}
+
+html.dark ::-webkit-scrollbar-thumb {
+  background: #334155;
+}
+
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+html.dark .bezel-outer {
+  background-color: rgba(30, 41, 59, 0.72);
+  --tw-ring-color: rgba(255, 255, 255, 0.08);
+}
+
+html.dark .bezel-inner {
+  background-color: #111827;
+  box-shadow: inset 0 1px 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+html.dark select option {
+  background-color: #111827;
+  color: #F1F5F9;
+}
+
+:where(html.dark) .bg-\[\#F8FAFC\],
+:where(html.dark) .bg-slate-50 {
+  background-color: #0B0F19;
+}
+
+:where(html.dark) .bg-slate-50\/90 {
+  background-color: rgba(15, 23, 42, 0.85);
+}
+
+:where(html.dark) .bg-white {
+  background-color: #111827;
+}
+
+:where(html.dark) .bg-white\/95 {
+  background-color: rgba(17, 24, 39, 0.95);
+}
+
+:where(html.dark) .bg-white\/80,
+:where(html.dark) .bg-white\/70 {
+  background-color: rgba(17, 24, 39, 0.88);
+}
+
+:where(html.dark) .bg-slate-100,
+:where(html.dark) .bg-slate-100\/60,
+:where(html.dark) .bg-slate-100\/70,
+:where(html.dark) .bg-slate-100\/80 {
+  background-color: rgba(30, 41, 59, 0.85);
+}
+
+:where(html.dark) .hover\:bg-white:hover {
+  background-color: rgba(30, 41, 59, 0.9);
+}
+
+:where(html.dark) .hover\:bg-slate-50:hover {
+  background-color: rgba(30, 41, 59, 0.85);
+}
+
+:where(html.dark) .hover\:bg-slate-100:hover,
+:where(html.dark) .hover\:bg-slate-200:hover {
+  background-color: rgba(51, 65, 85, 0.8);
+}
+
+:where(html.dark) .text-slate-900,
+:where(html.dark) .text-slate-800 {
+  color: #F1F5F9;
+}
+
+:where(html.dark) .text-slate-700,
+:where(html.dark) .text-slate-600 {
+  color: #CBD5E1;
+}
+
+:where(html.dark) .text-slate-500,
+:where(html.dark) .text-slate-400 {
+  color: #94A3B8;
+}
+
+:where(html.dark) .border-slate-100,
+:where(html.dark) .border-slate-200,
+:where(html.dark) .border-slate-200\/60,
+:where(html.dark) .border-slate-200\/70,
+:where(html.dark) .border-slate-200\/80,
+:where(html.dark) .border-white\/80 {
+  border-color: rgba(51, 65, 85, 0.7);
+}
+
+:where(html.dark) .divide-slate-100 > :not([hidden]) ~ :not([hidden]) {
+  border-color: rgba(51, 65, 85, 0.6);
+}
+
+:where(html.dark) .bg-rose-50 {
+  background-color: rgba(136, 19, 55, 0.28);
+}
+
+:where(html.dark) .bg-rose-100 {
+  background-color: rgba(136, 19, 55, 0.42);
+}
+
+:where(html.dark) .bg-emerald-50,
+:where(html.dark) .bg-emerald-50\/60 {
+  background-color: rgba(6, 78, 59, 0.32);
+}
+
+:where(html.dark) .bg-emerald-100 {
+  background-color: rgba(6, 78, 59, 0.45);
+}
+
+:where(html.dark) .bg-amber-50 {
+  background-color: rgba(120, 53, 15, 0.28);
+}
+
+:where(html.dark) .bg-amber-100 {
+  background-color: rgba(120, 53, 15, 0.45);
+}
+
+:where(html.dark) .bg-sky-50,
+:where(html.dark) .bg-sky-100 {
+  background-color: rgba(12, 74, 110, 0.38);
+}
+
+:where(html.dark) .bg-indigo-50 {
+  background-color: rgba(49, 46, 129, 0.38);
+}
+
+:where(html.dark) .text-rose-700,
+:where(html.dark) .text-rose-800 {
+  color: #FDA4AF;
+}
+
+:where(html.dark) .text-emerald-700,
+:where(html.dark) .text-emerald-800 {
+  color: #6EE7B7;
+}
+
+:where(html.dark) .text-amber-700,
+:where(html.dark) .text-amber-800 {
+  color: #FCD34D;
+}
+
+:where(html.dark) .text-sky-700 {
+  color: #7DD3FC;
+}
+
+:where(html.dark) .text-indigo-700 {
+  color: #A5B4FC;
+}
+
+:where(html.dark) .border-rose-100,
+:where(html.dark) .border-rose-200,
+:where(html.dark) .border-rose-200\/60,
+:where(html.dark) .border-rose-200\/80 {
+  border-color: rgba(190, 18, 60, 0.45);
+}
+
+:where(html.dark) .border-emerald-100,
+:where(html.dark) .border-emerald-200,
+:where(html.dark) .border-emerald-200\/60,
+:where(html.dark) .border-emerald-200\/80 {
+  border-color: rgba(6, 95, 70, 0.5);
+}
+
+:where(html.dark) .border-amber-100,
+:where(html.dark) .border-amber-200,
+:where(html.dark) .border-amber-200\/80 {
+  border-color: rgba(146, 64, 14, 0.5);
 }

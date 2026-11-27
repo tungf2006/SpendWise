@@ -34,7 +34,7 @@ function isPayloadExpired(payload) {
 }
 
 async function verifyWithSupabaseAuth(token, payload) {
-  if (process.env.NODE_ENV === 'test' || process.env.SKIP_SUPABASE_REMOTE_AUTH === 'true') {
+  if (process.env.NODE_ENV === 'test') {
     return {
       user: {
         id: payload.sub,
@@ -50,12 +50,9 @@ async function verifyWithSupabaseAuth(token, payload) {
 
   if (!supabaseUrl || !supabaseAnonKey) {
     return {
-      user: {
-        id: payload.sub,
-        email: payload.email || null,
-        role: payload.role || 'authenticated'
-      },
-      error: null
+      user: null,
+      status: 503,
+      error: 'Máy chủ chưa cấu hình xác thực Supabase.'
     }
   }
 
@@ -71,11 +68,19 @@ async function verifyWithSupabaseAuth(token, payload) {
       headers: {
         apikey: supabaseAnonKey,
         Authorization: `Bearer ${token}`
-      }
+      },
+      signal: AbortSignal.timeout(5000)
     })
 
     if (!response.ok) {
       verifiedTokenCache.delete(cacheKey)
+      if (response.status >= 500) {
+        return {
+          user: null,
+          status: 502,
+          error: 'Dịch vụ xác thực Supabase tạm thời không khả dụng.'
+        }
+      }
       return { user: null, status: 401, error: 'Phiên đăng nhập không hợp lệ hoặc đã bị thu hồi.' }
     }
 
@@ -100,10 +105,17 @@ async function verifyWithSupabaseAuth(token, payload) {
 
     return { user, error: null }
   } catch (err) {
+    if (err?.name === 'TimeoutError' || err?.name === 'AbortError') {
+      return {
+        user: null,
+        status: 504,
+        error: 'Yêu cầu xác thực Supabase quá thời gian chờ.'
+      }
+    }
     return {
       user: null,
       status: 503,
-      error: `Không thể kết nối dịch vụ xác thực Supabase: ${err.message}`
+      error: `Không thể kết nối dịch vụ xác thực Supabase: ${err?.message || 'Lỗi kết nối'}`
     }
   }
 }

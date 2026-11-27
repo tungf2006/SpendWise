@@ -1,9 +1,18 @@
 import { supabase } from '@/lib/supabaseClient'
 
+const VALID_GOAL_STATUSES = ['in_progress', 'completed']
+
 /**
  * Service quản lý Mục tiêu tiết kiệm và Nạp tiền vào mục tiêu
  * Phụ trách: TV1 (Trương Bích Vân) - Nhóm chức năng GOAL_REC (UC22 - UC23)
  */
+
+async function getAuthenticatedUser() {
+  const { data, error } = await supabase.auth.getUser()
+  if (error) throw error
+  if (!data?.user?.id) throw new Error('Người dùng chưa đăng nhập')
+  return data.user
+}
 
 /**
  * Lấy danh sách tất cả mục tiêu tiết kiệm của người dùng (UC22)
@@ -32,17 +41,21 @@ export async function getGoals() {
  */
 export async function createGoal(goalData) {
   try {
-    const { data: { user } } = await supabase.auth.getUser()
-    if (!user) throw new Error('Người dùng chưa đăng nhập')
+    const user = await getAuthenticatedUser()
 
-    const targetAmount = Number(goalData.target_amount)
-    if (targetAmount <= 0) throw new Error('Mục tiêu tiền tiết kiệm phải lớn hơn 0')
+    const trimmedName = typeof goalData?.name === 'string' ? goalData.name.trim() : ''
+    if (!trimmedName) throw new Error('Tên mục tiêu không được để trống')
+
+    const targetAmount = Number(goalData?.target_amount)
+    if (!Number.isFinite(targetAmount) || targetAmount <= 0) {
+      throw new Error('Mục tiêu tiền tiết kiệm phải lớn hơn 0')
+    }
 
     const { data, error } = await supabase
       .from('saving_goals')
       .insert({
         user_id: user.id,
-        name: goalData.name,
+        name: trimmedName,
         target_amount: targetAmount,
         current_amount: 0,
         deadline: goalData.deadline || null,
@@ -69,10 +82,52 @@ export async function createGoal(goalData) {
  */
 export async function updateGoal(id, updates) {
   try {
+    if (!id) throw new Error('Thiếu ID mục tiêu cần cập nhật')
+    if (!updates || typeof updates !== 'object' || Array.isArray(updates)) {
+      throw new Error('Dữ liệu cập nhật mục tiêu không hợp lệ')
+    }
+
+    const user = await getAuthenticatedUser()
+    const formattedUpdates = {}
+
+    if (Object.prototype.hasOwnProperty.call(updates, 'name') && updates.name !== undefined) {
+      const trimmedName = typeof updates.name === 'string' ? updates.name.trim() : ''
+      if (!trimmedName) throw new Error('Tên mục tiêu không được để trống')
+      formattedUpdates.name = trimmedName
+    }
+
+    if (Object.prototype.hasOwnProperty.call(updates, 'target_amount') && updates.target_amount !== undefined) {
+      const targetAmount = Number(updates.target_amount)
+      if (!Number.isFinite(targetAmount) || targetAmount <= 0) {
+        throw new Error('Mục tiêu tiền tiết kiệm phải lớn hơn 0')
+      }
+      formattedUpdates.target_amount = targetAmount
+    }
+
+    if (Object.prototype.hasOwnProperty.call(updates, 'deadline') && updates.deadline !== undefined) {
+      formattedUpdates.deadline = updates.deadline || null
+    }
+
+    if (Object.prototype.hasOwnProperty.call(updates, 'wallet_id') && updates.wallet_id !== undefined) {
+      formattedUpdates.wallet_id = updates.wallet_id || null
+    }
+
+    if (Object.prototype.hasOwnProperty.call(updates, 'status') && updates.status !== undefined) {
+      if (!VALID_GOAL_STATUSES.includes(updates.status)) {
+        throw new Error('Trạng thái mục tiêu không hợp lệ')
+      }
+      formattedUpdates.status = updates.status
+    }
+
+    if (Object.keys(formattedUpdates).length === 0) {
+      throw new Error('Không có thông tin hợp lệ để cập nhật')
+    }
+
     const { data, error } = await supabase
       .from('saving_goals')
-      .update(updates)
+      .update(formattedUpdates)
       .eq('id', id)
+      .eq('user_id', user.id)
       .select(`
         *,
         wallet:wallets(id, name, color, icon)
@@ -92,10 +147,14 @@ export async function updateGoal(id, updates) {
  */
 export async function deleteGoal(id) {
   try {
+    if (!id) throw new Error('Thiếu ID mục tiêu cần xóa')
+    const user = await getAuthenticatedUser()
+
     const { error } = await supabase
       .from('saving_goals')
       .delete()
       .eq('id', id)
+      .eq('user_id', user.id)
 
     return { error }
   } catch (err) {
