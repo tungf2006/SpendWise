@@ -129,27 +129,27 @@ export const BudgetPage = () => {
         title="Ngân sách Chi tiêu Tháng"
         description="Đặt hạn mức chi tiêu cho từng danh mục và theo dõi tiến độ qua 3 mức: An toàn (<80%), Sắp vượt (80-99%) và Đã vượt (>=100%)."
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 shrink-0">
             {/* Month picker */}
-            <div className="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-full border border-slate-200/80 shadow-2xs text-xs">
-              <Calendar className="w-3.5 h-3.5 text-slate-400" />
+            <div className="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-full border border-slate-200/80 shadow-2xs text-xs whitespace-nowrap shrink-0">
+              <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
               <select
                 aria-label="Chọn tháng ngân sách"
                 value={currentMonth}
                 onChange={(e) => setCurrentMonth(Number(e.target.value))}
-                className="bg-transparent font-semibold text-slate-700 outline-none"
+                className="bg-transparent font-semibold text-slate-700 outline-none whitespace-nowrap"
               >
                 {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
                   <option key={m} value={m}>Tháng {m}</option>
                 ))}
               </select>
             </div>
-            <div className="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-full border border-slate-200/80 shadow-2xs text-xs">
+            <div className="flex items-center gap-1.5 bg-white px-3 py-1.5 rounded-full border border-slate-200/80 shadow-2xs text-xs whitespace-nowrap shrink-0">
               <select
                 aria-label="Chọn năm ngân sách"
                 value={currentYear}
                 onChange={(e) => setCurrentYear(Number(e.target.value))}
-                className="bg-transparent font-semibold text-slate-700 outline-none"
+                className="bg-transparent font-semibold text-slate-700 outline-none whitespace-nowrap"
               >
                 {Array.from({ length: 7 }, (_, i) => new Date().getFullYear() - 3 + i).map((year) => (
                   <option key={year} value={year}>{year}</option>
@@ -164,9 +164,9 @@ export const BudgetPage = () => {
                 setAmountLimit('')
                 setShowModal(true)
               }}
-              className="px-4 py-2 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold flex items-center gap-1.5 shadow-soft-sm transition-transform active:scale-95 cursor-pointer"
+              className="px-4 py-2 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold flex items-center gap-1.5 shadow-soft-sm transition-transform active:scale-95 cursor-pointer whitespace-nowrap shrink-0"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-4 h-4 shrink-0" />
               <span>Đặt ngân sách</span>
             </button>
           </div>

@@ -69,9 +69,11 @@
   3. `Data Layer`: Supabase (PostgreSQL 15 + Row Level Security trên 100% các bảng).
 - **Biến môi trường:**
   - `.env` (Frontend): `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_API_BASE_URL` (mặc định `http://localhost:5000`). **Tuyệt đối không** khai báo `VITE_GEMINI_API_KEY` ở `.env` Client.
-  - `server/.env` (Backend Express): `PORT`, `CORS_ORIGIN`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `GEMINI_API_KEY`, `GEMINI_MODEL`.
-- **Kiểm thử tự động & CI/CD:**
-  - Bộ test Vitest + Supertest (`npm test`, `vite.config.js` -> `test`) kiểm thử các Service thuần (`safeToSpendService`, `recurringService`, `vietqrService`) và Backend API (`server/__tests__/api.test.js`).
+  - `server/.env` (Backend Express): `PORT`, `CORS_ORIGIN`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `GEMINI_API_KEY`, `GEMINI_MODEL` (mặc định `gemini-3.8-flash`), `GEMINI_FALLBACK_MODEL` (`gemini-2.5-flash`), `GEMINI_THINKING_LEVEL` (`low`), sử dụng SDK chính chủ `@google/genai`.
+- **Kiểm thử tự động, QA & CI/CD:**
+  - Bộ test Vitest + Supertest (`npm test`, `vite.config.js` -> `test`): **16 file test / 123 test cases PASS**, phủ đủ toàn bộ 13 Service Modules (`authService`, `walletService`, `categoryService`, `transactionService`, `transactionCsv`, `budgetService`, `reportService`, `quickEntryParser`, `safeToSpendService`, `aiAssistantService`, `goalService`, `recurringService`, `notificationService`, `vietqrService`, `vietqrValidation`) và Backend API (`server/__tests__/api.test.js`).
+  - Đã sửa lỗi so khớp chuỗi con trong `quickEntryParser.js` sang word-boundary matching (`matchesKeyword`), tránh nhận diện nhầm `"tien phong"` -> `"pho"` hay `"techcombank"` -> `"com"`.
+  - Bộ hồ sơ QA nộp đồ án tại `docs/qa/`: [TEST_PLAN_AND_TEST_CASES.md](docs/qa/TEST_PLAN_AND_TEST_CASES.md), [SpendWise_Test_Plan_va_50_TestCases.xlsx](docs/qa/SpendWise_Test_Plan_va_50_TestCases.xlsx) (Test Plan + 50 Test Cases phủ 26 Use Cases + RLS `QA-02` + PWA/UI + cột Evidence + Ma trận truy vết tự động) và bộ 14 ảnh chụp minh chứng thực tế tại `docs/qa/evidence/` (`EVID_01`–`EVID_14`).
   - GitHub Actions CI (`.github/workflows/ci.yml`): tự động kiểm tra chặn rò rỉ `VITE_GEMINI_API_KEY`, chạy `npm run lint`, `npm test`, `npm run build` và xác minh bundle `dist/` sạch cho mọi PR/push vào `main` và `develop`.
 
 ---

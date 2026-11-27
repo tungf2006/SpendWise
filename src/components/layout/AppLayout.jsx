@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet, useNavigate } from 'react-router-dom'
 import { Navbar } from './Navbar'
 import { BottomNav } from './BottomNav'
 import { AiChatWidget } from '@/components/ai/AiChatWidget'
@@ -11,6 +11,7 @@ import { startNotificationAutoSync } from '@/services/notificationService'
  * Phụ trách: TV2 (Hồ Nguyên Văn)
  */
 export const AppLayout = () => {
+  const navigate = useNavigate()
   const [dbStatus, setDbStatus] = useState({ checking: true, connected: false, message: '' })
   const [showAiChat, setShowAiChat] = useState(false)
 
@@ -82,7 +83,7 @@ export const AppLayout = () => {
     useEffect(() => startNotificationAutoSync({ intervalMs: 300000, daysAhead: 3 }), [])
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-brand-500 selection:text-white">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-brand-500 selection:text-white overflow-x-clip">
       {/* Floating Island Navbar */}
       <Navbar
         dbStatus={dbStatus}
@@ -90,15 +91,19 @@ export const AppLayout = () => {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-6xl w-full mx-auto px-4 py-4 pb-28 md:pb-12 transition-all">
+      <main className="flex-1 max-w-6xl w-full mx-auto px-3 sm:px-4 py-4 pb-28 md:pb-12 transition-all">
         <Outlet />
       </main>
 
       {/* Mobile Floating Dock Navigation */}
       <BottomNav
         onOpenQuickEntry={() => {
-          // Điều hướng về dashboard và focus vào Quick Entry bar
-          window.location.href = '/#quick-entry'
+          navigate('/')
+          setTimeout(() => {
+            const input = document.querySelector('#quick-entry input, input[placeholder*="cafe"]')
+            input?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            input?.focus()
+          }, 120)
         }}
       />
 
