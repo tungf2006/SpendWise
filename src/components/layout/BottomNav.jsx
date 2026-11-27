@@ -52,26 +52,26 @@ export const BottomNav = ({ onOpenQuickEntry = () => {} }) => {
     <>
       {drawerOpen && (
         <div
-          className="lg:hidden fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-xs flex items-end justify-center p-3 pb-24"
+          className="lg:hidden fixed inset-0 z-50 bg-slate-950/50 backdrop-blur-sm animate-fade-in flex items-end justify-center p-3 pb-24"
           onClick={() => setDrawerOpen(false)}
         >
           <div
             role="dialog"
             aria-modal="true"
             aria-label="Menu mở rộng"
-            className="w-full max-w-md rounded-[2rem] bg-white/95 p-1.5 shadow-2xl ring-1 ring-slate-900/10"
+            className="w-full max-w-md rounded-[2rem] bg-white/95 dark:bg-slate-900/95 p-1.5 shadow-2xl ring-1 ring-slate-900/10 dark:ring-white/10 animate-slide-up"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="rounded-[calc(2rem-0.375rem)] bg-white p-4 border border-slate-100">
+            <div className="rounded-[calc(2rem-0.375rem)] bg-white dark:bg-slate-900 p-4 border border-slate-100 dark:border-slate-800">
               <div className="flex items-center justify-between mb-3">
-                <span className="font-display font-bold text-sm text-slate-900">
+                <span className="font-display font-bold text-sm text-slate-900 dark:text-slate-100">
                   Tất cả chức năng
                 </span>
                 <button
                   type="button"
                   onClick={() => setDrawerOpen(false)}
                   aria-label="Đóng menu"
-                  className="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 flex items-center justify-center"
+                  className="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-300 flex items-center justify-center transition-colors cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -84,11 +84,12 @@ export const BottomNav = ({ onOpenQuickEntry = () => {} }) => {
                     <Link
                       key={item.path}
                       to={item.path}
+                      aria-current={active ? 'page' : undefined}
                       onClick={() => setDrawerOpen(false)}
                       className={`flex flex-col items-center justify-center gap-1.5 p-3 rounded-2xl border text-center transition-all ${
                         active
-                          ? 'bg-slate-900 text-white border-slate-900'
-                          : 'bg-slate-50 text-slate-700 border-slate-200/70 hover:bg-slate-100'
+                          ? 'bg-slate-900 dark:bg-brand-600 text-white border-slate-900 dark:border-brand-500 shadow-sm'
+                          : 'bg-slate-50 dark:bg-slate-800/70 text-slate-700 dark:text-slate-200 border-slate-200/70 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700/80'
                       }`}
                     >
                       <Icon className="w-4 h-4" />
@@ -103,7 +104,7 @@ export const BottomNav = ({ onOpenQuickEntry = () => {} }) => {
       )}
 
       <nav aria-label="Điều hướng di động" className="lg:hidden fixed bottom-3 left-3 right-3 z-40">
-        <div className="bg-slate-900/95 text-white backdrop-blur-2xl border border-white/10 rounded-full px-2 py-2 shadow-soft-xl flex items-center justify-around">
+        <div className="bg-slate-900/95 dark:bg-slate-900/95 text-white backdrop-blur-2xl border border-white/10 dark:border-slate-700/80 rounded-full px-2 py-2 shadow-soft-xl flex items-center justify-around">
           {tabs.map((tab) => {
             const Icon = tab.icon
 
@@ -120,7 +121,7 @@ export const BottomNav = ({ onOpenQuickEntry = () => {} }) => {
                   title={tab.label}
                   aria-label={tab.label}
                 >
-                  <div className="w-11 h-11 rounded-full bg-gradient-to-tr from-brand-600 to-indigo-500 text-white flex items-center justify-center shadow-glow-brand ring-4 ring-slate-900">
+                  <div className="w-11 h-11 rounded-full bg-gradient-to-tr from-brand-600 to-indigo-500 text-white flex items-center justify-center shadow-glow-brand ring-4 ring-slate-900 dark:ring-slate-950">
                     <Icon className="w-5 h-5 text-amber-200" strokeWidth={1.75} />
                   </div>
                 </button>
@@ -135,6 +136,7 @@ export const BottomNav = ({ onOpenQuickEntry = () => {} }) => {
               <Link
                 key={tab.path}
                 to={tab.path}
+                aria-current={isActive ? 'page' : undefined}
                 onClick={() => setDrawerOpen(false)}
                 className={`flex flex-col items-center py-1 px-2 rounded-full transition-all duration-300 ${
                   isActive ? 'text-white' : 'text-slate-400 hover:text-slate-200'

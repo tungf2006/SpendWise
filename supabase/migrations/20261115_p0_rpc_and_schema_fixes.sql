@@ -600,9 +600,10 @@ BEGIN
         ON CONFLICT (user_id, event_key) DO NOTHING;
 
         GET DIAGNOSTICS v_rows = ROW_COUNT;
-        v_budgets_created := v_budgets_created + v_rows;
         IF v_noti_type = 'budget_exceeded' THEN
             v_exceeded_created := v_exceeded_created + v_rows;
+        ELSIF v_noti_type = 'budget_warning' THEN
+            v_budgets_created := v_budgets_created + v_rows;
         END IF;
     END LOOP;
 

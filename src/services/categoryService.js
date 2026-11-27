@@ -99,6 +99,12 @@ export async function updateCategory(categoryId, updates) {
     if (!categoryId) {
       throw new Error('Thiếu ID danh mục cần cập nhật')
     }
+    if (!updates || typeof updates !== 'object' || Array.isArray(updates)) {
+      throw new Error('Dữ liệu cập nhật danh mục không hợp lệ')
+    }
+
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Người dùng chưa đăng nhập')
 
     const formattedUpdates = {}
 
@@ -110,26 +116,34 @@ export async function updateCategory(categoryId, updates) {
       formattedUpdates.name = trimmedName
     }
 
-    if ('type' in updates) {
-      formattedUpdates.type = updates.type === 'income' ? 'income' : 'expense'
+    if ('type' in updates && updates.type !== undefined) {
+      if (updates.type !== 'income' && updates.type !== 'expense') {
+        throw new Error('Loại danh mục không hợp lệ')
+      }
+      formattedUpdates.type = updates.type
     }
 
-    if ('icon' in updates) {
+    if ('icon' in updates && updates.icon !== undefined) {
       formattedUpdates.icon = updates.icon || 'tag'
     }
 
-    if ('color' in updates) {
+    if ('color' in updates && updates.color !== undefined) {
       formattedUpdates.color = updates.color || '#10B981'
     }
 
-    if ('keywords' in updates) {
+    if ('keywords' in updates && updates.keywords !== undefined) {
       formattedUpdates.keywords = normalizeKeywords(updates.keywords)
+    }
+
+    if (Object.keys(formattedUpdates).length === 0) {
+      throw new Error('Không có thông tin hợp lệ để cập nhật')
     }
 
     const { data, error } = await supabase
       .from('categories')
       .update(formattedUpdates)
       .eq('id', categoryId)
+      .eq('user_id', user.id)
       .select()
       .single()
 
@@ -150,10 +164,14 @@ export async function deleteCategory(categoryId) {
       throw new Error('Thiếu ID danh mục cần xóa')
     }
 
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) throw new Error('Người dùng chưa đăng nhập')
+
     const { error } = await supabase
       .from('categories')
       .delete()
       .eq('id', categoryId)
+      .eq('user_id', user.id)
 
     return { error }
   } catch (err) {

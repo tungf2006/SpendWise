@@ -198,8 +198,9 @@ async function requestSafeToSpend({ remainingBudget, upcomingRecurring, daysLeft
  * }>}
  */
 export async function calculateSafeToSpend(today = new Date()) {
-  const { month, year, todayDate, endOfMonthDate } = getCurrentMonthDates(today)
-  const daysLeft = getRemainingDaysInMonth(today)
+  const safeToday = today instanceof Date && !Number.isNaN(today.getTime()) ? today : new Date()
+  const { month, year, todayDate, endOfMonthDate } = getCurrentMonthDates(safeToday)
+  const daysLeft = getRemainingDaysInMonth(safeToday)
   const emptyResult = {
     safeToSpendToday: 0,
     remainingBudget: 0,

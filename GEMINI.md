@@ -57,8 +57,6 @@
 | **UC24** | Tạo giao dịch định kỳ | GOAL_REC (11) | TV3 (Lê Hoài Quốc) |
 | **UC25** | Xem thông báo trong ứng dụng | NOTI_QR (12) | TV3 (Lê Hoài Quốc) |
 | **UC26** | Chia hóa đơn & tạo VietQR | NOTI_QR (12) | TV1 (Trương Bích Vân) |
-| **UC25** | Xem thông báo trong ứng dụng | NOTI_QR (12) | TV3 (Lê Hoài Quốc) |
-| **UC26** | Chia hóa đơn & tạo VietQR | NOTI_QR (12) | TV1 (Trương Bích Vân) |
 
 ---
 
@@ -71,7 +69,8 @@
   - `.env` (Frontend): `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_API_BASE_URL` (mặc định `http://localhost:5000`). **Tuyệt đối không** khai báo `VITE_GEMINI_API_KEY` ở `.env` Client.
   - `server/.env` (Backend Express): `PORT`, `CORS_ORIGIN`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `GEMINI_API_KEY`, `GEMINI_MODEL`.
 - **Kiểm thử tự động & CI/CD:**
-  - Bộ test Vitest + Supertest (`npm test`, `vite.config.js` -> `test`) kiểm thử các Service thuần (`safeToSpendService`, `recurringService`, `vietqrService`) và Backend API (`server/__tests__/api.test.js`).
+  - Bộ test Vitest + Supertest + jsdom (`npm test`, `vite.config.js` -> `test`) gồm **19 test files / 323 tests**: 13 file unit/component/API (`145` tests) kiểm thử các Service thuần, Components, Context và Backend API (`server/__tests__/api.test.js`), cùng 6 file E2E/Tier 5 (`178` tests trong `tests/e2e/`, cấu hình riêng `tests/e2e/vitest.config.js`, gồm `tier1`–`tier4`, `tier5-adversarial.e2e.test.jsx` và `tier5-dom-behavioral.e2e.test.jsx` chạy `jsdom`).
+  - Lint & Build: `npm run lint` (`oxlint` trên **86 files**, `0` warnings / `0` errors); `npm run build` (`vite build`, `0` chunk warnings `>500 kB`, chunk JS lớn nhất `vendor-react` `260.11 kB`).
   - GitHub Actions CI (`.github/workflows/ci.yml`): tự động kiểm tra chặn rò rỉ `VITE_GEMINI_API_KEY`, chạy `npm run lint`, `npm test`, `npm run build` và xác minh bundle `dist/` sạch cho mọi PR/push vào `main` và `develop`.
 
 ---
@@ -81,8 +80,8 @@
 2. `wallets`: Ví tiền (`cash`, `bank`, `ewallet`), quản lý `balance`.
 3. `categories`: Danh mục (`income`, `expense`), mảng từ khóa `keywords` cho Parser.
 4. `transactions`: Giao dịch thu/chi/chuyển tiền (`amount`, `type`, `wallet_id`, `to_wallet_id`, `category_id`, `note_unaccent`).
-5. `budgets`: Hạn mức chi tiêu tháng theo danh mục (`month`, `amount`).
-6. `saving_goals`: Mục tiêu tiết kiệm (`target_amount`, `current_amount`, `target_date`).
+5. `budgets`: Hạn mức chi tiêu tháng theo danh mục (`month`, `year`, `amount_limit`).
+6. `saving_goals`: Mục tiêu tiết kiệm (`target_amount`, `current_amount`, `deadline`).
 7. `recurring_rules`: Khoản thu/chi định kỳ lặp lại (`frequency`, `day_of_month`, `next_due_date`).
 8. `notifications`: Thông báo hệ thống (`type`, `title`, `message`, `is_read`).
 
@@ -90,21 +89,22 @@
 
 ## 5. BỘ 3 TÍNH NĂNG CỐT LÕI (CORE ALGORITHMS)
 
-### 5.1. Nhập nhanh câu tự nhiên (`src/services/quickEntryParser.js`)
-- **Input:** Chuỗi tự nhiên (VD: `"cafe 35k hôm qua momo"`).
-- **Thuật toán Rule-based:**
-  - `amount`: Regex `(\d+)k`, `(\d+)tr(\d+)`, `(\d+(?:\.\d+)?)tr`, số nguyên.
-  - `date`: `hôm nay` ($T$), `hôm qua` ($T-1$), `hôm kia` ($T-2$), `dd/mm`.
-  - `wallet`: So khớp từ khóa ví (`momo`, `vcb`, `tiền mặt`,...).
-  - `type`: Từ khóa thu nhập (`lương`, `thưởng`, `nhận`) $\rightarrow$ `income`; mặc định `expense`.
-  - `category`: So khớp mảng `keywords` không dấu (`cafe` $\rightarrow$ Ăn uống).
-- **Nguyên tắc an toàn:** Luôn mở Preview xác nhận, trường chưa nhận diện được đánh dấu viền vàng, tuyệt đối không tự đoán.
+### 5.1. Nhập nhanh câu tự nhiên (`src/services/quickEntryParser.js` & `server/routes/quickEntryRoutes.js`)
+- **Input:** Chuỗi tự nhiên (VD: `"cafe 35k hôm qua momo"`, `"trà sữa 35.5k 15/11/26"`, `"chuyển 500k từ vcb sang momo"`).
+- **Thuật toán Rule-based (đồng bộ 100% Client–Server theo múi giờ `Asia/Ho_Chi_Minh` UTC+7):**
+  - `amount`: Hỗ trợ số thập phân `(\d+(?:[.,]\d+)?)k` (`35.5k`), `1tr25` / `1tr25k`, `(\d+(?:\.\d+)?)tr`, và số nguyên >= 1000 với lookaround word boundaries chống đụng độ tên đường/mã số.
+  - `date`: `hôm nay` ($T$), `hôm qua` ($T-1$), `hôm kia` ($T-2$), `dd/mm` / `dd/mm/yy(yy)` theo lịch UTC+7; từ chối ngày bất hợp lệ (VD `31/02` $\rightarrow$ `null`).
+  - `wallet` / `toWallet`: So khớp từ khóa ví không dấu theo ranh giới từ (`momo`, `vcb`, `tiền mặt`,...) thông qua `resolveQuickWallet`.
+  - `type`: Phát hiện `transfer` (`chuyển ... từ ... sang ...`), từ khóa thu nhập (`lương`, `thưởng`, `nhận`) $\rightarrow$ `income`, mặc định `expense`.
+  - `category`: So khớp mảng `keywords` từ DB (`categories.keywords`) không dấu (`cafe` $\rightarrow$ Ăn uống).
+- **Nguyên tắc an toàn (UC19):** Luôn kiểm tra đủ trường nhận diện; trường thiếu/không hợp lệ (ví, danh mục, số tiền, ngày không hợp lệ) giữ giá trị rỗng (không fallback về `wallets[0]`), tự động mở modal Preview UC19 với viền vàng `border-amber-400` để người dùng xác nhận trước khi lưu.
 
 ### 5.2. Công thức Safe-to-spend (`src/services/safeToSpendService.js`)
-$$\text{SafeToSpend} = \max\left(0, \frac{\text{RemainingBudget} - \text{UpcomingRecurring}}{\text{DaysLeft}}\right)$$
+$$\text{SafeToSpend} = \max\left(0, \operatorname{round}\left(\frac{\text{RemainingBudget} - \text{UpcomingRecurring}}{\text{DaysLeft}}\right)\right)$$
 - `RemainingBudget`: Ngân sách tháng còn lại = Tổng hạn mức - Tổng đã chi.
 - `UpcomingRecurring`: Tổng chi phí định kỳ active có `next_due_date` từ hôm nay đến cuối tháng.
 - `DaysLeft`: Số ngày còn lại trong tháng (tính cả hôm nay, $\ge 1$).
+- **Cơ chế gọi API & Fallback an toàn:** Gọi `POST /api/finance/safe-to-spend` kèm timeout `AbortController` 4 giây; nếu Backend cổng 5000 unreachable hoặc lỗi mạng/timeout, tự động tính cục bộ bằng `calculateSafeToSpendAmount` (tuyệt đối không trả cứng `0 ₫`).
 
 ### 5.3. Trợ lý AI Gemini (`src/services/aiAssistantService.js`)
 - Áp dụng kỹ thuật **Context-Stuffing**: Đóng gói JSON ngắn gọn (Dư ví, SafeToSpend hôm nay, Ngân sách tháng, Giao dịch trong tháng) đưa vào `systemInstruction`.
@@ -217,9 +217,9 @@ Mỗi phiên làm việc, Agent PHẢI tuân thủ 5 nguyên tắc hành động
   3. `03_LUOC_DO_LOP/`: 5 sơ đồ PNG (`class_diagram.png`, `class_diagram_01_overview.png`, `class_diagram_02_entities.png`, `class_diagram_03_services.png`, `class_diagram_04_method_fields.png`).
 - **Quy chuẩn kiến trúc & logic bắt buộc khi code (đối chiếu từ 13 sơ đồ đã đọc):**
   - **3-Tier Hybrid Architecture + Deployment:**
-    - *Tầng 1 (Client React 19 + PWA, Port 5173):* 13 màn hình UI, Double-Bezel & Chart.js, PWA (`sw.js`, `manifest.json`), LocalStorage (JWT + Dark/Light), 13 Client Services (`src/services/`) gọi Supabase PostgREST/Auth (RLS 100%, `auth.uid() = user_id`), gọi trực tiếp `https://img.vietqr.io` cho ảnh QR Napas247.
-    - *Tầng 2 (API Gateway Express `server/app.js` + `server/server.js`, Node.js v24, Port 5000):* Bảo mật tuyệt đối `GEMINI_API_KEY` phía server (đã gỡ fallback SDK ở Client `src/lib/geminiClient.js`), tách `createApp()` để test bằng Supertest, giới hạn JSON `100kb`, security headers, CORS từ `CORS_ORIGIN`, Rate Limiter (`server/middleware/rateLimiter.js`), JWT Auth (`server/middleware/authMiddleware.js`), với các endpoint `POST /api/ai/chat` (`requireAuth` + `aiChatRateLimiter`), `POST /api/quick-entry/parse` (`optionalAuth`), `POST /api/finance/safe-to-spend` (`optionalAuth`), `GET /api/finance/health`.
-    - *Tầng 3 (Supabase PostgreSQL 15):* Triggers (`on_auth_user_created`/`handle_new_user` có `SET search_path = ''` & `ON CONFLICT DO NOTHING` + backfill user cũ, `trg_transactions_unaccent`), Views (`v_monthly_summary`, `v_budget_progress`), 4 RPCs atomic (`generate_due_recurring_transactions`, `deposit_to_goal`, `transfer_funds`, `sync_finance_notifications` phân biệt `budget_warning` vs `budget_exceeded`), file migration chuẩn `supabase/migrations/20261115_p0_rpc_and_schema_fixes.sql`.
+    - *Tầng 1 (Client React 19 + PWA, Port 5173):* **15 routed pages** trong `src/pages/` (lazy-load qua `React.lazy` + `Suspense` + `ErrorBoundary.jsx` trong `App.jsx`: `DashboardPage`, `WalletPage`, `CategoryPage`, `TransactionPage`, `BudgetPage`, `ReportPage`, `GoalPage`, `RecurringPage`, `BillSplitVietQR`, `ProfilePage`, `LoginPage`, `RegisterPage`, `ForgotPasswordPage`, `ResetPasswordPage`, `NotFoundPage`), Double-Bezel & Chart.js, Dark/Light Theme (`ThemeContext.jsx`, `useTheme.js`, `themeUtils.js`, `tailwind.config.js` `darkMode: 'class'`, pre-paint script `spendwise_theme` trong `index.html`, override `html.dark` trong `src/index.css`), PWA (`public/sw.js` cache `spendwise-v3` Network-First HTML + bỏ qua `/api/` & non-GET, `manifest.json`), **15 tệp `.js`** trong `src/services/` (13 module dịch vụ cốt lõi + `recurringFallback.js` + `transactionCsvExport.js`) gọi Supabase PostgREST/Auth (RLS 100%, `auth.uid() = user_id`), gọi trực tiếp `https://img.vietqr.io` cho ảnh QR Napas247.
+    - *Tầng 2 (API Gateway Express `server/app.js` + `server/server.js`, Node.js v24, Port 5000):* Bảo mật tuyệt đối `GEMINI_API_KEY` phía server (không đọc `VITE_GEMINI_API_KEY`), tách `createApp()` để test bằng Supertest, giới hạn JSON `100kb`, security headers, CORS từ `CORS_ORIGIN`, Rate Limiter (`server/middleware/rateLimiter.js`), JWT Auth (`server/middleware/authMiddleware.js` fail-closed HTTP `503` khi thiếu env ngoài `NODE_ENV=test`, HTTP `502` khi Supabase Auth trả `5xx`, HTTP `504` khi timeout 5s), AI Router (`server/routes/aiRoutes.js` kiểm tra placeholder/độ dài thay vì ép tiền tố `AIza`, truyền `systemInstruction` qua `getGenerativeModel`, timeout 15s trả `504`), với các endpoint `POST /api/ai/chat` (`requireAuth` + `aiChatRateLimiter`), `POST /api/quick-entry/parse` (`optionalAuth`), `POST /api/finance/safe-to-spend` (`optionalAuth`), `GET /api/finance/health`.
+    - *Tầng 3 (Supabase PostgreSQL 15):* Triggers (`on_auth_user_created`/`handle_new_user` có `SET search_path = ''` & `ON CONFLICT DO NOTHING` + backfill user cũ, `trg_transactions_unaccent`), Views (`v_monthly_summary`, `v_budget_progress`), **7 RPCs atomic** (`generate_due_recurring_transactions`, `deposit_to_goal`, `transfer_funds`, `sync_finance_notifications` phân biệt tách bạch `budget_warning` vs `budget_exceeded`, `create_transaction_atomic`, `update_transaction_atomic`, `delete_transaction_atomic`) qua `supabase/init_schema.sql`, `supabase/migrations/20261115_p0_rpc_and_schema_fixes.sql` và `supabase/migrations/20261126_p1_atomic_txns_and_notification_fix.sql`.
   - **Ràng buộc ERD 8 bảng (`UUID`, 14 FKs, `NUMERIC(15,2)`):**
     - `profiles`: PK/FK `auth.users.id ON DELETE CASCADE`, `default_bank_bin`, `default_bank_account`.
     - `wallets`: `type` (`cash | bank | ewallet`), `balance` (`NUMERIC(15,2) DEFAULT 0`), `is_archived`.
@@ -227,27 +227,27 @@ Mỗi phiên làm việc, Agent PHẢI tuân thủ 5 nguyên tắc hành động
     - `transactions`: `wallet_id` (`ON DELETE RESTRICT`), `to_wallet_id` (nullable khi `transfer`), `category_id` (nullable), `type` (`income | expense | transfer`), `amount > 0`, `note_unaccent`.
     - `budgets`: `month` (`1..12`), `year` (`>= 2020`), `amount_limit > 0`, `UNIQUE(user_id, category_id, month, year)`.
     - `saving_goals`: `wallet_id` nullable, `target_amount > 0`, `current_amount >= 0`, `status` (`in_progress | completed`).
-    - `recurring_rules`: `type` (`income | expense`), `amount > 0`, `frequency` (`weekly | monthly | yearly`), `day_of_month` (`1..31`), `next_due_date`, `is_active`.
+    - `recurring_rules`: `type` (`income | expense`), `amount > 0`, `frequency` (`daily | weekly | monthly | yearly`), `day_of_month` (`1..31`), `next_due_date`, `is_active`.
     - `notifications`: `type` (`budget_warning | budget_exceeded | recurring_due | system`), `is_read`.
-  - **Luồng nghiệp vụ từ Sơ đồ Use Case & Class Diagram (13 Service Modules):**
+  - **Luồng nghiệp vụ từ Sơ đồ Use Case & Class Diagram (15 tệp trong `src/services/` — 13 Service Modules chuẩn + 2 helper tách module):**
     - UC01 tự động tạo hồ sơ + ví tiền mặt mặc định; UC09 chuyển tiền cập nhật số dư 2 ví; UC12/UC13 thêm/sửa/xóa giao dịch phải kiểm tra & bù trừ/hoàn lại số dư ví; UC23 nạp mục tiêu phải kiểm tra số dư ví và cập nhật cả ví lẫn mục tiêu; UC18 (`parseQuickEntry`) luôn mở Preview UC19 để người dùng xác nhận lưu; UC26 tính chia hóa đơn trước rồi mở rộng (`<<extend>>`) tạo mã VietQR.
     - Đã khắc phục triệt để toàn bộ lỗi P0/P1 Dữ liệu lõi (UC06–UC13, R1–R4 trên nhánh `feature/core-data-lead`):
       * Shared UI & Utils: `Toast.jsx`, `ConfirmDialog.jsx` (Double-Bezel, thay thế 100% `alert()` và `window.confirm()`), `PageHeader.jsx` (`flex-wrap` responsive mobile), `src/utils/date.js` (`getLocalDateString` chống lệch ngày UTC+7).
       * Ví (UC06–UC09): `walletService.js` dùng atomic RPC `transfer_funds` (kèm fallback `PGRST202`/`42883` có compensating rollback) + whitelist trường trong `updateWallet`; `WalletPage.jsx` có Modal Sửa ví Double-Bezel (cho phép giữ số dư âm, hỗ trợ `Escape`/backdrop), Error Banner + Retry và ConfirmDialog ẩn ví.
       * Danh mục (UC10–UC11): `categoryService.js` xuất `normalizeKeywords` xử lý chuỗi rỗng `"" -> []` + whitelist `updateCategory`; `CategoryPage.jsx` có Modal Sửa danh mục Double-Bezel (`Escape`/backdrop), chấm màu, chip từ khóa, skeleton loading, Error Banner + Retry và ConfirmDialog xóa (bắt lỗi FK `23503`).
       * Giao dịch (UC12–UC13): `transactionService.js` tính Net Delta chuẩn xác + compensating rollback cho cả Thêm/Sửa/Xóa 3 loại `income`/`expense`/`transfer`, lọc theo Ví bao gồm cả ví nhận (`to_wallet_id`); `TransactionPage.jsx` có Modal Sửa giao dịch Double-Bezel (`Escape`/backdrop), Error Banner + Retry, bộ lọc khoảng ngày kèm cảnh báo `startDate > endDate`, phân trang `pageSize=20` tự lùi trang khi xóa phần tử cuối, tự reset danh mục khi đổi loại Thu/Chi.
-      * Xuất CSV & Test (R4): Hợp nhất CSV chống Formula Injection (`=`, `+`, `-`, `@`), xuất đủ ví nhận và thu hồi URL an toàn; hoàn thiện 4 bộ Unit Test Vitest cho Core Data + CSV (68/68 tests toàn repo).
-    - Toàn bộ tên hàm `export` ở `src/services/` bám đúng hợp đồng 13 modules trong `class_diagram_03_services.png` (`authService`, `walletService`, `categoryService`, `transactionService`, `budgetService`, `reportService`, `goalService`, `recurringService`, `notificationService`, `quickEntryParser`, `safeToSpendService`, `aiAssistantService`, `vietqrService`), trong đó `SafeToSpendService` phụ thuộc `BudgetService` và `AiAssistantService` phụ thuộc `BudgetService` + `SafeToSpendService`.
+      * Xuất CSV & Test (R4): Hợp nhất CSV chống Formula Injection (`=`, `+`, `-`, `@`), xuất đủ ví nhận và thu hồi URL an toàn; hoàn thiện 4 bộ Unit Test Vitest cho Core Data + CSV (68/68 tests tại milestone `feature/core-data-lead`).
+    - Toàn bộ tên hàm `export` ở `src/services/` bám đúng hợp đồng 13 modules trong `class_diagram_03_services.png` (`authService`, `walletService`, `categoryService`, `transactionService`, `budgetService`, `reportService`, `goalService`, `recurringService`, `notificationService`, `quickEntryParser`, `safeToSpendService`, `aiAssistantService`, `vietqrService`), cùng 2 module hỗ trợ (`recurringFallback.js`, `transactionCsvExport.js`), trong đó `SafeToSpendService` phụ thuộc `BudgetService` và `AiAssistantService` phụ thuộc `BudgetService` + `SafeToSpendService`.
     - **Cập nhật nhánh `feature/smart-features-tv3` (TV3 Lê Hoài Quốc - 23/11/2026):**
       * Đã tích hợp trọn bộ Smart Features: Quick Entry Parser (`quickEntryParser.js` & `server/routes/quickEntryRoutes.js`), Safe-to-spend (`safeToSpendService.js`), Recurring Rules (`recurringService.js`, `recurringFallback.js`, `RecurringPage.jsx`), và Hệ thống Thông báo + Chuông (`notificationService.js`, `NotificationBell.jsx`).
       * Khắc phục xung đột `safeToSpendService.js` (kết hợp xác thực Supabase JWT với cơ chế timeout `AbortController` chống treo Dashboard).
       * Bổ sung đầy đủ chu kỳ `'daily'` vào `VALID_FREQUENCIES` và hàm tính ngày `calculateNextDueDate` trong `recurringService.js` để đồng bộ hoàn toàn với migration DB và UI.
       * Toàn bộ 68/68 Unit Tests Vitest đạt màu xanh (pass 100%), Lint đạt 0 lỗi, Build Vite production thành công sạch sẽ.
       * Đã đẩy nhánh lên GitHub (`origin/feature/smart-features-tv3`, commit `9ead70d`).
-    - **Tích hợp toàn đội & Dọn Lint/PWA/E2E trên nhánh `feature/integration-final` (24/11/2026):**
-      * Đã merge sạch `origin/feature/smart-features-tv3` (TV3), `origin/feature/auth-goal-tv1` & `origin/feature/vietqr-tv1` (TV1) vào `feature/integration-final` từ `develop`.
-      * Hoàn thiện phần P0/P1 của TV2: `Navbar.jsx` (thêm `/categories`, active route, bỏ hardcode tên, nút Dark/Light theme + CSS `html.dark`), `BottomNav.jsx` (drawer "Thêm" đủ 6 route phụ trên Mobile), `AppLayout.jsx` (điều hướng SPA `navigate('/#quick-entry')`), `DashboardPage.jsx` (Error/Retry, Skeleton, Enter lưu nhanh, `Toast`, modal Double-Bezel), `BudgetPage.jsx` (dùng `overall_percentage`/`overall_status` từ service, `Toast`/`ConfirmDialog`, race-condition guard), `ReportPage.jsx` & `reportService.js` (gom nhóm theo `category.id`, validate tham số, Empty/Error state, format VNĐ trên biểu đồ), PWA (`public/sw.js` Network-First HTML + bỏ qua `/api/`, `icon-192.png`/`icon-512.png`, `manifest.json`, `index.html`), và tách chunk (`React.lazy()` + `ScrollToTop` trong `App.jsx` + `manualChunks` trong `vite.config.js`).
-      * Tách `src/context/useAuth.js` khỏi `AuthContext.jsx` và dọn sạch **0 errors / 0 warnings** (`oxlint` 70 files); đạt **10/10 test files (80/80 tests)** Vitest + Vite build sạch không còn cảnh báo chunk > 500 kB.
+    - **Chuẩn hóa toàn diện P0–P3 & Tier 5 Hardening (nhánh `fix/audit-p0-p3-integration`, 26/11/2026):**
+      * **Bảo mật, Auth & Dịch vụ lõi:** `authMiddleware.js` fail-closed HTTP `503` + `502` (upstream `5xx`) + `504` (timeout 5s); `aiRoutes.js` bỏ ràng buộc tiền tố `AIza` + bỏ `VITE_GEMINI_API_KEY` + truyền `systemInstruction` chuẩn SDK + timeout 15s; `ResetPasswordPage.jsx` bắt URL recovery đồng bộ, hỗ trợ PKCE `?code=` (`exchangeCodeForSession` + `history.replaceState`) và `#error=` hết hạn; `goalService.js`, `walletService.js`, `categoryService.js`, `transactionService.js` siết kiểm tra `getUser()`, `.eq('user_id', user.id)`, whitelist payload, từ chối payload rỗng/sai `type`, và xóa `category_id` khi đổi `expense <-> income` ở fallback `updateTransaction`.
+      * **UI/UX, Theme & PWA:** Thêm `ErrorBoundary.jsx`, `userInitials.js` (tránh cắt nhầm ký tự ngoặc), `ThemeContext.jsx`/`useTheme.js`/`themeUtils.js` + `index.html` pre-paint script, `ResetPasswordPage.jsx` & `ForgotPasswordPage.jsx` chuẩn Double-Bezel, `BillSplitVietQR.jsx` tự reset `copied` sau 2s và giới hạn `tipPercent <= 50`, xóa sạch 5 file boilerplate Vite (`src/App.css`, `src/assets/hero.png`, `src/assets/react.svg`, `src/assets/vite.svg`, `public/icons.svg`), nâng cấp `public/sw.js` `spendwise-v3` Network-First HTML + clone cache response.
+      * **Kiểm thử hiện tại toàn repo:** `oxlint` **0 warnings / 0 errors** trên **86 files**; `npm test` đạt **19/19 test files (323/323 tests)** gồm 13 file unit/component/API (`145` tests) + 6 file E2E/Tier 5 (`178` tests, gồm `tier5-adversarial.e2e.test.jsx` và `tier5-dom-behavioral.e2e.test.jsx` chạy React 19 `createRoot` + `jsdom`); `vite build` sạch không còn cảnh báo chunk `> 500 kB` (chunk JS lớn nhất `vendor-react` `260.11 kB`).
 
 ---
 

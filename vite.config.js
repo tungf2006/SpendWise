@@ -25,6 +25,6 @@ export default defineConfig({
   test: {
     environment: 'node',
     globals: true,
-    include: ['src/**/*.test.{js,jsx}', 'server/**/*.test.js'],
+    include: ['src/**/*.test.{js,jsx}', 'server/**/*.test.js', 'tests/e2e/**/*.test.{js,jsx}'],
   },
 })

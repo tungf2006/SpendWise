@@ -44,7 +44,7 @@ function GoalModal({ title, onClose, children, busy }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 p-4 backdrop-blur-sm animate-fade-in"
       onClick={(event) => {
         if (event.target === event.currentTarget && !busy) onClose()
       }}
@@ -53,10 +53,10 @@ function GoalModal({ title, onClose, children, busy }) {
         role="dialog"
         aria-modal="true"
         aria-label={title}
-        className="w-full max-w-md rounded-[2rem] bg-white/80 p-2 shadow-2xl ring-1 ring-slate-900/5"
+        className="w-full max-w-md rounded-[2rem] bg-white/80 dark:bg-slate-900/95 p-2 shadow-2xl ring-1 ring-slate-900/5 dark:ring-white/10 animate-modal-pop"
       >
-        <div className="rounded-[calc(2rem-0.5rem)] border border-slate-100 bg-white p-6">
-          <div className="mb-5 flex items-center justify-between border-b border-slate-100 pb-3">
+        <div className="rounded-[calc(2rem-0.5rem)] border border-slate-100 dark:border-slate-800 bg-white dark:bg-[#111827] p-6">
+          <div className="mb-5 flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
             <h2 className="font-display text-base font-bold text-slate-900">
               {title}
             </h2>
@@ -65,7 +65,7 @@ function GoalModal({ title, onClose, children, busy }) {
               onClick={onClose}
               disabled={busy}
               aria-label="Đóng"
-              className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-600 disabled:opacity-50"
+              className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 disabled:opacity-50 cursor-pointer"
             >
               <X className="h-4 w-4" />
             </button>
@@ -273,7 +273,7 @@ export const GoalPage = () => {
   }
 
   const inputClass =
-    'w-full rounded-full border border-slate-200 bg-slate-50 px-4 py-2.5 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500/20'
+    'w-full rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/80 px-4 py-2.5 text-sm text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-500/20'
 
   const labelClass =
     'mb-1 block text-xs font-bold uppercase tracking-wider text-slate-700'
@@ -288,7 +288,7 @@ export const GoalPage = () => {
           <button
             type="button"
             onClick={openCreate}
-            className="flex items-center gap-1.5 rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white"
+            className="flex items-center gap-1.5 rounded-full bg-slate-900 dark:bg-brand-600 hover:bg-slate-800 dark:hover:bg-brand-500 px-4 py-2 text-xs font-semibold text-white shadow-soft-sm transition-colors cursor-pointer"
           >
             <Plus className="h-4 w-4" />
             Tạo mục tiêu
@@ -298,16 +298,16 @@ export const GoalPage = () => {
 
       {loading ? (
         <div className="rounded-3xl border border-slate-100 bg-white p-12 text-center text-sm text-slate-500">
-          <Loader2 className="mx-auto mb-2 h-6 w-6 animate-spin" />
+          <Loader2 className="mx-auto mb-2 h-6 w-6 animate-spin text-brand-600" />
           Đang tải danh sách mục tiêu...
         </div>
       ) : loadError ? (
-        <div role="alert" className="rounded-3xl border border-rose-200 bg-rose-50 p-6 text-sm text-rose-700">
+        <div role="alert" className="rounded-3xl border border-rose-200 dark:border-rose-800/60 bg-rose-50 dark:bg-rose-950/50 p-6 text-sm text-rose-700 dark:text-rose-300">
           <p>{loadError}</p>
           <button
             type="button"
             onClick={fetchGoalsList}
-            className="mt-3 font-semibold underline"
+            className="mt-3 font-semibold underline cursor-pointer"
           >
             Thử tải lại
           </button>
@@ -329,12 +329,12 @@ export const GoalPage = () => {
             return (
               <div
                 key={goal.id}
-                className="rounded-[2rem] bg-white/70 p-2 shadow-soft-sm ring-1 ring-slate-900/5"
+                className="rounded-[2rem] bg-white/70 p-2 shadow-soft-sm ring-1 ring-slate-900/5 dark:ring-white/10"
               >
                 <div className="h-full rounded-[calc(2rem-0.5rem)] border border-slate-100 bg-white p-5">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3">
-                      <div className="rounded-2xl bg-slate-900 p-2.5 text-white">
+                      <div className="rounded-2xl bg-slate-900 dark:bg-brand-600 p-2.5 text-white">
                         <Target className="h-4 w-4" />
                       </div>
                       <div>
@@ -355,7 +355,7 @@ export const GoalPage = () => {
                         type="button"
                         onClick={() => openEdit(goal)}
                         aria-label={`Sửa mục tiêu ${goal.name}`}
-                        className="rounded-full p-2 text-slate-500 hover:bg-slate-100"
+                        className="rounded-full p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
                       >
                         <Pencil className="h-4 w-4" />
                       </button>
@@ -363,7 +363,7 @@ export const GoalPage = () => {
                         type="button"
                         onClick={() => setDeleteGoalId(goal.id)}
                         aria-label={`Xóa mục tiêu ${goal.name}`}
-                        className="rounded-full p-2 text-rose-600 hover:bg-rose-50"
+                        className="rounded-full p-2 text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 cursor-pointer"
                       >
                         <Trash2 className="h-4 w-4" />
                       </button>
@@ -375,7 +375,7 @@ export const GoalPage = () => {
                       <span>Hiện có: <strong>{formatCurrency(current)}</strong></span>
                       <span>Mục tiêu: <strong>{formatCurrency(target)}</strong></span>
                     </div>
-                    <div className="h-3 overflow-hidden rounded-full bg-slate-100">
+                    <div className="h-3 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
                       <div
                         className="h-full rounded-full bg-emerald-500"
                         style={{ width: `${percent}%` }}
@@ -396,7 +396,7 @@ export const GoalPage = () => {
                       <button
                         type="button"
                         onClick={() => openDeposit(goal)}
-                        className="rounded-full bg-slate-900 px-4 py-2 text-xs font-semibold text-white"
+                        className="rounded-full bg-slate-900 dark:bg-brand-600 hover:bg-slate-800 dark:hover:bg-brand-500 px-4 py-2 text-xs font-semibold text-white transition-colors cursor-pointer"
                       >
                         Nạp tiền
                       </button>
@@ -462,14 +462,14 @@ export const GoalPage = () => {
                 type="button"
                 disabled={busy}
                 onClick={() => setFormOpen(false)}
-                className="rounded-full bg-slate-100 px-4 py-2 text-xs font-semibold"
+                className="rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-4 py-2 text-xs font-semibold cursor-pointer"
               >
                 Hủy
               </button>
               <button
                 type="submit"
                 disabled={busy}
-                className="rounded-full bg-slate-900 px-5 py-2 text-xs font-semibold text-white disabled:opacity-50"
+                className="rounded-full bg-slate-900 dark:bg-brand-600 hover:bg-slate-800 dark:hover:bg-brand-500 px-5 py-2 text-xs font-semibold text-white disabled:opacity-50 cursor-pointer"
               >
                 {busy ? 'Đang lưu...' : 'Lưu mục tiêu'}
               </button>
@@ -523,14 +523,14 @@ export const GoalPage = () => {
                 type="button"
                 disabled={busy}
                 onClick={() => setDepositGoal(null)}
-                className="rounded-full bg-slate-100 px-4 py-2 text-xs font-semibold"
+                className="rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-4 py-2 text-xs font-semibold cursor-pointer"
               >
                 Hủy
               </button>
               <button
                 type="submit"
                 disabled={busy}
-                className="rounded-full bg-slate-900 px-5 py-2 text-xs font-semibold text-white disabled:opacity-50"
+                className="rounded-full bg-slate-900 dark:bg-brand-600 hover:bg-slate-800 dark:hover:bg-brand-500 px-5 py-2 text-xs font-semibold text-white disabled:opacity-50 cursor-pointer"
               >
                 {busy ? 'Đang nạp...' : 'Xác nhận nạp'}
               </button>

@@ -155,32 +155,48 @@ describe('categoryService - UC10 & UC11 (R2)', () => {
       expect(result.data.keywords).toEqual([])
     })
 
-    it('whitelist các trường hợp lệ và từ chối khi tên danh mục rỗng', async () => {
+    it('whitelist các trường hợp lệ, từ chối tên rỗng, loại không hợp lệ và payload rỗng', async () => {
       const resNoId = await updateCategory('', { name: 'Danh mục' })
       expect(resNoId.error.message).toContain('Thiếu ID')
 
       const resEmptyName = await updateCategory('c1', { name: '  ' })
       expect(resEmptyName.error.message).toContain('Tên danh mục không được để trống')
+
+      const resInvalidType = await updateCategory('c1', { type: 'bogus_type' })
+      expect(resInvalidType.error.message).toContain('Loại danh mục không hợp lệ')
+
+      const resDisallowed = await updateCategory('c1', { user_id: 'hacker-id', id: 'fake-id' })
+      expect(resDisallowed.error.message).toContain('Không có thông tin hợp lệ')
+
+      mockAuthGetUser.mockResolvedValueOnce({ data: { user: null }, error: null })
+      const resUnauth = await updateCategory('c1', { name: 'Hợp lệ' })
+      expect(resUnauth.error.message).toContain('chưa đăng nhập')
     })
   })
 
   describe('deleteCategory (UC11)', () => {
-    it('xóa danh mục theo id thành công', async () => {
+    it('xóa danh mục theo id và ràng buộc user_id thành công', async () => {
+      const eqUserSpy = vi.fn().mockResolvedValue({ error: null })
       const mockQuery = {
         delete: vi.fn().mockReturnThis(),
-        eq: vi.fn().mockResolvedValue({ error: null })
+        eq: vi.fn().mockReturnValue({ eq: eqUserSpy })
       }
       mockFrom.mockReturnValue(mockQuery)
 
       const result = await deleteCategory('c1')
       expect(mockQuery.delete).toHaveBeenCalled()
       expect(mockQuery.eq).toHaveBeenCalledWith('id', 'c1')
+      expect(eqUserSpy).toHaveBeenCalledWith('user_id', 'user-001')
       expect(result.error).toBeNull()
     })
 
-    it('từ chối khi thiếu ID danh mục', async () => {
+    it('từ chối khi thiếu ID danh mục hoặc chưa đăng nhập', async () => {
       const result = await deleteCategory('')
       expect(result.error.message).toContain('Thiếu ID')
+
+      mockAuthGetUser.mockResolvedValueOnce({ data: { user: null }, error: null })
+      const resUnauth = await deleteCategory('c1')
+      expect(resUnauth.error.message).toContain('chưa đăng nhập')
     })
   })
 })

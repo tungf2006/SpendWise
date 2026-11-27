@@ -62,9 +62,10 @@ function hasPhrase(haystack, phrase) {
 }
 
 function localParts(now) {
+  const safeNow = now instanceof Date && !Number.isNaN(now.getTime()) ? now : new Date()
   const parts = new Intl.DateTimeFormat('en-US', {
     timeZone: TIME_ZONE, year: 'numeric', month: '2-digit', day: '2-digit',
-  }).formatToParts(now)
+  }).formatToParts(safeNow)
   const get = (type) => Number(parts.find((part) => part.type === type).value)
   return { year: get('year'), month: get('month'), day: get('day') }
 }
@@ -117,16 +118,18 @@ function parseAmount(normalized) {
   if (thousand) return asAmount(Math.round(Number(thousand[1].replace(',', '.')) * 1_000))
 
   // Guard against 2026 in `15/11/2026` being interpreted as an amount.
-  const plain = normalized.match(/(?<![a-z0-9/.,-])([0-9]{1,3}(?:[.,][0-9]{3})+|[0-9]{4,12})(?![a-z0-9/.,-])/u)
+  const plain = normalized.match(/(?<![a-z0-9/.,-])([0-9]{1,3}(?:[.,][0-9]{3})+|[0-9]{4,12})(?:\s*(?:d|vnd))?(?![a-z0-9/.,-])/u)
   if (plain) return asAmount(Number(plain[1].replace(/[.,]/g, '')))
   return null
 }
 
 function walletCandidates(wallets) {
   const fromDB = Array.isArray(wallets)
-    ? wallets.filter((w) => w && typeof w.name === 'string' && w.name.trim()).map((w) => ({
-        keyword: normalizeQuickText(w.name), label: w.name, aliases: [w.name],
-      }))
+    ? wallets
+        .filter((w) => w && !w.is_archived && typeof w.name === 'string' && w.name.trim())
+        .map((w) => ({
+          keyword: normalizeQuickText(w.name), label: w.name, aliases: [w.name],
+        }))
     : []
   return [...WALLET_ALIASES, ...fromDB]
 }
@@ -151,7 +154,7 @@ export function resolveQuickWallet(wallets, keywordOrLabel) {
   const search = normalizeQuickText(keywordOrLabel)
   const canonical = WALLET_ALIASES.find((w) => w.keyword === search ||
     normalizeQuickText(w.label) === search || w.aliases.some((alias) => normalizeQuickText(alias) === search))
-  const list = wallets.filter((w) => w && typeof w.name === 'string')
+  const list = wallets.filter((w) => w && !w.is_archived && typeof w.name === 'string' && w.name.trim())
   const exact = list.find((w) => normalizeQuickText(w.name) === search)
   if (exact) return exact
   if (canonical) {

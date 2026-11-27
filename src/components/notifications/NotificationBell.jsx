@@ -118,11 +118,11 @@ export function NotificationBell() {
         aria-label={unread > 0 ? `Thông báo: ${unread} chưa đọc` : 'Thông báo'}
         aria-expanded={open}
         aria-haspopup="dialog"
-        className="relative h-9 w-9 rounded-full bg-slate-100 hover:bg-slate-200 border border-slate-200/80 flex items-center justify-center text-slate-700 transition-colors focus-visible:outline-2 focus-visible:outline-emerald-500"
+        className="relative h-9 w-9 rounded-full bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200/80 dark:border-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-200 transition-colors focus-visible:outline-2 focus-visible:outline-emerald-500 cursor-pointer"
       >
         <Bell size={18} aria-hidden="true" />
         {unread > 0 && (
-          <span className="absolute -top-1.5 -right-1.5 flex min-w-5 h-5 px-1 items-center justify-center rounded-full bg-rose-600 text-[10px] font-bold text-white ring-2 ring-white">
+          <span className="absolute -top-1.5 -right-1.5 flex min-w-5 h-5 px-1 items-center justify-center rounded-full bg-rose-600 text-[10px] font-bold text-white ring-2 ring-white dark:ring-slate-900">
             {unread > 99 ? '99+' : unread}
           </span>
         )}
@@ -131,45 +131,45 @@ export function NotificationBell() {
         <div
           role="dialog"
           aria-label="Danh sách thông báo"
-          className="absolute right-0 top-12 z-[80] w-[min(92vw,390px)] rounded-2xl bg-white shadow-2xl border border-slate-200 text-slate-900 overflow-hidden"
+          className="absolute right-[-44px] sm:right-0 top-12 z-[80] w-[min(92vw,390px)] max-w-[calc(100vw-1.5rem)] rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-slate-100 overflow-hidden animate-fade-in"
         >
-          <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between gap-3">
+          <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between gap-3">
             <div>
-              <h2 className="text-sm font-bold">Thông báo</h2>
-              <p className="text-xs text-slate-500">{unread} chưa đọc</p>
+              <h2 className="text-sm font-bold text-slate-900 dark:text-slate-100">Thông báo</h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">{unread} chưa đọc</p>
             </div>
             <button type="button" onClick={() => setOpen(false)} aria-label="Đóng thông báo"
-              className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-500"><X size={18} /></button>
+              className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 cursor-pointer"><X size={18} /></button>
           </div>
-          <div className="flex flex-wrap gap-2 px-3 py-2 border-b border-slate-100">
+          <div className="flex flex-wrap gap-2 px-3 py-2 border-b border-slate-100 dark:border-slate-800">
             <button type="button" disabled={!unread || busy} onClick={onMarkAll}
-              className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 disabled:opacity-40">
+              className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 disabled:opacity-40 cursor-pointer">
               <CheckCheck size={14} /> Đánh dấu tất cả đã đọc
             </button>
             <button type="button" disabled={busy || !notifications.some(item => item.is_read)} onClick={onClearRead}
-              className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 disabled:opacity-40">
+              className="inline-flex items-center gap-1 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/50 hover:bg-rose-100 dark:hover:bg-rose-900/60 disabled:opacity-40 cursor-pointer">
               <Trash2 size={14} /> Xóa đã đọc
             </button>
           </div>
-          {error && <p role="alert" className="px-4 py-2 text-xs text-rose-700 bg-rose-50">{error}</p>}
+          {error && <p role="alert" className="px-4 py-2 text-xs text-rose-700 dark:text-rose-300 bg-rose-50 dark:bg-rose-950/50">{error}</p>}
           <div className="max-h-[min(60vh,440px)] overflow-y-auto" aria-live="polite">
-            {loading && <div className="flex gap-2 items-center px-4 py-6 text-xs text-slate-500"><Loader2 size={16} className="animate-spin" /> Đang tải...</div>}
-            {!loading && !notifications.length && <p className="px-4 py-8 text-center text-sm text-slate-500">Chưa có thông báo nào.</p>}
+            {loading && <div className="flex gap-2 items-center px-4 py-6 text-xs text-slate-500 dark:text-slate-400"><Loader2 size={16} className="animate-spin" /> Đang tải...</div>}
+            {!loading && !notifications.length && <p className="px-4 py-8 text-center text-sm text-slate-500 dark:text-slate-400">Chưa có thông báo nào.</p>}
             {!loading && notifications.map(item => {
               const isBudget = item.type === 'budget_warning' || item.type === 'budget_exceeded'
               const Symbol = isBudget ? AlertTriangle : item.type === 'recurring_due' ? CalendarClock : Bell
               return (
-                <div key={item.id} className={`flex items-start gap-3 px-4 py-3 border-b border-slate-100 last:border-0 ${item.is_read ? 'bg-white' : 'bg-emerald-50/60'}`}>
-                  <span className={`mt-0.5 shrink-0 rounded-lg p-2 ${isBudget ? 'bg-amber-100 text-amber-700' : 'bg-sky-100 text-sky-700'}`}><Symbol size={16} /></span>
+                <div key={item.id} className={`flex items-start gap-3 px-4 py-3 border-b border-slate-100 dark:border-slate-800 last:border-0 ${item.is_read ? 'bg-white dark:bg-slate-900' : 'bg-emerald-50/60 dark:bg-emerald-950/40'}`}>
+                  <span className={`mt-0.5 shrink-0 rounded-lg p-2 ${isBudget ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300' : 'bg-sky-100 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300'}`}><Symbol size={16} /></span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <p className="break-words text-xs font-bold text-slate-800">{item.title}</p>
-                      {!item.is_read && <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-600" aria-label="Chưa đọc" />}
+                      <p className="break-words text-xs font-bold text-slate-800 dark:text-slate-100">{item.title}</p>
+                      {!item.is_read && <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-600 dark:bg-emerald-400" aria-label="Chưa đọc" />}
                     </div>
-                    <p className="text-xs mt-1 text-slate-600 break-words">{item.message}</p>
-                    {item.is_virtual && <p className="text-[10px] text-slate-400 mt-1">Cảnh báo dự phòng (chưa đồng bộ máy chủ)</p>}
+                    <p className="text-xs mt-1 text-slate-600 dark:text-slate-300 break-words">{item.message}</p>
+                    {item.is_virtual && <p className="text-[10px] text-slate-400 dark:text-slate-500 mt-1">Cảnh báo dự phòng (chưa đồng bộ máy chủ)</p>}
                     {!item.is_read && <button type="button" disabled={busy} onClick={() => onMarkOne(item)}
-                      className="inline-flex items-center gap-1 text-[11px] mt-2 font-semibold text-emerald-700 hover:underline disabled:opacity-40"><Check size={13} /> Đánh dấu đã đọc</button>}
+                      className="inline-flex items-center gap-1 text-[11px] mt-2 font-semibold text-emerald-700 dark:text-emerald-400 hover:underline disabled:opacity-40 cursor-pointer"><Check size={13} /> Đánh dấu đã đọc</button>}
                   </div>
                 </div>
               )

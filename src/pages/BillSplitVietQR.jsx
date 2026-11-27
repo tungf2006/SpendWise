@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { PageHeader } from '@/components/common/PageHeader'
 import { formatCurrency } from '@/utils/formatCurrency'
 import { useAuth } from '@/context/useAuth'
@@ -24,8 +24,25 @@ export const BillSplitVietQR = () => {
   const bankAccount = bankAccountDraft ?? profile?.default_bank_account ?? ''
   const [memo, setMemo] = useState('Tien an toi nhom')
   const [copied, setCopied] = useState(false)
+  const copyTimerRef = useRef(null)
   const [actionMessage, setActionMessage] = useState('')
   const [failedQrUrl, setFailedQrUrl] = useState('')
+
+  useEffect(() => {
+    return () => {
+      if (copyTimerRef.current) {
+        clearTimeout(copyTimerRef.current)
+      }
+    }
+  }, [])
+
+  const resetCopiedState = () => {
+    if (copyTimerRef.current) {
+      clearTimeout(copyTimerRef.current)
+      copyTimerRef.current = null
+    }
+    setCopied(false)
+  }
 
   const peopleValue = Number(numberOfPeople)
   const peopleValid =
@@ -55,10 +72,17 @@ export const BillSplitVietQR = () => {
 
     try {
       await navigator.clipboard.writeText(memo)
+      if (copyTimerRef.current) {
+        clearTimeout(copyTimerRef.current)
+      }
       setCopied(true)
+      copyTimerRef.current = setTimeout(() => {
+        setCopied(false)
+        copyTimerRef.current = null
+      }, 2000)
       setActionMessage('Đã sao chép nội dung chuyển khoản.')
     } catch {
-      setCopied(false)
+      resetCopiedState()
       setActionMessage('Không thể sao chép. Bạn hãy chọn và sao chép nội dung thủ công.')
     }
   }
@@ -107,10 +131,10 @@ export const BillSplitVietQR = () => {
         <div className="lg:col-span-7 space-y-6">
           
           {/* Bill Split Section */}
-          <div className="rounded-[2rem] bg-white/70 p-2 shadow-soft-md ring-1 ring-slate-900/5">
+          <div className="rounded-[2rem] bg-white/70 p-2 shadow-soft-md ring-1 ring-slate-900/5 dark:ring-slate-700/60">
             <div className="rounded-[calc(2rem-0.5rem)] bg-white p-6 border border-slate-100 space-y-4">
               <div className="flex items-center gap-2 mb-2">
-                <Users className="w-4 h-4 text-brand-600" />
+                <Users className="w-4 h-4 text-brand-600 dark:text-blue-400" />
                 <h3 className="font-display font-bold text-sm text-slate-900 uppercase tracking-wider">
                   Thông tin Chia tiền (Bill Split)
                 </h3>
@@ -125,8 +149,11 @@ export const BillSplitVietQR = () => {
                   min="1000"
                   step="5000"
                   value={totalAmount}
-                  onChange={(e) => setTotalAmount(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-full text-base font-display font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                  onChange={(e) => {
+                    resetCopiedState()
+                    setTotalAmount(e.target.value)
+                  }}
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-full text-base font-display font-bold text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-500/20"
                 />
               </div>
 
@@ -140,11 +167,14 @@ export const BillSplitVietQR = () => {
                     min="1"
                     max="50"
                     value={numberOfPeople}
-                    onChange={(e) => setNumberOfPeople(e.target.value)}
-                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-full text-sm font-semibold text-slate-900 text-center"
+                    onChange={(e) => {
+                      resetCopiedState()
+                      setNumberOfPeople(e.target.value)
+                    }}
+                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-full text-sm font-semibold text-slate-900 dark:text-slate-100 text-center"
                   />
                   {!peopleValid && (
-                    <p role="alert" className="mt-1 text-xs text-rose-600">
+                    <p role="alert" className="mt-1 text-xs text-rose-600 dark:text-rose-400">
                       Số người phải là số nguyên từ 1 đến 50.
                     </p>
                   )}
@@ -159,17 +189,20 @@ export const BillSplitVietQR = () => {
                     min="0"
                     max="50"
                     value={tipPercent}
-                    onChange={(e) => setTipPercent(Math.max(0, Number(e.target.value)))}
-                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-full text-sm font-semibold text-slate-900 text-center"
+                    onChange={(e) => {
+                      resetCopiedState()
+                      setTipPercent(Math.min(50, Math.max(0, Number(e.target.value) || 0)))
+                    }}
+                    className="w-full px-4 py-2 bg-slate-50 border border-slate-200 rounded-full text-sm font-semibold text-slate-900 dark:text-slate-100 text-center"
                   />
                 </div>
               </div>
 
               {/* Calculated per person highlight */}
-              <div className="p-4 rounded-2xl bg-gradient-to-r from-brand-50 to-emerald-50 border border-brand-200/60 flex items-center justify-between">
+              <div className="p-4 rounded-2xl bg-gradient-to-r from-brand-50 to-emerald-50 dark:from-brand-900/30 dark:to-emerald-950/30 border border-brand-200/60 dark:border-brand-500/30 flex items-center justify-between">
                 <div>
                   <span className="text-[11px] font-semibold text-slate-500 block">Mỗi người cần chuyển</span>
-                  <span className="font-display font-black text-2xl text-brand-700 tracking-tight">
+                  <span className="font-display font-black text-2xl text-brand-700 dark:text-blue-300 tracking-tight">
                     {splitResult ? formatCurrency(splitResult.amountPerPerson) : '—'}
                   </span>
                 </div>
@@ -187,10 +220,10 @@ export const BillSplitVietQR = () => {
           )}
 
           {/* Receiving Bank Section */}
-          <div className="rounded-[2rem] bg-white/70 p-2 shadow-soft-md ring-1 ring-slate-900/5">
+          <div className="rounded-[2rem] bg-white/70 p-2 shadow-soft-md ring-1 ring-slate-900/5 dark:ring-slate-700/60">
             <div className="rounded-[calc(2rem-0.5rem)] bg-white p-6 border border-slate-100 space-y-4">
               <div className="flex items-center gap-2 mb-2">
-                <CreditCard className="w-4 h-4 text-brand-600" />
+                <CreditCard className="w-4 h-4 text-brand-600 dark:text-blue-400" />
                 <h3 className="font-display font-bold text-sm text-slate-900 uppercase tracking-wider">
                   Tài khoản Thụ hưởng tạo VietQR
                 </h3>
@@ -202,8 +235,11 @@ export const BillSplitVietQR = () => {
                 </label>
                 <select
                   value={bankBin}
-                  onChange={(e) => setBankBin(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-full text-xs text-slate-900 focus:outline-none"
+                  onChange={(e) => {
+                    resetCopiedState()
+                    setBankBin(e.target.value)
+                  }}
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-full text-xs text-slate-900 dark:text-slate-100 dark:[color-scheme:dark] focus:outline-none"
                 >
                   {POPULAR_BANKS.map((b) => (
                     <option key={b.bin} value={b.bin}>{b.shortName} - {b.name}</option>
@@ -218,9 +254,12 @@ export const BillSplitVietQR = () => {
                 <input
                   type="text"
                   value={bankAccount}
-                  onChange={(e) => setBankAccount(e.target.value)}
+                  onChange={(e) => {
+                    resetCopiedState()
+                    setBankAccount(e.target.value)
+                  }}
                   placeholder="Nhập số tài khoản ngân hàng của bạn..."
-                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-full text-xs text-slate-900 focus:outline-none"
+                  className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-full text-xs text-slate-900 dark:text-slate-100 focus:outline-none"
                 />
               </div>
 
@@ -232,15 +271,18 @@ export const BillSplitVietQR = () => {
                   <input
                     type="text"
                     value={memo}
-                    onChange={(e) => setMemo(e.target.value)}
-                    className="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-full text-xs text-slate-900 focus:outline-none"
+                    onChange={(e) => {
+                      resetCopiedState()
+                      setMemo(e.target.value)
+                    }}
+                    className="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-full text-xs text-slate-900 dark:text-slate-100 focus:outline-none"
                   />
                   <button
                     type="button"
                     onClick={handleCopyMemo}
-                    className="px-3 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold flex items-center gap-1 transition-colors"
+                    className="px-3 rounded-full bg-slate-100 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
                   >
-                    {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                    {copied ? <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
                     <span>{copied ? 'Đã sao chép' : 'Chép'}</span>
                   </button>
                 </div>
@@ -252,16 +294,16 @@ export const BillSplitVietQR = () => {
 
         {/* Right Preview: VietQR Card */}
         <div className="lg:col-span-5">
-          <div className="rounded-[2.25rem] bg-gradient-to-b from-slate-900 to-slate-950 p-2 shadow-soft-xl text-white">
+          <div className="rounded-[2.25rem] bg-gradient-to-b from-slate-900 to-slate-950 p-2 shadow-soft-xl text-white dark:ring-1 dark:ring-slate-700/60">
             <div className="rounded-[calc(2.25rem-0.5rem)] bg-white p-6 text-slate-900 flex flex-col items-center text-center">
               
               <div className="flex items-center gap-2 mb-4 text-xs font-bold uppercase tracking-wider text-slate-500">
-                <QrCode className="w-4 h-4 text-brand-600" />
+                <QrCode className="w-4 h-4 text-brand-600 dark:text-blue-400" />
                 <span>Mã VietQR Thanh Toán Napas247</span>
               </div>
 
               {qrUrl && failedQrUrl !== qrUrl ? (
-                <div className="p-3 bg-white rounded-2xl border border-slate-200 shadow-sm mb-4">
+                <div className="p-3 bg-[#FFFFFF] rounded-2xl border border-slate-200 dark:border-white/20 shadow-sm mb-4">
                   <img
                     src={qrUrl}
                     alt="VietQR Code"
@@ -286,7 +328,7 @@ export const BillSplitVietQR = () => {
               <div className="w-full space-y-1.5 py-3 border-t border-slate-100 text-xs text-left">
                 <div className="flex justify-between">
                   <span className="text-slate-400">Số tiền mỗi người:</span>
-                  <span className="font-display font-bold text-brand-600 text-sm">
+                  <span className="font-display font-bold text-brand-600 dark:text-blue-400 text-sm">
                     {splitResult ? formatCurrency(splitResult.amountPerPerson) : '—'}
                   </span>
                 </div>
@@ -301,7 +343,7 @@ export const BillSplitVietQR = () => {
                   <button
                     type="button"
                     onClick={handleDownloadQr}
-                    className="w-full mt-2 py-2.5 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold flex items-center justify-center gap-2 transition-transform active:scale-95"
+                    className="w-full mt-2 py-2.5 rounded-full bg-slate-900 hover:bg-slate-800 dark:bg-brand-600 dark:hover:bg-brand-500 text-white text-xs font-semibold flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer"
                   >
                     <Download className="w-4 h-4" />
                     <span>Tải ảnh mã QR</span>
@@ -310,7 +352,7 @@ export const BillSplitVietQR = () => {
                     href={qrUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="mt-2 text-xs font-semibold text-brand-700 underline"
+                    className="mt-2 text-xs font-semibold text-brand-700 dark:text-blue-400 underline"
                   >
                     Mở ảnh QR trong tab mới
                   </a>

@@ -69,15 +69,15 @@ export const RegisterPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#0B0F19] flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <div className="w-12 h-12 mx-auto rounded-full bg-slate-900 text-white flex items-center justify-center shadow-lg ring-4 ring-slate-100 mb-3">
+        <div className="w-12 h-12 mx-auto rounded-full bg-slate-900 dark:bg-brand-600 text-white flex items-center justify-center shadow-lg ring-4 ring-slate-100 dark:ring-slate-800 mb-3">
           <span className="font-display font-black text-sm tracking-tighter text-transparent bg-clip-text bg-gradient-to-tr from-brand-200 to-emerald-300">
             SW
           </span>
         </div>
         <h2 className="font-display font-black text-2xl sm:text-3xl tracking-tight text-slate-900">
-          Tạo tài khoản Spend<span className="text-brand-600">Wise</span>
+          Tạo tài khoản Spend<span className="text-brand-600 dark:text-brand-500">Wise</span>
         </h2>
         <p className="mt-1 text-xs sm:text-sm text-slate-500">
           Bắt đầu hành trình tự do tài chính cùng trợ lý AI cá nhân
@@ -86,18 +86,18 @@ export const RegisterPage = () => {
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md px-4">
         {/* Card thiết kế Double-Bezel */}
-        <div className="rounded-[2rem] bg-white/70 p-2 shadow-soft-xl ring-1 ring-slate-900/5 backdrop-blur-xl">
-          <div className="rounded-[calc(2rem-0.5rem)] bg-white p-6 sm:p-8 border border-slate-100 shadow-2xs">
+        <div className="rounded-[2rem] bg-white/70 p-2 shadow-soft-xl ring-1 ring-slate-900/5 dark:ring-white/10 backdrop-blur-xl">
+          <div className="rounded-[calc(2rem-0.5rem)] bg-white p-6 sm:p-8 border border-slate-100 shadow-sm">
             
             {errorMsg && (
-              <div className="mb-5 p-3 rounded-2xl bg-rose-50 border border-rose-200/80 flex items-start gap-2.5 text-rose-700 text-xs">
+              <div className="mb-5 p-3 rounded-2xl bg-rose-50 dark:bg-rose-950/50 border border-rose-200/80 dark:border-rose-800/60 flex items-start gap-2.5 text-rose-700 dark:text-rose-300 text-xs">
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                 <span>{errorMsg}</span>
               </div>
             )}
 
             {successMsg && (
-              <div className="mb-5 p-3 rounded-2xl bg-emerald-50 border border-emerald-200/80 flex items-start gap-2.5 text-emerald-700 text-xs">
+              <div className="mb-5 p-3 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200/80 dark:border-emerald-800/60 flex items-start gap-2.5 text-emerald-700 dark:text-emerald-300 text-xs">
                 <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
                 <span>{successMsg}</span>
               </div>
@@ -118,7 +118,7 @@ export const RegisterPage = () => {
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     placeholder="Nguyễn Văn A"
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-full text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-full text-xs sm:text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
                   />
                 </div>
               </div>
@@ -137,7 +137,7 @@ export const RegisterPage = () => {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="ban@example.com"
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-full text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-full text-xs sm:text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
                   />
                 </div>
               </div>
@@ -156,7 +156,7 @@ export const RegisterPage = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Tối thiểu 6 ký tự"
-                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-full text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-700 rounded-full text-xs sm:text-sm text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 transition-all"
                   />
                 </div>
               </div>
@@ -165,7 +165,7 @@ export const RegisterPage = () => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full group py-3 px-5 rounded-full bg-slate-900 text-white font-medium text-xs sm:text-sm flex items-center justify-between shadow-soft-md hover:bg-slate-800 active:scale-[0.98] transition-all duration-300 disabled:opacity-60 cursor-pointer"
+                  className="w-full group py-3 px-5 rounded-full bg-slate-900 dark:bg-brand-600 text-white font-medium text-xs sm:text-sm flex items-center justify-between shadow-soft-md hover:bg-slate-800 dark:hover:bg-brand-500 active:scale-[0.98] transition-all duration-300 disabled:opacity-60 cursor-pointer"
                 >
                   <span className="font-semibold">
                     {loading ? 'Đang tạo tài khoản...' : 'Đăng ký tài khoản'}
@@ -183,7 +183,7 @@ export const RegisterPage = () => {
 
             <div className="mt-6 text-center text-xs text-slate-500">
               Đã có tài khoản SpendWise?{' '}
-              <Link to="/login" className="font-semibold text-brand-600 hover:text-brand-700 hover:underline">
+              <Link to="/login" className="font-semibold text-brand-600 dark:text-brand-500 hover:text-brand-700 dark:hover:text-brand-400 hover:underline">
                 Đăng nhập tại đây
               </Link>
             </div>

@@ -1,7 +1,7 @@
-// Service Worker cho SpendWise PWA (Network-First cho HTML/Navigation, bỏ qua API)
+// Service Worker cho SpendWise PWA (Network-First cho HTML/Navigation, bỏ qua API và cross-origin)
 // Phụ trách: TV2 (Hồ Nguyên Văn)
 
-const CACHE_NAME = 'spendwise-v2'
+const CACHE_NAME = 'spendwise-v3'
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -20,18 +20,20 @@ self.addEventListener('install', (event) => {
 
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) =>
-      Promise.all(
-        keys.map((key) => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key)
-          }
-          return null
-        })
+    caches
+      .keys()
+      .then((keys) =>
+        Promise.all(
+          keys.map((key) => {
+            if (key !== CACHE_NAME) {
+              return caches.delete(key)
+            }
+            return null
+          })
+        )
       )
-    )
+      .then(() => self.clients.claim())
   )
-  self.clients.claim()
 })
 
 self.addEventListener('fetch', (event) => {
@@ -47,11 +49,12 @@ self.addEventListener('fetch', (event) => {
 
   if (url.protocol !== 'http:' && url.protocol !== 'https:') return
 
-  // Bỏ qua các API backend, Supabase và Gemini
+  // Bỏ qua các API backend, Supabase, Gemini và mọi request cross-origin (VietQR, Google Fonts, ...)
   if (
     url.pathname.startsWith('/api/') ||
     url.hostname.includes('supabase.co') ||
-    url.hostname.includes('generativelanguage.googleapis.com')
+    url.hostname.includes('generativelanguage.googleapis.com') ||
+    url.origin !== self.location.origin
   ) {
     return
   }
@@ -70,7 +73,12 @@ self.addEventListener('fetch', (event) => {
           }
           return response
         })
-        .catch(() => caches.match(request).then((res) => res || caches.match('/index.html')))
+        .catch(() =>
+          caches
+            .match(request)
+            .then((res) => res || caches.match('/index.html'))
+            .then((res) => res || Response.error())
+        )
     )
     return
   }
@@ -86,7 +94,7 @@ self.addEventListener('fetch', (event) => {
           }
           return networkResponse
         })
-        .catch(() => cachedResponse)
+        .catch(() => cachedResponse || Response.error())
 
       return cachedResponse || fetchPromise
     })
